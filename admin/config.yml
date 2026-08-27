@@ -1,0 +1,57 @@
+backend:
+  name: github
+  repo: katsushi2441/xb4g
+  branch: main
+  base_url: https://xb4g.com
+  auth_endpoint: decap-oauth.php?action=auth
+locale: 'ja'
+site_url: https://xb4g.com
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+collections:
+  - name: "sites"
+    label: "掲載サイト"
+    folder: "content/sites"
+    extension: "json"
+    format: "json"
+    create: true
+    identifier_field: title
+    summary: "{{title}} ({{category}})"
+    fields:
+      - {label: "サイト名", name: "title", widget: "string"}
+      - {label: "URL", name: "url", widget: "string"}
+      - label: "カテゴリ"
+        name: "category"
+        widget: "select"
+        options:
+          - {label: "入口 — 探す・相談する", value: "entrance"}
+          - {label: "お店 — 買い切りとキット", value: "store"}
+          - {label: "Kurage AIプロダクト", value: "product"}
+          - {label: "受託・コミュニティ", value: "service"}
+          - {label: "ブログ・メディア", value: "media"}
+          - {label: "SNS・開発", value: "sns"}
+      - {label: "説明(1文)", name: "desc", widget: "text"}
+      - {label: "表示順(小さいほど上)", name: "order", widget: "number", default: 50}
+      - {label: "公開する", name: "published", widget: "boolean", default: true}
+  - name: "settings"
+    label: "サイト設定"
+    files:
+      - file: "content/settings/site.json"
+        name: "site"
+        label: "トップページ設定"
+        fields:
+          - {label: "見出し", name: "hero_title", widget: "string"}
+          - {label: "リード文", name: "hero_lead", widget: "text"}
+          - label: "世代のあゆみ"
+            name: "generations"
+            widget: "list"
+            fields:
+              - {label: "世代", name: "era", widget: "string"}
+              - {label: "タイトル", name: "title", widget: "string"}
+              - {label: "説明", name: "desc", widget: "string"}
+          - label: "カテゴリ定義"
+            name: "categories"
+            widget: "list"
+            fields:
+              - {label: "キー", name: "key", widget: "string"}
+              - {label: "表示名", name: "label", widget: "string"}
