@@ -33,6 +33,9 @@ require $cfg;
 
 session_start();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
+// Decapはauth_endpointの後ろに '?provider=github&...' をさらに連結するため
+// action の値が 'auth?provider=github' になる。?以降を捨てて正規化する。
+$action = explode('?', $action)[0];
 
 if ($action === 'auth') {
     $_SESSION['decap_state'] = bin2hex(random_bytes(16));
