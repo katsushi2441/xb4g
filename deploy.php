@@ -22,7 +22,7 @@ file_put_contents($zip, $data);
 
 $za = new ZipArchive();
 if ($za->open($zip) !== true) { unlink($zip); http_response_code(500); exit('zip open failed'); }
-$n = 0;
+$n = 0; $fail = [];
 for ($i = 0; $i < $za->numFiles; $i++) {
     $name = $za->getNameIndex($i);
     // xb4g-main/content/... と xb4g-main/images/uploads/... だけを取り出す(コード類はFTPデプロイ)
@@ -31,9 +31,10 @@ for ($i = 0; $i < $za->numFiles; $i++) {
     $rel = $m[1];
     if (strpos($rel, '..') !== false) continue;
     $dst = __DIR__ . '/' . $rel;
-    @mkdir(dirname($dst), 0755, true);
-    file_put_contents($dst, $za->getFromIndex($i));
+    if (!is_dir(dirname($dst))) @mkdir(dirname($dst), 0777, true);
+    if (@file_put_contents($dst, $za->getFromIndex($i)) === false) { $fail[] = $rel; continue; }
     $n++;
 }
 $za->close(); unlink($zip);
-echo "synced files: $n";
+if ($fail) { http_response_code(500); echo "written: $n, FAILED: " . implode(',', array_slice($fail, 0, 5)); exit; }
+echo "written: $n";
