@@ -92,7 +92,19 @@ if ($action === 'callback') {
   }
   window.addEventListener('message', receive, false);
   if (window.opener) { window.opener.postMessage('authorizing:github', '*'); }
-  document.body.appendChild(document.createTextNode('認証処理中です。このウィンドウは自動で閉じます…'));
+  // openerがCOOP等で切断されていても届くよう、同一オリジンのBroadcastChannelでも結果を配送する
+  // (受け側は admin/index.html のリスナー。BroadcastChannelは同一オリジン限定なので安全)
+  try {
+    var bc = new BroadcastChannel('decap-oauth');
+    var sent = 0;
+    var iv = setInterval(function () {
+      bc.postMessage({ status: status, content: content });
+      if (++sent >= 10) clearInterval(iv);
+    }, 500);
+    bc.postMessage({ status: status, content: content });
+  } catch (err) {}
+  setTimeout(function () { try { window.close(); } catch (err) {} }, 2000);
+  document.body.appendChild(document.createTextNode('認証処理中です。このウィンドウは自動で閉じます…(閉じない場合は手動で閉じてください)'));
 })();
 </script></body></html>
     <?php

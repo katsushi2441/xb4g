@@ -7,6 +7,26 @@
 <title>xb4g.com 管理画面</title>
 </head>
 <body>
+<script>
+// OAuthポップアップのopenerが切断される環境向けフォールバック:
+// ポップアップがBroadcastChannelで送る結果を受け取り、Decapのハンドシェイク
+// (authorizing:github → authorization:github:...)を自ウィンドウ内postMessageで完了させる。
+(function () {
+  try {
+    var done = false;
+    var bc = new BroadcastChannel('decap-oauth');
+    bc.onmessage = function (ev) {
+      var d = ev.data || {};
+      if (done || !d.status) return;
+      done = true;
+      window.postMessage('authorizing:github', window.location.origin);
+      setTimeout(function () {
+        window.postMessage('authorization:github:' + d.status + ':' + JSON.stringify(d.content), window.location.origin);
+      }, 150);
+    };
+  } catch (err) {}
+})();
+</script>
 <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </body>
 </html>
