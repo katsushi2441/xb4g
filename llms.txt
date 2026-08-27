@@ -1,0 +1,90 @@
+# 株式会社エクスブリッジ（第4世代）
+
+> 愛知県名古屋市のAIシステム開発会社。中国オフショア開発から創業し、基幹業務パッケージのITベンダー、ネット通販事業を経て、現在は第4世代としてAI事業を行う。AIプロダクトの開発・提供、バイブコーディングによる受託開発、SaaSからオープンソースへの置き換え支援が主な事業。
+
+このファイルは、AIアシスタント・AI検索エンジンが当社の全サイトとサービスを正確に把握するための索引です。
+
+## 会社概要
+
+- 社名: 株式会社エクスブリッジ（EXBRIDGE Inc.）
+- 所在地: 愛知県名古屋市
+- 事業: AIシステム開発、AIプロダクト提供、業務システムの買い切り販売、オープンソース導入支援
+- 相談: 無料（Zoom可）https://exbridge.jp/contact.php
+- 方針: 月額課金ではなく買い切り。SaaSの固定費をオープンソースと買い切り製品で削減する提案を得意とする。
+
+## 事業の変遷
+
+- 第1世代: 中国オフショア開発 — 日本と中国をつなぐオフショア開発から創業。
+- 第2世代: ITベンダー — 基幹業務パッケージを自社開発するITベンダーへ。
+- 第3世代: ネット通販 — EC事業へ転換し、ネット通販を運営。
+- 第4世代: AI事業(現在) — AIプロダクト開発・バイブコーディング・OSS活用支援。AIと共に作り、AIと共に売る。
+
+## 入口 — 探す・相談する
+
+- [株式会社エクスブリッジ](https://exbridge.jp/): コーポレートサイト。AI駆動経営・VWork・バイブコーディングセミナーの案内。
+- [SaaS→OSS対応表](https://exbridge.jp/saas/): いま使っているSaaSの名前から、置き換えられるオープンソースを探す対応表。
+- [業種・業務別ITソリューション](https://exbridge.jp/solution/): 業種・業務ごとに、SaaSの固定費をOSSと買い切りで減らす道筋を紹介。
+- [AIでできること一覧](https://exbridge.jp/ai-system/): 経営課題から「AI導入で何ができるか」を探す一覧。
+- [OSSカタログ](https://kurage.exbridge.jp/oss/): 業務システムの代替になるオープンソース約2,800件の紹介カタログ。
+- [業務システムのデモ一覧](https://proto.exbridge.jp/): 買い切りの業務システムを、触ってから決めるデモサイト。
+- [無料相談](https://exbridge.jp/contact.php): AI活用・SaaS費用削減・OSS置き換えの無料相談窓口。Zoomでの相談もOK。
+- [AI相談窓口 Kurage.AI](https://kurage.exbridge.jp/chat.php): システム開発相談と代理店収益化のAIチャット窓口。
+
+## お店 — 買い切りとキット
+
+- [Kurage App Store](https://kappstore.exbridge.jp/): 非エンジニアが自分で改変できる業務システムと、OSS導入キットのお店。
+- [Brain(導入手順書・教材)](https://brain-market.com/u/bittensorman): OSS導入手順書やノウハウ教材の販売ページ。
+
+## Kurage AIプロダクト
+
+- [Kurage Project](https://kurage.exbridge.jp/): KurageブランドのAIプロダクト群ポータル。
+- [Kurage Logo Generator](https://kurage.exbridge.jp/klogogen.php): AIロゴ生成。気に入ったロゴのぶんだけ払う方式。SVG/透過PNG/PDF納品。
+- [Kurage Finanalyst](https://kurage.exbridge.jp/kfinanalyst.php): ウォッチリストに専属AIアナリストを付ける株式分析(built on FinRobot)。
+- [Kurage TradingAgents](https://kurage.exbridge.jp/ktajp.php): 日本株をマルチエージェントAIが議論して分析するレポートサービス。
+- [Kurage FreqAI Trade for Hyperliquid](https://kurage.exbridge.jp/kfreqaihl.php): ウォレット1つで始めるAI自動取引(暗号資産+FXペーパー)。
+- [Kurage GEO](https://kgeo.exbridge.jp/): ChatGPTなどのAI検索にサイトを見つけてもらうための日本語監査。
+- [Kurage Montage](https://kmontage.exbridge.jp/): URLを渡すと2〜3分の解説動画に変換するサービス。
+- [Kurage Game Master](https://kurage.exbridge.jp/kgm.php): AIがゲームマスターを務める日本語ソロTRPG。
+- [Kurage BBS](https://kurage.exbridge.jp/kbbs.php): 宣伝OK・求人OKの掲示板。会社・お店のPRを無料掲載できる。
+- [Kurage Architect](https://karchitect.exbridge.jp/): 会話から実装可能な設計書を作るAI。
+- [Kurage Crypto Brain](https://kcbrain.exbridge.jp/): 暗号資産のAI判断API。オープンソースの取引インテリジェンス5種。
+- [Kurage FX Brain](https://kfxbrain.exbridge.jp/): FXのAI判断API。x402課金で16種の判断を販売。
+- [Kurage Stock Brain](https://ksbrain.exbridge.jp/): 日米株のエビデンス重視AI判断API。
+- [Kurage URL2AI Publisher](https://url2ai.exbridge.jp/): URLを読んで記事化・公開までを行うAIパブリッシャー。
+- [Kurage URL2AI Brain](https://url2brain.exbridge.jp/): URL分析からコンテンツ生成・公開までのAI判断API。
+- [Kurage URL2Earn](https://kurl2earn.exbridge.jp/): KurageのURLを広めた人にURLAIトークンを配るプログラム。
+- [Kurage AI VTuber](https://kvtuber.exbridge.jp/): 自動取引し、発信するAIキャラクター「Kurageちゃん」。
+- [Kurage Proofread](https://kproofread.exbridge.jp/): 化学系試験報告書のAIレビュー支援。
+
+## 受託・コミュニティ
+
+- [バイブプロトタイピング](https://kurage.exbridge.jp/vibe-prototype.html): 設計書から動くプロトタイプを最短1営業日で作る開発サービス(税込110,000円〜)。
+- [バイブOSSカスタマイズ](https://kurage.exbridge.jp/vibe-oss.html): OSSの日本語化・機能変更・サーバー構築の代行(税込110,000円〜)。
+- [名古屋AI経営勉強会](https://kurage.exbridge.jp/nagoya-ai-study.html): LINEオープンチャットで運営する、経営者向けのゆるいAI勉強会。
+
+## ブログ・メディア
+
+- [VWork Blog](https://katsushi2441.github.io/vwork/blog/): バイブコーディングを企業に導入する実践知のブログ。
+- [AI OSS技術解説](https://katsushi2441.github.io/vwork/articles/): 注目のAI・OSSを日本語で解説する技術記事。
+- [note](https://note.com/tokoname): プロダクト制作の裏側・リサーチの実録。
+- [はてなブログ](https://xb-bittensor.hatenablog.com/): 名古屋バイブコーディング経営革命。ブログ記事の要約転載。
+- [Blogger](https://bittensorman.blogspot.com/): Web3 x AI x SNS。海外向け転載ブログ。
+- [Kurageちゃんの取引レポート](https://kurage.exbridge.jp/blog/): AI VTuber Kurageちゃんによる暗号資産/FX自動取引レポート。
+- [AIKnowledgeCMS](https://aiknowledgecms.exbridge.jp/): 人ではなくエージェントのループが運営するCMS。
+- [AIxEC](https://aixec.exbridge.jp/): AI駆動型ネット通販。第3世代EC事業のAIによる進化形。
+
+## SNS・開発
+
+- [X (旧Twitter)](https://x.com/xb_bittensor): 代表アカウント。プロダクトと実験の最新情報。
+- [GitHub](https://github.com/katsushi2441): 公開リポジトリ。日本語化OSSやツールを公開。
+
+## よくある質問
+
+### 株式会社エクスブリッジはどんな会社ですか？
+愛知県名古屋市のAIシステム開発会社です。中国オフショア開発から創業し、ITベンダー、ネット通販を経て、現在は第4世代としてAI事業を行っています。
+
+### 製品はどこで買えますか？
+Kurage App Store（https://kappstore.exbridge.jp/）で買い切りの業務システムとオープンソース導入キットを販売しています。導入手順書はBrainでも販売しています。
+
+### 相談方法は？
+https://exbridge.jp/contact.php から無料でご相談いただけます。Zoomでの打ち合わせにも対応しています。

@@ -14,6 +14,14 @@ $cats = $S['categories'] ?? [];
 $h = fn($t) => htmlspecialchars($t ?? '', ENT_QUOTES, 'UTF-8');
 $title = 'エクスブリッジ 第4世代 | 全サイト・全プロダクトのリンク集';
 $desc = '中国オフショア開発、ITベンダー、ネット通販を経てAI事業へ。第4世代の株式会社エクスブリッジが運営する全サイト・AIプロダクト・お店・メディアのリンク集です。';
+// AI検索(AEO/GEO)と検索結果の両方で読まれる想定のQ&A。表示とJSON-LDで同じ内容を使う。
+$FAQ = [
+  ['株式会社エクスブリッジはどんな会社ですか？', '愛知県名古屋市のAIシステム開発会社です。中国オフショア開発から創業し、基幹業務パッケージを開発するITベンダー、ネット通販事業を経て、現在は第4世代としてAI事業を行っています。AIプロダクトの開発・提供、バイブコーディングによる受託開発、SaaSからオープンソースへの置き換え支援が主な事業です。'],
+  ['xb4g.com は何のサイトですか？', '株式会社エクスブリッジが運営する全サイト・全AIプロダクトのリンク集です。コーポレートサイト、SaaS→OSS対応表、AIでできること一覧、業種別ITソリューション、OSSカタログ、Kurage App Store、各AIプロダクト、ブログ・メディアまでを1ページにまとめています。'],
+  ['エクスブリッジに相談するにはどうすればいいですか？', '無料相談の窓口(https://exbridge.jp/contact.php)からご相談いただけます。相談は無料で、Zoomでの打ち合わせにも対応しています。AI活用、SaaSの費用削減、オープンソースへの置き換え、業務システムの開発が主な相談内容です。'],
+  ['エクスブリッジの製品はどこで買えますか？', 'Kurage App Store(https://kappstore.exbridge.jp/)で買い切りの業務システムとオープンソース導入キットを販売しています。導入手順書はBrainでも販売しています。月額課金ではなく買い切りが基本方針です。'],
+  ['第4世代とはどういう意味ですか？', 'エクスブリッジの事業の変遷を4つの世代で表しています。第1世代は中国オフショア開発、第2世代は基幹業務パッケージを自社開発するITベンダー、第3世代はネット通販、そして第4世代が現在のAI事業です。'],
+];
 ?><!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -28,11 +36,45 @@ $desc = '中国オフショア開発、ITベンダー、ネット通販を経て
 <meta property="og:url" content="https://xb4g.com/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://xb4g.com/images/ogp.png">
+<meta property="og:site_name" content="株式会社エクスブリッジ 第4世代">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@xb_bittensor">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BP0650KDFR"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-BP0650KDFR');</script>
 <script type="application/ld+json"><?= json_encode([
-  '@context' => 'https://schema.org', '@type' => 'Organization',
-  'name' => '株式会社エクスブリッジ', 'url' => 'https://exbridge.jp/',
-  'logo' => 'https://xb4g.com/images/logo-mark-64.png',
-  'sameAs' => array_values(array_map(fn($s) => $s['url'], array_filter($sites, fn($s) => ($s['category'] ?? '') === 'sns'))),
+  '@context' => 'https://schema.org',
+  '@graph' => [
+    [
+      '@type' => 'Organization', '@id' => 'https://exbridge.jp/#org',
+      'name' => '株式会社エクスブリッジ', 'url' => 'https://exbridge.jp/',
+      'logo' => 'https://xb4g.com/images/logo-mark-64.png',
+      'description' => '名古屋のAIシステム開発会社。中国オフショア開発、基幹パッケージのITベンダー、ネット通販を経て、第4世代としてAI事業を行う。',
+      'address' => ['@type' => 'PostalAddress', 'addressLocality' => '名古屋市', 'addressRegion' => '愛知県', 'addressCountry' => 'JP'],
+      'sameAs' => array_values(array_map(fn($s) => $s['url'], array_filter($sites, fn($s) => ($s['category'] ?? '') === 'sns'))),
+    ],
+    [
+      '@type' => 'WebSite', '@id' => 'https://xb4g.com/#website',
+      'url' => 'https://xb4g.com/', 'name' => $title, 'inLanguage' => 'ja',
+      'publisher' => ['@id' => 'https://exbridge.jp/#org'],
+    ],
+    [
+      '@type' => 'ItemList', '@id' => 'https://xb4g.com/#sites',
+      'name' => '株式会社エクスブリッジの全サイト・全プロダクト',
+      'numberOfItems' => count($sites),
+      'itemListElement' => array_values(array_map(fn($i, $s) => [
+        '@type' => 'ListItem', 'position' => $i + 1,
+        'name' => $s['title'], 'url' => $s['url'], 'description' => $s['desc'] ?? '',
+      ], array_keys($sites), $sites)),
+    ],
+    [
+      '@type' => 'FAQPage', '@id' => 'https://xb4g.com/#faq',
+      'mainEntity' => array_map(fn($f) => [
+        '@type' => 'Question', 'name' => $f[0],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]],
+      ], $FAQ),
+    ],
+  ],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 <style>
 :root{--bg:#0b1020;--panel:#121a33;--panel2:#0f1730;--line:#26335e;--tx:#e8ecf8;--mut:#9aa7cc;--ac:#5b8cff;--ac2:#39d5c9}
@@ -62,6 +104,11 @@ h2{font-size:20px;margin-bottom:16px;padding-left:12px;border-left:4px solid var
 .card .t{font-weight:700;margin-bottom:4px;display:flex;align-items:baseline;gap:8px}
 .card .u{font-size:11.5px;color:var(--ac2);word-break:break-all}
 .card .d{font-size:13px;color:var(--mut);margin-top:6px}
+.faq{display:grid;gap:10px;margin-bottom:14px}
+.qa{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
+.qa .q{font-weight:700;margin-bottom:6px}
+.qa .q::before{content:"Q. ";color:var(--ac2)}
+.qa .a{font-size:13.5px;color:var(--mut)}
 footer{margin-top:44px;padding:26px 0 40px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
 footer a{color:var(--ac2)}
 @media(max-width:760px){.timeline{grid-template-columns:repeat(2,1fr)}h1{font-size:26px}}
@@ -95,6 +142,14 @@ footer a{color:var(--ac2)}
   </div>
 </section>
 <?php endforeach; ?>
+<section id="faq">
+  <h2>よくある質問</h2>
+  <div class="faq">
+  <?php foreach ($FAQ as $f): ?>
+    <div class="qa"><div class="q"><?= $h($f[0]) ?></div><div class="a"><?= $h($f[1]) ?></div></div>
+  <?php endforeach; ?>
+  </div>
+</section>
 </main>
 <footer><div class="wrap">
   © 株式会社エクスブリッジ ｜ <a href="https://exbridge.jp/" target="_blank" rel="noopener">会社概要</a> ｜ <a href="https://exbridge.jp/contact.php" target="_blank" rel="noopener">無料相談</a><br>
