@@ -166,6 +166,17 @@ section{padding:30px 0 6px}
 /* サイト一覧 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:11px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;transition:.15s}
+/* つくっている人（開発者紹介）。個人サイトへの入口 */
+.maker{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;padding:16px}
+.maker-ico img{width:88px;height:88px;border-radius:12px;object-fit:cover;display:block}
+.maker-txt{min-width:0}
+.maker-txt .t{font-weight:800;font-size:15.5px;margin-bottom:4px}
+.maker-txt p{font-size:13px;color:var(--muted);margin:0 0 10px}
+.maker-links{display:flex;flex-wrap:wrap;gap:8px}
+.maker-links a{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700}
+.maker-links a:hover{border-color:var(--teal)}
+@media(max-width:560px){.maker{gap:12px;padding:13px}.maker-ico img{width:64px;height:64px}}
 .card:hover{border-color:var(--teal);transform:translateY(-2px)}
 .card .t{font-weight:800;font-size:14px;color:var(--ink);margin-bottom:3px}
 .card .u{font-size:11px;color:var(--teal);word-break:break-all}
@@ -297,6 +308,29 @@ footer{margin-top:36px;padding:24px 0 40px;border-top:1px solid var(--line);colo
         <span class="p"><?= $h($s['price']) ?></span>
       </a>
     <?php endforeach; ?>
+  </div>
+</section>
+
+<section id="maker">
+  <div class="sec-head"><h2>つくっている人</h2>
+    <a class="more" href="https://kurage.exbridge.jp/">個人サイトを見る →</a></div>
+  <div class="maker">
+    <a class="maker-ico" href="https://kurage.exbridge.jp/">
+      <img src="https://kurage.exbridge.jp/images/bittensorman.webp" width="400" height="400"
+           alt="BittensorMan のアイコン" loading="lazy">
+    </a>
+    <div class="maker-txt">
+      <div class="t">BittensorMan（小嶋 篤）</div>
+      <p>社会の課題を、AIとシステム開発技術で解決したい。名古屋で一人で、AI動画・業務システム・OSSカタログを作っています。
+        1995年から業務システムの開発に従事し、2025年からAI事業へ。うまくいった数字も、外した数字も公開しています。</p>
+      <div class="maker-links">
+        <a href="https://kurage.exbridge.jp/">個人サイト</a>
+        <a href="https://x.com/xb_bittensor">X @xb_bittensor</a>
+        <a href="https://kurage.exbridge.jp/essay/">エッセイ</a>
+        <a href="https://kurage.exbridge.jp/stack.php">開発環境</a>
+        <a href="https://github.com/katsushi2441">GitHub</a>
+      </div>
+    </div>
   </div>
 </section>
 
