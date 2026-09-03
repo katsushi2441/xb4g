@@ -89,15 +89,51 @@ function xb4g_fetch_posts($indexUrl, $base, $limit = 6)
     return $out;
 }
 
+
+/** VWorkのRSS(feed.xml)から、リンクのパスでセクション(blog/articles)を分けて拾う。
+ *  HTML一覧のスクレイプと違い、jekyll-feedが公開記事を自動で載せるので取りこぼさない。 */
+function xb4g_fetch_rss($section, $limit = 6)
+{
+    // blogは本体feed.xml(jekyll-feed)、articlesは専用feed.xml(build_articles_feed.pyが生成)。
+    $feed = ($section === 'articles')
+        ? 'https://katsushi2441.github.io/vwork/articles/feed.xml'
+        : 'https://katsushi2441.github.io/vwork/feed.xml';
+    $xml = xb4g_http($feed);
+    if ($xml === '') return array();
+    // SimpleXMLに依存せず、<item>ブロックを正規表現で読む(移植性優先)。
+    if (!preg_match_all('~<item>(.*?)</item>~s', $xml, $items)) return array();
+    $out = array();
+    $pick = function ($block, $tag) {
+        if (!preg_match('~<' . $tag . '[^>]*>(.*?)</' . $tag . '>~s', $block, $mm)) return '';
+        $v = $mm[1];
+        // CDATAを剥がす
+        $v = preg_replace('~^\s*<!\[CDATA\[(.*?)\]\]>\s*$~s', '$1', $v);
+        return html_entity_decode(trim($v), ENT_QUOTES | ENT_XML1, 'UTF-8');
+    };
+    foreach ($items[1] as $block) {
+        $url = $pick($block, 'link');
+        if ($url === '' || strpos($url, '/' . $section . '/') === false) continue;   // blog か articles か
+        $t = trim(preg_replace('~\s+~u', ' ', $pick($block, 'title')));
+        if ($t === '') continue;
+        $date = '';
+        $pd = $pick($block, 'pubDate');
+        if ($pd !== '') { $ts = strtotime($pd); if ($ts) $date = date('Y-m-d', $ts); }
+        if ($date === '' && preg_match('~(\d{4})-(\d{2})-(\d{2})~', $url, $dm)) $date = $dm[0];
+        $out[] = array('title' => $t, 'url' => $url, 'date' => $date);
+        if (count($out) >= $limit) break;
+    }
+    return $out;
+}
+
 /** 全部取り直してキャッシュへ（cron/手動用） */
 function xb4g_refresh_all()
 {
     $r = array();
     $v = xb4g_fetch_videos();
     if ($v) { xb4g_cache_put('videos', $v); $r['videos'] = count($v); }
-    $b = xb4g_fetch_posts('https://katsushi2441.github.io/vwork/blog/', 'https://katsushi2441.github.io/vwork/blog/');
+    $b = xb4g_fetch_rss('blog');
     if ($b) { xb4g_cache_put('blog', $b); $r['blog'] = count($b); }
-    $a = xb4g_fetch_posts('https://katsushi2441.github.io/vwork/articles/', 'https://katsushi2441.github.io/vwork/articles/');
+    $a = xb4g_fetch_rss('articles');
     if ($a) { xb4g_cache_put('articles', $a); $r['articles'] = count($a); }
     return $r;
 }
@@ -107,8 +143,8 @@ function xb4g_feed($name)
 {
     if (!xb4g_cache_fresh($name)) {
         if ($name === 'videos')        { $d = xb4g_fetch_videos();  if ($d) xb4g_cache_put('videos', $d); }
-        elseif ($name === 'blog')      { $d = xb4g_fetch_posts('https://katsushi2441.github.io/vwork/blog/', 'https://katsushi2441.github.io/vwork/blog/'); if ($d) xb4g_cache_put('blog', $d); }
-        elseif ($name === 'articles')  { $d = xb4g_fetch_posts('https://katsushi2441.github.io/vwork/articles/', 'https://katsushi2441.github.io/vwork/articles/'); if ($d) xb4g_cache_put('articles', $d); }
+        elseif ($name === 'blog')      { $d = xb4g_fetch_rss('blog');     if ($d) xb4g_cache_put('blog', $d); }
+        elseif ($name === 'articles')  { $d = xb4g_fetch_rss('articles'); if ($d) xb4g_cache_put('articles', $d); }
         // 取得できなければ古いキャッシュをそのまま使う
     }
     return xb4g_cache_get($name);
