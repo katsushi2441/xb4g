@@ -30,6 +30,7 @@ $BANNERS = [
     ['url' => 'https://exbridge.jp/ai-system/',       'eyebrow' => 'AIでできること', 'title' => '経営課題から、AIの使い道を探す', 'desc' => '「何ができるか」ではなく「何が解決するか」から引ける一覧です。', 'tone' => 'amber'],
 ];
 $SERVICES = [
+    ['url' => 'https://exbridge.jp/outsourcing/',               'title' => '業務のAI自動化（全48業務）', 'desc' => '外注・代行を探す前に。データ入力・経理・SNS運用などをAIの仕組みで社内に残す。'],
     ['url' => 'https://kurage.exbridge.jp/vibe-prototype.html', 'title' => 'バイブプロトタイピング', 'desc' => '設計書から動くプロトタイプを最短1営業日で。', 'price' => '税込110,000円〜'],
     ['url' => 'https://kurage.exbridge.jp/vibe-oss.html',       'title' => 'バイブOSSカスタマイズ', 'desc' => 'OSSの日本語化・機能変更・サーバー構築を代行。', 'price' => '税込110,000円〜'],
     ['url' => 'https://kappstore.exbridge.jp/',                 'title' => 'Kurage App Store', 'desc' => '買い切りの業務システムと、OSS導入キットのお店。', 'price' => '買い切り'],
