@@ -11,3 +11,4 @@ __pycache__/
 # content/ を同期するたびに、サーバー上の最新キャッシュを過去の中身で
 # 上書きしてしまう（2026-09-14に実際に起きた。ブログ一覧が8/28へ巻き戻った）。
 content/cache/
+giin/data/update_report.json
