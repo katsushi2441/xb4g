@@ -6,3 +6,8 @@ giin/data/*.sqlite-journal
 giin/data/fetch.log
 giin/outputs/
 __pycache__/
+
+# 外部新着のキャッシュは「生きているデータ」。Gitに入れると、webhookが
+# content/ を同期するたびに、サーバー上の最新キャッシュを過去の中身で
+# 上書きしてしまう（2026-09-14に実際に起きた。ブログ一覧が8/28へ巻き戻った）。
+content/cache/

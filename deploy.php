@@ -27,6 +27,10 @@ for ($i = 0; $i < $za->numFiles; $i++) {
     $name = $za->getNameIndex($i);
     // xb4g-main/content/... と xb4g-main/images/uploads/... だけを取り出す(コード類はFTPデプロイ)
     if (!preg_match('~^[^/]+/((content|images/uploads)/.+)$~', $name, $m)) continue;
+    // **content/cache/ は同期しない。** ここは外部新着の生きたキャッシュで、
+    // リポジトリ側の古い中身で上書きするとブログ一覧が過去に巻き戻る
+    // （2026-09-14に実際に起きた）。Git からも外してあるが、二重に止める。
+    if (strpos($m[1], 'content/cache/') === 0) continue;
     if (substr($name, -1) === '/') continue;
     $rel = $m[1];
     if (strpos($rel, '..') !== false) continue;
