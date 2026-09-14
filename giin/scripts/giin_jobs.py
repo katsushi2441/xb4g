@@ -25,13 +25,24 @@ import os
 import subprocess
 import sys
 
-ROOT = "/home/kojima/work/xb4g/giin"
+# 設置先ごとに変わるものは環境変数で上書きできるようにする
+# （配布物に特定サーバーのパスを焼き込まない）
+ROOT = os.environ.get("GIIN_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 設置先の設定は .giin_env があれば読む（配布物には入れない・この機械の値）
+_envf = os.path.join(ROOT, ".giin_env")
+if os.path.isfile(_envf):
+    for _l in open(_envf, encoding="utf-8"):
+        _l = _l.strip()
+        if _l and not _l.startswith("#") and "=" in _l:
+            _k, _v = _l.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 SCRIPTS = os.path.join(ROOT, "scripts")
 DB = os.path.join(ROOT, "data", "giin.sqlite")
 REPORT = os.path.join(ROOT, "data", "update_report.json")
-REMOTE_DIR = "/web/xb4g_com/giin/data"
-PUBLIC = "https://xb4g.com/giin/"
-PY = "/usr/bin/python3"
+# FTPで配る先と、確認しにいく公開URL。FTPを使わない設置では GIIN_REMOTE_DIR を空にする
+REMOTE_DIR = os.environ.get("GIIN_REMOTE_DIR", "")   # 例: /web/example_com/giin/data
+PUBLIC = os.environ.get("GIIN_PUBLIC_URL", "")       # 例: https://example.com/giin/
+PY = os.environ.get("GIIN_PYTHON", sys.executable or "/usr/bin/python3")
 
 
 def _run(args, timeout=1800):
@@ -56,8 +67,11 @@ def _counts():
 
 
 def _upload():
-    """heteml へ SQLite を送る。**送らないと公開サイトは古いまま。**"""
+    """サーバーへ SQLite を送る。**送らないと公開サイトは古いまま。**
+    同じ機械の中に置いている設置では GIIN_REMOTE_DIR を空にすれば飛ばす。"""
     import ftplib
+    if not REMOTE_DIR:
+        return True, "配布は不要（GIIN_REMOTE_DIR が空。同じ機械に置いている設置）"
     host, user, pw = (os.environ.get("FTP_HOST"), os.environ.get("FTP_USER"),
                       os.environ.get("FTP_PASS"))
     if not (host and user and pw):
@@ -80,13 +94,15 @@ def _upload():
 
 def _verify(expect_speech: int):
     """公開ページを実際に読み、件数が反映されているか確かめる。"""
+    if not PUBLIC:
+        return True, "確認先が未設定（GIIN_PUBLIC_URL が空）"
     try:
         r = subprocess.run(["curl", "-s", "--max-time", "30", PUBLIC],
                            capture_output=True, text=True, timeout=45)
         html = r.stdout or ""
     except Exception as e:  # noqa: BLE001
         return False, f"取得できず: {e}"
-    if "愛知の国会議員" not in html:
+    if "<b>" not in html:
         return False, "トップの内容が想定と違う"
     import re
     m = re.search(r"<b>([\d,]+)件</b>の質疑", html)

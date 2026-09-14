@@ -2,9 +2,13 @@
 /** 画面の枠。xb4g.com のライトテーマ（白＋ティール #0a9a8f ＋濃紺 #12202f）に合わせる。 */
 declare(strict_types=1);
 
-const G_BASE = '/giin';
-const G_SITE = '愛知の国会議員 発言ログ';
-const G_GA4  = 'G-BP0650KDFR';        // xb4g.com 本体と同じ計測ID
+// 設置ごとの設定。giin_config.php があればそれを使い、無ければ既定値。
+// **定数は「その行が実行されたとき」に定義される**ので、ここで先に読む。
+if (is_file(__DIR__ . '/../giin_config.php')) { require __DIR__ . '/../giin_config.php'; }
+if (!defined('G_BASE')) { define('G_BASE', '/giin'); }
+if (!defined('G_SITE')) { define('G_SITE', '愛知の国会議員 発言ログ'); }
+if (!defined('G_HOST')) { define('G_HOST', 'https://xb4g.com'); }
+if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php で入れる
 
 /** トップ直下で予約している語。議員の slug がここに当たらないよう守る。
  *  **const は「その行が実行されたとき」に定義される**ので、ルーティングを
@@ -14,7 +18,7 @@ const G_RESERVED = ['list', 'theme', 'compare', 'about', 'search', 'sitemap.xml'
                     'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt'];
 
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }
-function g_abs(string $p = ''): string { return 'https://xb4g.com' . g_url($p); }
+function g_abs(string $p = ''): string { return G_HOST . g_url($p); }
 
 /** 移す先へ送る。**302を使う**（この作業場の決め事。301は使わない）。 */
 function g_redirect(string $to): void
@@ -65,9 +69,11 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<meta name="twitter:card" content="summary_large_image">'
        . ($x['jsonld'] ?? '')
        // 計測は xb4g.com 本体と同じものを使う（GA4 と kurage の simpletrack）
-       . '<script async src="https://www.googletagmanager.com/gtag/js?id=' . G_GA4 . '"></script>'
-       . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}'
-       . 'gtag(\'js\',new Date());gtag(\'config\',\'' . G_GA4 . '\');</script>'
+       . (G_GA4 !== ''
+          ? '<script async src="https://www.googletagmanager.com/gtag/js?id=' . G_GA4 . '"></script>'
+            . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}'
+            . 'gtag(\'js\',new Date());gtag(\'config\',\'' . G_GA4 . '\');</script>'
+          : '')
        . '<style>' . g_css() . '</style></head><body>';
     echo '<header class="site"><div class="inner">'
        . '<a class="brand" href="' . g_url('') . '">' . g_e(G_SITE)

@@ -15,7 +15,8 @@ W, H = 1200, 630
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "img", "og")
 DB = os.path.join(ROOT, "data", "giin.sqlite")
-MASCOT = "/home/kojima/work/kurage_web/images/kurage-mascot-cutout.png"
+# 右下に置くキャラ画像。無ければ中央寄せで作る（配布先には同梱しない）
+MASCOT = os.environ.get("GIIN_MASCOT", "")
 FB = "/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc"
 FM = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 FR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"

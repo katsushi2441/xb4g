@@ -1,0 +1,11 @@
+<?php
+/**
+ * 設置ごとの設定。**このファイルを giin_config.php にコピーして使う。**
+ * 置かなくても既定値で動く。
+ */
+declare(strict_types=1);
+
+define('G_BASE', '/giin');                 // 設置パス。ドメイン直下なら ''
+define('G_SITE', '愛知の国会議員 発言ログ'); // サイト名（見出し・タイトルに出る）
+define('G_HOST', 'https://xb4g.com');       // 絶対URLを組むときのホスト
+define('G_GA4',  '');                       // GA4の測定ID。空なら計測タグを出さない
