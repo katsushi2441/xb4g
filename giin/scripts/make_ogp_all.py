@@ -114,6 +114,24 @@ def main():
              f"xb4g.com/giin/theme/{t['slug']}")
         n += 1
 
+    # AIの特集。**ことがらのカードとは別に作る**（見せる数字が「件数」ではなく
+    # 「何日・いくつの会議で」なので、同じ型に流し込むと内容と合わない）
+    ai_q = con.execute("""SELECT COUNT(*) FROM speech s
+        JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai'
+        WHERE s.kind='q'""").fetchone()[0]
+    ai_g = con.execute("""SELECT COUNT(DISTINCT s.giin_id) FROM speech s
+        JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai'
+        WHERE s.kind='q'""").fetchone()[0]
+    card(os.path.join(OUT, "ai-tokushu.png"),
+         "愛知の国会議員45人の質疑から",
+         "AIを国会で、",
+         "だれが論じているか。",
+         f"AIに触れた質疑 {ai_q:,}件、{ai_g}人。何日・いくつの会議で持ち出したかで並べます。",
+         "件数より「続けて取り上げたか」を見ます。",
+         "愛知の国会議員 発言ログ",
+         "xb4g.com/giin/ai")
+    n += 1
+
     # 会派ごと
     slugmap = {'自民':'jimin','国民民主':'kokumin','立憲':'rikken','公明':'komei','維新':'ishin',
                '共産':'kyosan','参政':'sansei','チームみらい':'mirai','中道改革連合':'chudo',

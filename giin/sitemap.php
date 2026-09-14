@@ -14,6 +14,7 @@ $urls = [
     ['theme', '0.9', 'weekly'],
     ['party', '0.9', 'weekly'],
     ['news', '0.8', 'daily'],
+    ['ai', '0.9', 'weekly'],
     ['compare', '0.7', 'weekly'],
     ['about', '0.5', 'monthly'],
 ];

@@ -257,3 +257,65 @@ function g_insight_html(array $r, string $heading): string
         . g_e($r['built_at']) . '現在）。本人の見解ではありません。'
         . '<a href="' . g_url('about') . '#insight">作り方</a></p></div>';
 }
+
+/** AIの特集で使う「AIと一緒に語られている論点」。
+ *  ことがら（themes.json）と違い、**AIに触れた発言の中だけ**を分けるための語。
+ *  単独では広すぎる語（教育・規制・行政）でも、AIとの共起に絞れば意味を持つ。 */
+function g_ai_topics(): array
+{
+    return [
+        'kyoiku'  => ['教育・学校',     ['教育', '学校', '児童', '生徒', '学習指導']],
+        'kisei'   => ['規制とルール',   ['規制', '法制', 'ガイドライン', 'ルール整備', '法案']],
+        'gyosei'  => ['行政・自治体',   ['行政', '自治体', '窓口', '公務']],
+        'koyo'    => ['仕事と雇用',     ['雇用', '労働', '失業', '働き方']],
+        'kotsu'   => ['交通・自動運転', ['自動運転', 'ライドシェア', '交通']],
+        'iryo'    => ['医療',           ['医療', '診療', '医師', '創薬']],
+        'boei'    => ['防衛・安全保障', ['防衛', '安全保障', '自衛隊']],
+        'energy'  => ['電力・半導体',   ['電力', 'データセンター', '半導体']],
+        'chosaku' => ['著作権',         ['著作権', 'クリエイター', '無断学習']],
+        'gizo'    => ['偽情報・詐欺',   ['偽情報', 'フェイク', 'ディープフェイク', '詐欺', 'なりすまし']],
+        'chusho'  => ['中小企業',       ['中小企業', '小規模事業者']],
+        'nogyo'   => ['農業',           ['農業', '農家', 'スマート農業']],
+    ];
+}
+
+/** AIに触れた発言の中で、論点ごとの件数。多い順。
+ *  ひとつの発言が複数の論点に入ることがある（AIと教育と規制を一度に話すため）。 */
+function g_ai_topic_counts(string $kind = 'q'): array
+{
+    $out = [];
+    foreach (g_ai_topics() as $key => [$label, $words]) {
+        $w = implode(' OR ', array_fill(0, count($words), 's.body LIKE ?'));
+        $a = array_map(fn($x) => '%' . $x . '%', $words);
+        $a[] = $kind;
+        $out[] = ['key' => $key, 'label' => $label, 'words' => $words,
+            'n' => (int)g_val("SELECT COUNT(*) FROM speech s
+                 JOIN speech_theme st ON st.speech_id = s.speech_id AND st.theme='ai'
+                 WHERE ($w) AND s.kind=?", $a)];
+    }
+    usort($out, fn($x, $y) => $y['n'] <=> $x['n']);
+    return $out;
+}
+
+/** AIを持ち出した議員。**件数ではなく「何日・いくつの会議で」を主に見る。**
+ *  一度の質疑で何回AIと言ったかは熱心さではないが、
+ *  別の日・別の委員会で繰り返し持ち出したなら、それは続けて取り組んでいる印である。 */
+function g_ai_members(string $kind = 'q'): array
+{
+    return g_all("SELECT g.id, g.plain, g.slug, g.party, g.house, g.n_q,
+                    COUNT(DISTINCT s.date) days, COUNT(*) n,
+                    COUNT(DISTINCT s.meeting) meetings, MAX(s.date) last
+                  FROM speech s
+                  JOIN speech_theme st ON st.speech_id = s.speech_id AND st.theme='ai'
+                  JOIN giin g ON g.id = s.giin_id
+                  WHERE s.kind=? GROUP BY g.id
+                  ORDER BY days DESC, n DESC", [$kind]);
+}
+
+/** 年ごとの件数。伸びているかどうかを見せるため。 */
+function g_ai_years(string $kind = 'q'): array
+{
+    return g_all("SELECT substr(s.date,1,4) y, COUNT(*) n FROM speech s
+                  JOIN speech_theme st ON st.speech_id = s.speech_id AND st.theme='ai'
+                  WHERE s.kind=? GROUP BY y ORDER BY y", [$kind]);
+}

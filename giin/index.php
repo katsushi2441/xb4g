@@ -41,6 +41,8 @@ function g_route(string $path, int $page): void
     if (preg_match('#^/t/([a-z0-9-]+)$#', $path, $m)) { g_redirect(g_url('theme/' . $m[1])); return; }
     if ($path === '/giin')   { g_redirect(g_url('list')); return; }
     if ($path === '/themes') { g_redirect(g_url('theme')); return; }
+    // AIを独立したことがらに切り出したので、元の複合ページから送る
+    if ($path === '/theme/digital-ai') { g_redirect(g_url('theme/digital')); return; }
 
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
@@ -54,6 +56,7 @@ function g_route(string $path, int $page): void
         case '/news':    g_page_news($page); return;
         case '/compare': g_page_compare(); return;
         case '/about':   g_page_about(); return;
+        case '/ai':      g_page_ai(); return;
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
     // 検索結果でも共有先でも「誰のページか」が伝わらない。
@@ -185,6 +188,20 @@ function g_page_top(): void
             echo '</div>';
         }
         echo '<p><a href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
+    }
+
+    // AIの特集への導線。愛知は自動車・半導体・工作機械の土地なので、
+    // 「国会でAIがどう論じられているか」は地元の有権者に直接効く
+    $ai_q = g_theme_n('ai');
+    $ai_n = (int)g_val("SELECT COUNT(DISTINCT s.giin_id) FROM speech s
+        JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai' WHERE s.kind='q'");
+    if ($ai_q > 0) {
+        echo '<h2>特集：AIを国会でどう論じているか</h2>'
+           . '<div class="panel"><p>AIに触れた質疑は<b>' . number_format($ai_q) . '件</b>、'
+           . '持ち出した議員は<b>' . $ai_n . '人</b>です。'
+           . 'いちばん多く一緒に語られているのは<b>学校と教育</b>で、'
+           . '件数より<b>何日・いくつの会議で持ち出したか</b>で並べています。</p>'
+           . '<p><a href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
     }
 
     echo '<h2>ことがらから探す</h2><div class="grid">';
@@ -660,6 +677,150 @@ function g_page_compare(): void
         echo '</tr>';
     }
     echo '</table></div>';
+    g_foot();
+}
+
+/** AIの特集。**「何件言ったか」ではなく「何日・いくつの会議で持ち出したか」を主に見せる。**
+ *  件数だけで並べると、一度の質疑で何度もAIと言った人が上に来てしまい、
+ *  続けて取り組んでいる人が沈む。この道具が会派ページで書いているのと同じ理屈である。 */
+function g_page_ai(): void
+{
+    $q      = g_ai_members('q');
+    $gov    = g_ai_members('gov');
+    $years  = g_ai_years('q');
+    $topics = g_ai_topic_counts('q');
+    $nq     = g_theme_n('ai', 'q');
+    $totq   = (int)g_val("SELECT SUM(n_q) FROM giin");
+    $pct    = $totq ? $nq / $totq * 100 : 0;
+    $t      = g_theme('ai');
+
+    $first = $years ? (int)$years[0]['y'] : 0;
+    $lastY = $years ? (int)$years[count($years) - 1]['y'] : 0;
+    $firstN = $years ? (int)$years[0]['n'] : 0;
+    $lastN = $years ? (int)$years[count($years) - 1]['n'] : 0;
+
+    $desc = '愛知の有権者の一票が当落に効く国会議員45人が、国会でAIに触れた質疑は'
+          . number_format($nq) . '件です。'
+          . 'いちばん多く語られている論点は「' . ($topics[0]['label'] ?? '') . '」で、'
+          . 'だれが何日・いくつの会議で持ち出したかを並べています。';
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['AIをどう論じているか', '/ai']]),
+        ['@type' => 'Article', '@id' => g_abs('ai'), 'url' => g_abs('ai'),
+         'headline' => '愛知の国会議員はAIをどう論じているか',
+         'description' => $desc, 'inLanguage' => 'ja',
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
+    ]);
+    g_head('愛知の国会議員はAIをどう論じているか', $desc, '/ai',
+           ['jsonld' => $ld, 'image' => g_abs('img/og/ai-tokushu.png')]);
+
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › AIをどう論じているか</nav>';
+    echo '<h1>愛知の国会議員はAIをどう論じているか</h1>'
+       . '<p class="lead">愛知の有権者の一票が当落に効く国会議員' . (int)g_val('SELECT COUNT(*) FROM giin')
+       . '人の質疑' . number_format($totq) . '件のうち、AIに触れたものは<b>'
+       . number_format($nq) . '件</b>（' . number_format($pct, 1) . '%）です。'
+       . 'ここでは<b>だれが何日・いくつの会議でAIを持ち出したか</b>を並べています。</p>';
+
+    echo '<div class="kv">'
+       . '<div class="c"><b>' . number_format($nq) . '</b><span>AIに触れた<br>質疑</span></div>'
+       . '<div class="c"><b>' . count($q) . '</b><span>持ち出した<br>議員</span></div>'
+       . '<div class="c"><b>' . ($topics[0]['n'] ?? 0) . '</b><span>最多の論点<br>'
+       . g_e($topics[0]['label'] ?? '') . '</span></div>'
+       . '<div class="c"><b>' . $lastN . '</b><span>' . $lastY . '年<br>（' . $first . '年は' . $firstN . '件）</span></div>'
+       . '</div>';
+
+    // ---- 伸び ----
+    if ($years) {
+        $max = max(array_map(fn($r) => (int)$r['n'], $years));
+        $lastDate = (string)g_val("SELECT MAX(date) FROM speech s
+            JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai'");
+        echo '<h2>AIに触れた質疑は増えている</h2>'
+           . '<div class="scroll"><table><tr><th>年</th><th class="n">件数</th><th></th></tr>';
+        foreach ($years as $r) {
+            $partial = ((int)$r['y'] === $lastY);
+            echo '<tr><td>' . g_e($r['y']) . '年'
+               . ($partial ? ' <span class="note">' . g_e(substr($lastDate, 5, 2)) . '月まで</span>' : '')
+               . '</td><td class="n">' . (int)$r['n'] . '</td>'
+               . '<td><div class="bar"><i style="width:' . round((int)$r['n'] / $max * 100) . '%"></i></div></td></tr>';
+        }
+        echo '</table></div>'
+           . '<p class="note">収録しているのは' . g_e(g_meta('range_from')) . '以降の会議録です。'
+           . $lastY . '年は年の途中までの数字なので、前の年とそのまま比べられません。</p>';
+    }
+
+    // ---- 論点 ----
+    if ($topics && $topics[0]['n'] > 0) {
+        $max = (int)$topics[0]['n'];
+        echo '<h2>AIは何と一緒に語られているか</h2>'
+           . '<p>AIに触れた質疑' . number_format($nq) . '件を、一緒に出てくる言葉で分けたものです。'
+           . 'ひとつの質疑が複数に入ります（AIと学校と規制を一度に話すことがあるためです）。</p>'
+           . '<div class="scroll"><table><tr><th>論点</th><th class="n">件数</th><th></th></tr>';
+        foreach ($topics as $r) {
+            if (!$r['n']) { continue; }
+            echo '<tr><td>' . g_e($r['label'])
+               . '<br><span class="note">' . g_e(implode('・', $r['words'])) . '</span></td>'
+               . '<td class="n">' . (int)$r['n'] . '</td>'
+               . '<td><div class="bar"><i style="width:' . round((int)$r['n'] / $max * 100) . '%"></i></div></td></tr>';
+        }
+        echo '</table></div>';
+    }
+
+    // ---- だれが持ち出しているか ----
+    if ($q) {
+        echo '<h2>だれがAIを持ち出しているか</h2>'
+           . '<p><b>「日数」で並べています。</b>同じ日の質疑で何度AIと言っても1日です。'
+           . '別の日、別の委員会で繰り返し持ち出しているなら、続けて取り組んでいる印になります。</p>'
+           . '<div class="scroll"><table>'
+           . '<tr><th>議員</th><th>会派</th><th class="n">日数</th><th class="n">件数</th>'
+           . '<th class="n">会議の種類</th><th>最後に触れた日</th></tr>';
+        foreach ($q as $r) {
+            echo '<tr><td><a href="' . g_url($r['slug']) . '">' . g_e($r['plain']) . '</a>'
+               . '<br><span class="note">' . g_e($r['house']) . '</span></td>'
+               . '<td><span class="pill">' . g_e($r['party']) . '</span></td>'
+               . '<td class="n"><b>' . (int)$r['days'] . '</b></td>'
+               . '<td class="n">' . (int)$r['n'] . '</td>'
+               . '<td class="n">' . (int)$r['meetings'] . '</td>'
+               . '<td class="note">' . g_e($r['last']) . '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+
+    // ---- 答える側 ----
+    if ($gov) {
+        echo '<h2>AIについて答弁した議員</h2>'
+           . '<p>大臣・副大臣・政務官として、AIに関する質問に<b>答えた側</b>です。'
+           . '質問する側とは立場が違うので、上の表とは別に出しています。</p>'
+           . '<div class="scroll"><table><tr><th>議員</th><th>会派</th>'
+           . '<th class="n">日数</th><th class="n">件数</th></tr>';
+        foreach ($gov as $r) {
+            echo '<tr><td><a href="' . g_url($r['slug']) . '">' . g_e($r['plain']) . '</a></td>'
+               . '<td><span class="pill">' . g_e($r['party']) . '</span></td>'
+               . '<td class="n">' . (int)$r['days'] . '</td>'
+               . '<td class="n">' . (int)$r['n'] . '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+
+    // ---- 発言そのもの ----
+    echo '<h2>発言そのものを読む</h2>'
+       . '<p>ここに出した数字のもとになった発言は、'
+       . '<a href="' . g_url('theme/ai') . '">AI（人工知能）のことがらのページ</a>から、'
+       . '日付・会議名・会議録へのリンクつきで読めます。'
+       . '拾っている語は' . g_e(implode('、', $t['words'] ?? [])) . 'です。</p>';
+
+    $nw = g_news('ai', 6);
+    if ($nw) {
+        echo '<h2>AIに関する議案と報道発表</h2>';
+        foreach ($nw as $n) { echo g_news_item($n, true); }
+    }
+
+    echo '<h2>この数字の読み方</h2>'
+       . '<div class="panel note">質疑ができるのは、その日その委員会で質問に立った議員だけです。'
+       . '大臣や委員長を務めている間は質問する側に回れないので、'
+       . '<b>件数の差はそのまま熱心さの差ではありません。</b>'
+       . 'また、ここで数えているのは会議録に語が出てきたかどうかで、'
+       . 'AIに賛成か反対かは判定していません。'
+       . '<br><a href="' . g_url('about') . '">この道具の作り方</a></div>';
+
     g_foot();
 }
 
