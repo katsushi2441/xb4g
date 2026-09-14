@@ -134,6 +134,8 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("公式Xの新着", [PY, os.path.join(SCRIPTS, "fetch_x.py")]),
         # **画面で LIKE を走らせないための対応表。** 発言やことがらを足したら作り直す
         ("ことがらの対応表", [PY, os.path.join(SCRIPTS, "build_theme_index.py")]),
+        # 新しい材料が入ったあとに考察を作り直す。**必ず対応表のあと**（ことがらの順位を使うため）
+        ("いまの時点でのAI考察", [PY, os.path.join(SCRIPTS, "build_insight.py")]),
     ]:
         code, out, err = _run(args)
         steps.append({"step": name, "code": code, "tail": out.strip().splitlines()[-3:],
