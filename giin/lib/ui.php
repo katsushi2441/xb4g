@@ -124,6 +124,12 @@ background:#e6f4f2;color:#0a726b;border:1px solid #bfe3de;white-space:nowrap}
 .sp .t{margin:7px 0 0}
 .sp mark{background:#fff3b0;padding:0 1px}
 .sp .lk{font-size:12.5px;margin-top:8px}
+.nw{background:#fff;border:1px solid #e3e9ec;border-left:3px solid #0a9a8f;border-radius:10px;padding:11px 13px;margin-bottom:8px}
+.nw .m{font-size:12.5px;color:#5d6b7a;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nw .t{margin:5px 0 0;font-size:14.5px;line-height:1.6}
+.nw .lk{font-size:12.5px;color:#5d6b7a;margin-top:6px}
+.top3{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}
+.top3 a{font-size:13px;background:#e6f4f2;border:1px solid #bfe3de;border-radius:999px;padding:3px 11px;text-decoration:none}
 table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
 th,td{border:1px solid #e3e9ec;padding:8px 10px;text-align:left;vertical-align:top}
 th{background:#f5f8f9;white-space:nowrap}
@@ -157,4 +163,29 @@ function g_ku(string $d): string
 {
     if (strpos($d, '東海') !== false) { return '比例東海'; }
     return preg_match('/^愛知(\d+)$/u', $d, $m) ? '愛知' . $m[1] . '区' : $d;
+}
+
+/** 動きを1件出す。**見出しと日付と発表元とリンクだけ。** */
+function g_news_item(array $n, bool $compact = false): string
+{
+    $badge = $n['source'] === 'gian' ? '議案' : g_e($n['publisher']);
+    $cls = $n['source'] === 'gian' ? 'pill' : 'pill gray';
+    $h = '<div class="nw"><div class="m">'
+       . '<b>' . g_e(g_date($n['date'])) . '</b>'
+       . '<span class="' . $cls . '">' . $badge . '</span>'
+       . ($n['source'] === 'gian' && $n['kind'] ? '<span class="note">' . g_e($n['kind']) . '</span>' : '')
+       . '</div>'
+       . '<p class="t">' . ($n['url']
+            ? '<a href="' . g_e($n['url']) . '" rel="nofollow noopener" target="_blank">'
+              . g_e($n['title']) . '</a>'
+            : g_e($n['title'])) . '</p>';
+    if (!$compact && $n['source'] === 'gian' && $n['submitter']) {
+        $h .= '<div class="lk">提出 ' . g_e($n['submitter']);
+        if ($n['giin_id']) {
+            $g = g_one('SELECT plain,slug FROM giin WHERE id=?', [(int)$n['giin_id']]);
+            if ($g) { $h .= '　<a href="' . g_url($g['slug']) . '">' . g_e($g['plain']) . 'のページ</a>'; }
+        }
+        $h .= '</div>';
+    }
+    return $h . '</div>';
 }

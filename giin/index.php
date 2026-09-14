@@ -49,6 +49,7 @@ function g_route(string $path, int $page): void
         case '/search':  g_page_search($page); return;
         case '/list':    g_page_list(); return;
         case '/theme':   g_page_themes(); return;
+        case '/news':    g_page_news($page); return;
         case '/compare': g_page_compare(); return;
         case '/about':   g_page_about(); return;
     }
@@ -137,6 +138,31 @@ function g_page_top(): void
        . '（「次に、○○君。」）や、大臣としての答弁は別に数えています。'
        . '混ぜると、委員長を務めた議員の件数が跳ね上がって「よく質問している人」に'
        . '見えてしまうためです。各ページで切り替えられます。</div>';
+
+    $hot = g_hot_themes(150, 4);
+    if ($hot) {
+        echo '<h2>いま動いていることがら</h2>'
+           . '<p class="note">国会に出された議案と、省庁の報道発表から、'
+           . 'ことがらの語で機械的に拾ったものです。当サイトが選んだ話題ではありません。</p>';
+        foreach ($hot as $t) {
+            echo '<div class="panel">'
+               . '<h3 style="margin:0 0 6px;font-size:16px">'
+               . '<a href="' . g_url('theme/' . $t['slug']) . '">' . g_e($t['name']) . '</a>'
+               . ' <span class="note">最近の動き ' . $t['n'] . '件</span></h3>';
+            foreach (g_news($t['slug'], 2) as $n) { echo g_news_item($n, true); }
+            $top = g_theme_top($t['slug'], 3);
+            if ($top) {
+                echo '<div class="top3"><span class="note">このことがらを国会でよく質問しているのは</span>';
+                foreach ($top as $g) {
+                    echo '<a href="' . g_url($g['slug']) . '">' . g_e($g['plain'])
+                       . '（' . g_e($g['party']) . '）' . number_format((int)$g['c']) . '件</a>';
+                }
+                echo '</div>';
+            }
+            echo '</div>';
+        }
+        echo '<p><a href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
+    }
 
     echo '<h2>ことがらから探す</h2><div class="grid">';
     foreach (g_themes() as $t) {
@@ -272,6 +298,15 @@ function g_page_giin(int $id, int $page): void
         echo '</div><p class="note">語がその発言に出てきた回数です。賛成・反対の判定はしていません。</p>';
     }
 
+    // この議員が提出者になっている議案
+    $mine = g_news('', 10, $id);
+    if ($mine) {
+        echo '<h2>提出した議案</h2>'
+           . '<p class="note">この議員が提出者・発議者として名前が出ている議案です'
+           . '（出典: 参議院議案情報 / smartnews-smri, MIT）。</p>';
+        foreach ($mine as $n) { echo g_news_item($n); }
+    }
+
     // 発言一覧
     $per = 20; $off = ($page - 1) * $per;
     $total = $counts[$kind];
@@ -335,6 +370,15 @@ function g_page_theme(string $slug, int $page): void
        . '</p>'
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
+    // このことがらの最近の動き（議案・省庁の報道発表）
+    $nw = g_news($slug, 6);
+    if ($nw) {
+        echo '<h2>このことがらの最近の動き</h2>'
+           . '<p class="note">国会に出された議案と、省庁の報道発表です。'
+           . '見出しと日付と発表元だけを出しています。中身は必ずリンク先でご確認ください。</p>';
+        foreach ($nw as $n) { echo g_news_item($n); }
+    }
+
     g_kind_tabs($kind, $counts, g_url('theme/' . $slug) . ($only ? '?g=' . $onlySlug : ''));
 
     // 議員別の件数
@@ -560,7 +604,22 @@ function g_page_about(): void
        . '「なぜこの人が入っていて、あの人が入っていないのか」に一言で答えられます。</p>'
        . '<p class="note">現職のみを収録しています。選挙の候補者は扱いません。</p>'
 
+       . '<h2>「最近の動き」について</h2>'
+       . '<p>ことがらのページとトップに出している「最近の動き」は、'
+       . '<b>国会に出された議案</b>と<b>省庁の報道発表</b>です。'
+       . '見出しと日付と発表元とリンクだけを出し、本文は持っていません。要約もしません。</p>'
+       . '<p><b>一般ニュースは載せていません。</b>報道各社のRSSは個人利用に限られており、'
+       . '事業者が再配信することを許していないためです'
+       . '（NHKは「個人の方の利用のためのみ」「商業目的での利用を含め再配信や再提供を許可するものではありません」と明記）。'
+       . 'ここに出るのは、商用利用が明文で許されている一次情報だけです。</p>'
+       . '<p class="note">ことがらへの割り当ては、ことがらごとに決めた語が見出しに出てきたかどうかで'
+       . '機械的に行っています。AIは使っていません。当サイトが話題を選んでいるわけではありません。</p>'
+
        . '<h2>出典</h2><ul>'
+       . '<li>議案：<a href="https://github.com/smartnews-smri/house-of-councillors" '
+       . 'rel="nofollow noopener" target="_blank">参議院 議案情報（smartnews-smri／MIT）</a></li>'
+       . '<li>報道発表：厚生労働省・国土交通省・総務省・内閣府・デジタル庁・文部科学省の'
+       . '各ホームページ（公共データ利用規約 PDL1.0。出典を記載し、編集・加工はしていません）</li>'
        . '<li>発言・会議名・日付：<a href="https://kokkai.ndl.go.jp/" rel="nofollow noopener" '
        . 'target="_blank">国立国会図書館 国会会議録検索システム</a></li>'
        . '<li>衆議院議員の名簿：<a href="https://www.shugiin.go.jp/" rel="nofollow noopener" '
@@ -579,6 +638,67 @@ function g_page_about(): void
        . '<p>株式会社エクスブリッジ（名古屋市瑞穂区）。'
        . '第4世代のテーマとして、政治・社会の課題に対応する情報技術をAIを活用して提供しています。'
        . '<a href="https://xb4g.com/">xb4g.com</a></p>'
+       . '</div>';
+    g_foot();
+}
+
+/** 最近の動き（議案・省庁の報道発表）の一覧 */
+function g_page_news(int $page): void
+{
+    $per = 30; $off = ($page - 1) * $per;
+    $src = (string)($_GET['s'] ?? '');
+    $w = ['1=1']; $a = [];
+    if ($src === 'gian' || $src === 'press') { $w[] = 'source = ?'; $a[] = $src; }
+    $ws = implode(' AND ', $w);
+    $total = (int)g_val("SELECT COUNT(*) FROM news WHERE $ws", $a);
+
+    g_head('最近の動き', '国会に出された議案と、省庁の報道発表を、ことがらごとに並べています。'
+        . '見出しと日付と発表元だけを出し、中身はリンク先でご確認いただきます。', '/news',
+        ['jsonld' => g_jsonld([g_crumbs([['ホーム', '/'], ['最近の動き', '/news']])])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 最近の動き</nav>';
+    echo '<h1>最近の動き</h1>'
+       . '<p class="lead">国会に出された議案と、省庁の報道発表です。'
+       . '当サイトが選んだ話題ではなく、配信されているものをことがらの語で機械的に束ねています。</p>'
+       . '<p class="note"><b>一般ニュースは載せていません。</b>報道各社のRSSは個人利用に限られており、'
+       . '当社のような事業者が再配信することを許していないためです。'
+       . 'ここに出るのは、商用利用が明文で許されている一次情報だけです。</p>';
+
+    $base = g_url('news');
+    echo '<p class="lead">'
+       . '<a class="pill' . ($src === '' ? '' : ' gray') . '" href="' . g_e($base) . '">すべて '
+       . number_format((int)g_val('SELECT COUNT(*) FROM news')) . '</a> '
+       . '<a class="pill' . ($src === 'gian' ? '' : ' gray') . '" href="' . g_e($base . '?s=gian') . '">議案 '
+       . number_format((int)g_val("SELECT COUNT(*) FROM news WHERE source='gian'")) . '</a> '
+       . '<a class="pill' . ($src === 'press' ? '' : ' gray') . '" href="' . g_e($base . '?s=press') . '">省庁の報道発表 '
+       . number_format((int)g_val("SELECT COUNT(*) FROM news WHERE source='press'")) . '</a>'
+       . '</p>';
+
+    $a2 = $a; $a2[] = $per; $a2[] = $off;
+    foreach (g_all("SELECT * FROM news WHERE $ws ORDER BY date DESC LIMIT ? OFFSET ?", $a2) as $n) {
+        echo g_news_item($n);
+        // このニュースが当たったことがらと、そこでよく質問している議員
+        $ths = g_all('SELECT theme FROM news_theme WHERE news_id=?', [$n['id']]);
+        if ($ths) {
+            echo '<div class="top3" style="margin:-4px 0 14px 13px">';
+            foreach ($ths as $x) {
+                $t = g_theme($x['theme']);
+                if (!$t) { continue; }
+                echo '<a href="' . g_url('theme/' . $t['slug']) . '">' . g_e($t['name']) . '</a>';
+                foreach (g_theme_top($t['slug'], 2) as $g) {
+                    echo '<a href="' . g_url($g['slug']) . '" style="background:#fff">'
+                       . g_e($g['plain']) . ' ' . number_format((int)$g['c']) . '件</a>';
+                }
+            }
+            echo '</div>';
+        }
+    }
+    g_pager($page, $total, $per, $base . ($src !== '' ? '?s=' . $src : ''));
+
+    echo '<div class="panel note" style="margin-top:20px"><b>出典</b><br>'
+       . '・議案：参議院 議案情報（<a href="https://github.com/smartnews-smri/house-of-councillors" '
+       . 'rel="nofollow noopener" target="_blank">smartnews-smri/house-of-councillors</a>／MIT）<br>'
+       . '・報道発表：厚生労働省・国土交通省・総務省・内閣府・デジタル庁・文部科学省の各ホームページ'
+       . '（公共データ利用規約 PDL1.0）。見出しとリンクをそのまま掲載しており、編集・加工はしていません。'
        . '</div>';
     g_foot();
 }

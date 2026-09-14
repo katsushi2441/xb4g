@@ -55,3 +55,45 @@ function g_kind_tabs(string $now, array $counts, string $base): void
     }
     echo '<span class="note">' . g_e(G_KINDS[$now][1]) . '</span></p>';
 }
+
+/** ことがらの「最近の動き」。国会の議案と省庁の報道発表だけ。
+ *  **見出し・日付・発表元・リンクだけを出す。本文は持っていないし、要約もしない。** */
+function g_news(string $theme = '', int $limit = 8, int $giin = 0): array
+{
+    $w = []; $a = [];
+    if ($theme !== '') {
+        $w[] = 'n.id IN (SELECT news_id FROM news_theme WHERE theme=?)'; $a[] = $theme;
+    }
+    if ($giin > 0) { $w[] = 'n.giin_id = ?'; $a[] = $giin; }
+    $sql = 'SELECT n.* FROM news n' . ($w ? ' WHERE ' . implode(' AND ', $w) : '')
+         . ' ORDER BY n.date DESC LIMIT ' . (int)$limit;
+    return g_all($sql, $a);
+}
+
+/** ことがらの動きが多い順。トップの「いま動いていることがら」用。 */
+function g_hot_themes(int $days = 120, int $limit = 6): array
+{
+    $since = date('Y-m-d', strtotime("-{$days} days"));
+    $rows = g_all('SELECT t.theme, COUNT(*) c, MAX(n.date) last FROM news_theme t'
+                . ' JOIN news n ON n.id=t.news_id WHERE n.date >= ?'
+                . ' GROUP BY t.theme ORDER BY c DESC, last DESC LIMIT ' . (int)$limit, [$since]);
+    $out = [];
+    foreach ($rows as $r) {
+        $t = g_theme($r['theme']);
+        if ($t) { $out[] = $t + ['n' => (int)$r['c'], 'last' => $r['last']]; }
+    }
+    return $out;
+}
+
+/** そのことがらで、国会でよく質問している議員の上位。 */
+function g_theme_top(string $slug, int $limit = 3): array
+{
+    $t = g_theme($slug);
+    if (!$t) { return []; }
+    $args = [];
+    $w = g_words_where($t['words'], $args);
+    $args[] = $limit;
+    return g_all("SELECT g.id,g.plain,g.slug,g.party,g.district,COUNT(*) c
+                  FROM speech s JOIN giin g ON g.id=s.giin_id
+                  WHERE s.kind='q' AND $w GROUP BY g.id ORDER BY c DESC LIMIT ?", $args);
+}

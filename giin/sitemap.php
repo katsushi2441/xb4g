@@ -12,6 +12,7 @@ $urls = [
     ['', '1.0', 'daily'],
     ['list', '0.9', 'weekly'],
     ['theme', '0.9', 'weekly'],
+    ['news', '0.8', 'daily'],
     ['compare', '0.7', 'weekly'],
     ['about', '0.5', 'monthly'],
 ];
