@@ -126,12 +126,49 @@ claude mcp add giin -- php /path/to/giin_mcp.php
 
 `scripts/giin_jobs.py` の `update_giin_job()` が1回で
 
-1. 発言の増分 → 2. 立場の分類 → 3. 議案と報道発表 → 4. **サーバーへ配る** →
-5. **公開ページを叩いて件数が一致するか確かめる**
+1. 発言の増分 → 2. 立場の分類 → 3. 議案と報道発表 → 4. 活動の要約 →
+5. **サーバーへ配る** → 6. **公開ページを叩いて件数が一致するか確かめる**
 
 までやります。**公開側で確認できたときだけ成功**とし、配布か確認に失敗したら失敗として返します。
 手元のDBを更新しただけでは公開サイトは古いままだからです。
 cron でも rqdb4ai でも呼べます。
+
+## 活動の要約（`scripts/build_insight.py`）
+
+議員と会派のページの「いま何に取り組んでいるか」を作ります。材料はそのページに
+出ているもの——質疑・提出議案・本人の公式X・公式YouTube——だけです。
+
+**数字はAIに書かせません。** 件数や日付は画面が集計から出します。
+生成した文に数の主張（「四十五件」「二割」など）が混ざっていたら、その文は捨てます。
+人物の評価（「熱心」「優れた」）、賛否の判定、
+省庁の報道発表を「本人の公式発信」として書く取り違えも同じように捨てます。
+3回書き直させて通らなければ、そのページには要約を出しません。
+
+書かせる先は上限に当たると次へ移ります。
+
+```bash
+python3 scripts/build_insight.py                    # codex → claude → ollama
+python3 scripts/build_insight.py --engine claude    # claude から始める
+python3 scripts/build_insight.py --slug tanaka-ken --dry   # 1人だけ試す
+python3 scripts/build_insight.py --stale-only       # 中断したところから
+```
+
+| 生成先 | 何 |
+|---|---|
+| `codex` | Codex CLI（既定）。`~/.codex/config.toml` のモデルを使う |
+| `claude` | Claude Code CLI。codex が上限のときの受け皿 |
+| `ollama` | 手元の gemma4。外へ出さずに回したいとき |
+
+渡しているのは国会会議録と各省庁の公開情報だけで、ここにしかない情報は渡していません。
+
+## 公開ファイルを配る（`scripts/deploy.py`）
+
+```bash
+python3 scripts/deploy.py           # PHP・CSS・画像
+python3 scripts/deploy.py --db      # DBも一緒に
+```
+
+`giin_config.php` は設置ごとの設定なので配りません（上書きすると壊れます）。
 
 ## 出典と、守っていること
 

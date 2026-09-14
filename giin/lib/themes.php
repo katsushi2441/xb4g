@@ -228,7 +228,7 @@ function g_party_news(string $party, int $themes = 3, int $limit = 6): array
     return [$news, $ts];
 }
 
-/** 「いまの時点でのAI考察」。scope は 'giin'（slug）か 'party'（会派名）。
+/** AIがまとめた活動の要約。scope は 'giin'（slug）か 'party'（会派名）。
  *  表が無い設置でも壊れないよう、無ければ空を返す。 */
 function g_insight(string $scope, string $key): array
 {
@@ -241,10 +241,9 @@ function g_insight(string $scope, string $key): array
     return $r ?: [];
 }
 
-/** AI考察の描画。**断り書きを本文と必ず一体で出す。**
- *  機械が書いた文であることと、件数・日付はAIに書かせていないことを、
- *  読む人がこの一箇所で分かるようにするため。 */
-function g_insight_html(array $r, string $what, string $sources = ''): string
+/** 要約の描画。**断りは一行だけ。** 作り方は /about にまとめてある。
+ *  断り書きを並べた画面は読む気を削ぐので、ここには置かない。 */
+function g_insight_html(array $r, string $heading): string
 {
     if (!$r) { return ''; }
     $ps = '';
@@ -252,24 +251,9 @@ function g_insight_html(array $r, string $what, string $sources = ''): string
         $p = trim($p);
         if ($p !== '') { $ps .= '<p>' . nl2br(g_e($p)) . '</p>'; }
     }
-    return '<h2>いまの時点でのAI考察</h2>'
+    return '<h2>' . g_e($heading) . '</h2>'
         . '<div class="panel insight">' . $ps
-        . '<p class="note">このページに出している' . g_e($sources)
-        . 'だけを材料に、<b>機械が書いた下書き</b>です。'
-        . g_e($what) . 'の見解ではありません。'
-        . '賛成・反対の判定はしていません（会議録から機械判定できないためです）。'
-        . '<b>件数や日付はAIに書かせていません。</b>数字はすべて集計から出しています。'
-        . '<br>' . g_e($r['built_at']) . '時点　生成: ' . g_e($r['model'])
-        . '　<a href="' . g_url('about') . '">作り方</a></p></div>';
-}
-
-/** 考察に使っているモデル名（/about の説明用）。無ければ空。 */
-function g_insight_model(): string
-{
-    static $m = null;
-    if ($m === null) {
-        $m = (string)(g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='insight'")
-            ? (g_val('SELECT model FROM insight LIMIT 1') ?: '') : '');
-    }
-    return $m;
+        . '<p class="note">このページの発言と議案からAIが書いた要約です（'
+        . g_e($r['built_at']) . '現在）。本人の見解ではありません。'
+        . '<a href="' . g_url('about') . '#insight">作り方</a></p></div>';
 }

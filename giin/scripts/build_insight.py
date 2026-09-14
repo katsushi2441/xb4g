@@ -26,12 +26,24 @@ import os
 import re
 import sqlite3
 import sys
+import subprocess
+import tempfile
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "giin.sqlite")
 OLLAMA = os.environ.get("GIIN_OLLAMA", "http://192.168.0.3:11434")
-MODEL = os.environ.get("GIIN_OLLAMA_MODEL", "gemma4:12b-it-qat")
+OLLAMA_MODEL = os.environ.get("GIIN_OLLAMA_MODEL", "gemma4:12b-it-qat")
+CODEX_MODEL = os.environ.get("GIIN_CODEX_MODEL", "")  # 空なら codex の既定
+CLAUDE_MODEL = os.environ.get("GIIN_CLAUDE_MODEL", "")
+ENGINE = "codex"   # main() で上書きする
+MODEL = ""         # 実際に使ったモデル名。DBに残して画面に出す
+
+# 「書くだけの仕事」だと伝える前置き。CLIは放っておくと調べものを始める
+HEAD = ("これは文章を書くだけの仕事です。コマンドやファイル操作は一切必要ありません。"
+        "調べものもしないでください。渡した材料だけで書いてください。\n\n")
+# 使用量の上限に当たったことを示す言い回し。当たったら次の道具へ移る
+LIMIT_SIGNS = ("usage limit", "rate limit", "quota", "上限", "429")
 
 # 出たら採用しない語。人物の評価・賛否の判定・煽りにあたるもの
 BANNED = [
@@ -87,12 +99,12 @@ def db():
     return con
 
 
-def _ask(prompt: str, temp: float = 0.2) -> str:
-    """ローカルの Ollama に聞く。gemma4 は思考型なので think は必ず false。"""
+def _ask_ollama(prompt: str, temp: float) -> str:
+    """手元の Ollama に聞く。gemma4 は思考型なので think は必ず false。"""
     req = urllib.request.Request(
         OLLAMA + "/api/chat",
         data=json.dumps({
-            "model": MODEL,
+            "model": OLLAMA_MODEL,
             "messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": prompt}],
             "stream": False, "think": False,
@@ -101,6 +113,74 @@ def _ask(prompt: str, temp: float = 0.2) -> str:
         headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=300) as r:
         return json.loads(r.read())["message"]["content"].strip()
+
+
+def _ask_codex(prompt: str, _temp: float) -> str:
+    """Codex CLI に聞く。
+
+    これは文章を書かせるだけの用なので、**コマンドを実行させない**。
+    読み取り専用の砂箱で走らせ、プロンプトでも道具を使わないよう言う。
+    セッションを残さない（--ephemeral）のは、会議録の断片がディスクに
+    溜まり続けないようにするため。
+    """
+    with tempfile.TemporaryDirectory() as d:
+        out = os.path.join(d, "out.txt")
+        cmd = ["codex", "exec", "--ephemeral", "--skip-git-repo-check",
+               "-s", "read-only", "-C", d, "-o", out]
+        if CODEX_MODEL:
+            cmd += ["-m", CODEX_MODEL]
+        r = subprocess.run(cmd, input=SYSTEM + "\n\n" + HEAD + prompt,
+                           capture_output=True, text=True, timeout=600)
+        if os.path.isfile(out):
+            got = open(out, encoding="utf-8").read().strip()
+            if got:
+                return got
+        raise RuntimeError((r.stderr or r.stdout or "codexが何も返さなかった")[-200:])
+
+
+def _ask_claude(prompt: str, _temp: float) -> str:
+    """Claude Code CLI に聞く。道具は使わせない（文章を書くだけなので）。"""
+    cmd = ["claude", "-p", "--allowed-tools", ""]
+    if CLAUDE_MODEL:
+        cmd += ["--model", CLAUDE_MODEL]
+    r = subprocess.run(cmd, input=SYSTEM + "\n\n" + HEAD + prompt,
+                       capture_output=True, text=True, timeout=600)
+    out = (r.stdout or "").strip()
+    if not out:
+        raise RuntimeError((r.stderr or "claudeが何も返さなかった")[-200:])
+    return out
+
+
+ENGINES = {"codex": _ask_codex, "claude": _ask_claude, "ollama": _ask_ollama}
+# 上限に当たったら下へ移る順。ユーザーの指示: codex が上限なら claude code cli
+CHAIN = ["codex", "claude", "ollama"]
+_dead: set = set()
+
+
+def _ask(prompt: str, temp: float = 0.2) -> str:
+    """いま使える道具で書かせる。**上限に当たった道具は、その回のうちは二度と使わない。**
+    38回続けて同じ上限エラーを踏んだので、1回踏んだら次へ移る。"""
+    global ENGINE, MODEL
+    order = [ENGINE] + [e for e in CHAIN if e != ENGINE] if ENGINE != "auto" else list(CHAIN)
+    last = None
+    for name in order:
+        if name in _dead:
+            continue
+        try:
+            out = ENGINES[name](prompt, temp)
+        except Exception as e:  # noqa: BLE001
+            msg = str(e)
+            last = e
+            if any(w in msg.lower() for w in LIMIT_SIGNS):
+                print(f"    （{name} は使用量の上限。ここから先は使いません）")
+                _dead.add(name)
+                continue
+            raise
+        if name != ENGINE:
+            print(f"    （{name} に切り替えました）")
+            ENGINE, MODEL = name, _model_name(name)
+        return out
+    raise last or RuntimeError("使える生成先がない")
 
 
 def _judge(text: str, has_own: bool = True):
@@ -226,13 +306,40 @@ def _make(facts: str, subject: str, has_own: bool):
     return "", bad
 
 
+def _model_name(engine: str) -> str:
+    if engine == "ollama":
+        return OLLAMA_MODEL
+    if engine == "claude":
+        return CLAUDE_MODEL or "Claude Code"
+    return CODEX_MODEL or _codex_model()
+
+
+def _codex_model() -> str:
+    """codex の設定から既定モデル名を拾う。画面に「何で書いたか」を出すため。"""
+    path = os.path.expanduser("~/.codex/config.toml")
+    if os.path.isfile(path):
+        for line in open(path, encoding="utf-8", errors="ignore"):
+            m = re.match(r'\s*model\s*=\s*"([^"]+)"', line)
+            if m:
+                return m.group(1)
+    return "codex"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--slug")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--parties-only", action="store_true")
+    ap.add_argument("--engine", choices=["codex", "claude", "ollama", "auto"], default="codex",
+                    help="文章を書かせる先。上限に当たれば codex→claude→ollama と自動で移る")
+    ap.add_argument("--stale-only", action="store_true",
+                    help="いまの生成先で作り直していないページだけをやる（中断からの続き）")
     a = ap.parse_args()
+
+    global ENGINE, MODEL
+    ENGINE = a.engine
+    MODEL = _model_name(CHAIN[0] if ENGINE == "auto" else ENGINE)
 
     con = db()
     now = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -244,6 +351,10 @@ def main() -> int:
         if a.slug:
             sql, args = "SELECT * FROM giin WHERE slug=?", [a.slug]
         rows = con.execute(sql + " ORDER BY n_q DESC", args).fetchall()
+        if a.stale_only:
+            done = {r[0] for r in con.execute(
+                "SELECT key FROM insight WHERE scope='giin' AND model=?", (MODEL,))}
+            rows = [g for g in rows if g["slug"] not in done]
         if a.limit:
             rows = rows[:a.limit]
         for g in rows:
@@ -269,6 +380,10 @@ def main() -> int:
     if not a.slug:
         kaihas = [r["party"] for r in con.execute(
             "SELECT party, COUNT(*) c FROM giin WHERE party<>'' GROUP BY party ORDER BY c DESC")]
+        if a.stale_only:
+            done = {r[0] for r in con.execute(
+                "SELECT key FROM insight WHERE scope='party' AND model=?", (MODEL,))}
+            kaihas = [k for k in kaihas if k not in done]
         if a.limit:
             kaihas = kaihas[:a.limit]
         for k in kaihas:
