@@ -14,7 +14,7 @@ if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php
  *  **const は「その行が実行されたとき」に定義される**ので、ルーティングを
  *  呼ぶより前に読み込まれるこのファイルに置く（index.php の下に書くと
  *  Undefined constant になる。2026-09-14 に踏んだ）。 */
-const G_RESERVED = ['list', 'theme', 'compare', 'about', 'search', 'sitemap.xml',
+const G_RESERVED = ['list', 'theme', 'party', 'compare', 'about', 'search', 'sitemap.xml',
                     'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt'];
 
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }

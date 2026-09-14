@@ -171,3 +171,59 @@ function g_theme_where(string $theme, array &$args): string
     $t = g_theme($theme);
     return $t ? g_words_where($t['words'], $args) : '1=0';
 }
+
+/** 政党の一覧と内訳。**全党を同じ処理で出す。**特定の党だけのページは作らない。 */
+function g_parties(): array
+{
+    return g_all("SELECT party, COUNT(*) n, SUM(n_q) q, SUM(n_gov) gov, SUM(n_chair) chair,
+                         SUM(n_speech) total
+                  FROM giin GROUP BY party ORDER BY q DESC");
+}
+
+function g_party(string $slug): ?array
+{
+    foreach (g_parties() as $p) {
+        if (g_party_slug($p['party']) === $slug) { return $p; }
+    }
+    return null;
+}
+
+/** 政党名からURL用のslug。日本語をURLに入れないための対応表。 */
+function g_party_slug(string $name): string
+{
+    $map = [
+        '自民' => 'jimin', '国民民主' => 'kokumin', '立憲' => 'rikken',
+        '公明' => 'komei', '維新' => 'ishin', '共産' => 'kyosan',
+        '参政' => 'sansei', 'チームみらい' => 'mirai',
+        '中道改革連合' => 'chudo', '無所属' => 'mushozoku',
+        '社民' => 'shamin', '日本保守党' => 'hoshu', 'いのちの党' => 'inochi',
+        '沖縄の風' => 'okinawa',
+    ];
+    return $map[$name] ?? 'p' . substr(md5($name), 0, 6);
+}
+
+/** その会派の議員が提出者になっている議案。 */
+function g_party_gian(string $party, int $limit = 6): array
+{
+    try {
+        return g_all("SELECT n.*, g.plain, g.slug FROM news n JOIN giin g ON g.id=n.giin_id
+                      WHERE g.party=? ORDER BY n.date DESC LIMIT ?", [$party, $limit]);
+    } catch (PDOException $e) { return []; }
+}
+
+/** その会派がよく質疑していることがらの、最近の動き。
+ *  議案が無い会派でも「いま何が動いているか」が出るようにするため。 */
+function g_party_news(string $party, int $themes = 3, int $limit = 6): array
+{
+    $ts = g_all("SELECT tc.theme, SUM(tc.n) n FROM theme_count tc JOIN giin g ON g.id=tc.giin_id
+                 WHERE tc.kind='q' AND tc.giin_id>0 AND g.party=?
+                 GROUP BY tc.theme ORDER BY n DESC LIMIT ?", [$party, $themes]);
+    if (!$ts) { return [[], []]; }
+    $slugs = array_column($ts, 'theme');
+    $in = implode(',', array_fill(0, count($slugs), '?'));
+    $a = $slugs; $a[] = $limit;
+    $news = g_all("SELECT DISTINCT n.* FROM news n
+                   JOIN news_theme nt ON nt.news_id = n.id
+                   WHERE nt.theme IN ($in) ORDER BY n.date DESC LIMIT ?", $a);
+    return [$news, $ts];
+}

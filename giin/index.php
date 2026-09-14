@@ -44,11 +44,13 @@ function g_route(string $path, int $page): void
 
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
+    if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
     switch ($path) {
         case '/':        g_page_top(); return;
         case '/search':  g_page_search($page); return;
         case '/list':    g_page_list(); return;
         case '/theme':   g_page_themes(); return;
+        case '/party':   g_page_parties(); return;
         case '/news':    g_page_news($page); return;
         case '/compare': g_page_compare(); return;
         case '/about':   g_page_about(); return;
@@ -198,6 +200,21 @@ function g_page_top(): void
     foreach (g_all('SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id'
                  . " WHERE s.kind='q' ORDER BY s.date DESC, s.speech_order DESC LIMIT 10") as $s) { g_speech($s); }
     echo '<p><a href="' . g_url('search') . '">もっと探す</a></p>';
+
+    echo '<h2>会派から見る</h2>'
+       . '<p class="note">人数の割合と質疑の割合のずれが分かります。'
+       . '<b>ずれは熱心さではなく、与党か野党かという立場で決まります。</b></p><div class="grid">';
+    $tot = (int)g_val('SELECT COUNT(*) FROM giin');
+    $totq = (int)g_val('SELECT SUM(n_q) FROM giin');
+    foreach (g_parties() as $p) {
+        $pn = $tot ? (int)$p['n'] / $tot * 100 : 0;
+        $pq = $totq ? (int)$p['q'] / $totq * 100 : 0;
+        echo '<a class="card" href="' . g_url('party/' . g_party_slug($p['party'])) . '">'
+           . '<div class="nm">' . g_e($p['party']) . '</div>'
+           . '<div class="mt">' . (int)$p['n'] . '人（' . round($pn) . '%）</div>'
+           . '<div class="n">質疑 ' . number_format((int)$p['q']) . '件（' . round($pq) . '%）</div></a>';
+    }
+    echo '</div><p><a href="' . g_url('party') . '">会派の一覧を見る</a></p>';
 
     echo '<h2>議員から探す</h2>';
     g_giin_grid();
@@ -876,5 +893,171 @@ function g_page_news(int $page): void
        . '・報道発表：厚生労働省・国土交通省・総務省・内閣府・デジタル庁・文部科学省の各ホームページ'
        . '（公共データ利用規約 PDL1.0）。見出しとリンクをそのまま掲載しており、編集・加工はしていません。'
        . '</div>';
+    g_foot();
+}
+
+/** 数字の読み方。**どの政党のページにも同じ文章を出す。**
+ *  国民民主のページにだけ有利な注記、自民のページにだけ不利な注記、を作らない。 */
+function g_party_caveat(): string
+{
+    return '<div class="panel note"><b>この数字の読み方</b><br>'
+        . '質疑の件数は、<b>与党か野党かでほとんど決まります。</b>'
+        . '与党の議員は大臣・副大臣・政務官として答弁する側に回り、委員長として議事を'
+        . '整理する側に回ります。質問する立場ではないので、質疑の件数は少なくなります。'
+        . '実際、自民24人の発言3,693件の内訳は議事整理59%・答弁24%で、質疑は17%です'
+        . '（24人のうち12人が答弁、6人が委員長として議事整理をしています）。'
+        . '一方、野党の議員は発言のほぼ全部が質疑になります。'
+        . '<br><b>つまり件数の差は、熱心さの差ではなく立場の差です。</b>'
+        . 'このサイトは件数を数えるだけで、良し悪しの判定はしません。'
+        . '数字を比べるときは、同じ立場の議員どうしで比べてください。</div>';
+}
+
+function g_page_parties(): void
+{
+    $ps = g_parties();
+    $tot = array_sum(array_column($ps, 'n'));
+    $totq = array_sum(array_column($ps, 'q'));
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['会派から見る', '/party']]),
+        ['@type' => 'CollectionPage', '@id' => g_abs('party'), 'url' => g_abs('party'),
+         'name' => '会派から見る — 愛知の国会議員' . $tot . '人',
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
+    ]);
+    g_head('会派から見る', '愛知の国会議員' . $tot . '人を会派ごとにまとめ、人数と質疑・答弁・'
+        . '議事整理の件数を並べています。件数の差は立場の差なので、読み方も併せて書いています。',
+        '/party', ['jsonld' => $ld, 'image' => g_abs('img/og/party.png')]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 会派から見る</nav>';
+    echo '<h1>会派から見る</h1>'
+       . '<p class="lead">愛知の国会議員' . $tot . '人を会派ごとにまとめました。'
+       . '人数と、質疑・答弁・議事整理の件数です。</p>';
+    echo g_party_caveat();
+
+    echo '<div class="scroll"><table><tr><th>会派</th><th class="n">人数</th>'
+       . '<th class="n">質疑</th><th class="n">1人あたり</th>'
+       . '<th class="n">答弁</th><th class="n">議事整理</th>'
+       . '<th>人数と質疑の割合</th></tr>';
+    foreach ($ps as $p) {
+        $sn = g_party_slug($p['party']);
+        $pn = $tot ? (int)$p['n'] / $tot * 100 : 0;
+        $pq = $totq ? (int)$p['q'] / $totq * 100 : 0;
+        echo '<tr><td><a href="' . g_url('party/' . $sn) . '">' . g_e($p['party']) . '</a></td>'
+           . '<td class="n">' . (int)$p['n'] . '</td>'
+           . '<td class="n"><b>' . number_format((int)$p['q']) . '</b></td>'
+           . '<td class="n">' . number_format((int)$p['q'] / max(1, (int)$p['n'])) . '</td>'
+           . '<td class="n">' . number_format((int)$p['gov']) . '</td>'
+           . '<td class="n">' . number_format((int)$p['chair']) . '</td>'
+           . '<td><div class="share">'
+           . '<i style="width:' . round($pn, 1) . '%;background:#8fa3b3">人 ' . round($pn) . '%</i>'
+           . '<i style="width:' . round(100 - $pn, 1) . '%;background:#eef2f4"></i></div>'
+           . '<div class="share">'
+           . '<i style="width:' . round($pq, 1) . '%;background:#0a9a8f">質疑 ' . round($pq) . '%</i>'
+           . '<i style="width:' . round(100 - $pq, 1) . '%;background:#e6f4f2"></i></div></td></tr>';
+    }
+    echo '</table></div>';
+    echo '<p class="note">上段が45人に占める人数の割合、下段が全質疑に占める割合です。'
+       . '両者がずれている会派ほど、与党・野党の立場の違いが効いています。</p>';
+    g_foot();
+}
+
+function g_page_party(string $slug): void
+{
+    $p = g_party($slug);
+    if (!$p) {
+        http_response_code(404);
+        g_head('見つかりません', '', '/party', ['noindex' => true]);
+        echo '<h1>その会派は収録していません</h1>'; g_foot(); return;
+    }
+    $name = $p['party'];
+    $tot = (int)g_val('SELECT COUNT(*) FROM giin');
+    $totq = (int)g_val("SELECT SUM(n_q) FROM giin");
+    $pn = $tot ? (int)$p['n'] / $tot * 100 : 0;
+    $pq = $totq ? (int)$p['q'] / $totq * 100 : 0;
+
+    $desc = $name . 'の愛知関係の国会議員' . (int)$p['n'] . '人（45人中'
+          . round($pn) . '%）が、国会で行った質疑は' . number_format((int)$p['q']) . '件'
+          . '（全体の' . round($pq) . '%）です。件数の差は立場の差なので、読み方も書いています。';
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['会派から見る', '/party'], [$name, '/party/' . $slug]]),
+        ['@type' => 'CollectionPage', '@id' => g_abs('party/' . $slug),
+         'url' => g_abs('party/' . $slug), 'name' => $name . 'の国会発言',
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
+    ]);
+    g_head($name . 'の国会発言（愛知関係' . (int)$p['n'] . '人）', $desc, '/party/' . $slug,
+           ['jsonld' => $ld, 'image' => g_abs('img/og/party-' . $slug . '.png')]);
+
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
+       . '<a href="' . g_url('party') . '">会派から見る</a> › ' . g_e($name) . '</nav>';
+    echo '<h1>' . g_e($name) . '</h1>'
+       . '<p class="lead">愛知の有権者の一票が当落に効く国会議員' . $tot . '人のうち、'
+       . g_e($name) . 'は<b>' . (int)$p['n'] . '人</b>です。</p>';
+
+    echo '<div class="kv">'
+       . '<div class="c"><b>' . (int)$p['n'] . '</b><span>人<br>45人中 ' . round($pn) . '%</span></div>'
+       . '<div class="c"><b>' . number_format((int)$p['q']) . '</b><span>質疑<br>全体の ' . round($pq) . '%</span></div>'
+       . '<div class="c"><b>' . number_format((int)$p['q'] / max(1, (int)$p['n'])) . '</b><span>1人あたり<br>の質疑</span></div>'
+       . '<div class="c"><b>' . number_format((int)$p['gov']) . '</b><span>答弁<br>大臣・副大臣・政務官</span></div>'
+       . '<div class="c"><b>' . number_format((int)$p['chair']) . '</b><span>議事整理<br>委員長・議長</span></div>'
+       . '</div>';
+
+    if (abs($pq - $pn) >= 5) {
+        $up = $pq > $pn;
+        echo '<div class="panel"><p><b>人数の割合は' . round($pn) . '%、質疑の割合は'
+           . round($pq) . '%です。</b>'
+           . ($up ? '人数の割に質疑が多いことになります。'
+                  : '人数の割に質疑が少ないことになります。')
+           . '<b>これは熱心さではなく立場で決まります。</b>下の「この数字の読み方」をご覧ください。</p></div>';
+    }
+    echo g_party_caveat();
+
+    // この会派の議員が提出した議案
+    $gian = g_party_gian($name, 6);
+    if ($gian) {
+        echo '<h2>' . g_e($name) . 'の議員が提出した議案</h2>'
+           . '<p class="note">提出者の筆頭に名前が出ている議案です。'
+           . '「外○名」として名を連ねた分は数えていません。'
+           . 'また<b>内閣が提出する法案（閣法）には議員の名前が出ない</b>ので、'
+           . '与党の会派ではここが空になります。政策を出していないという意味ではありません。</p>';
+        foreach ($gian as $n) { echo g_news_item($n); }
+    }
+
+    // よく質疑していることがらの最近の動き（議案が無い会派でも出る）
+    [$pnews, $pth] = g_party_news($name, 3, 6);
+    if ($pnews) {
+        $labels = [];
+        foreach ($pth as $r) { $t = g_theme($r['theme']); if ($t) { $labels[] = $t['name']; } }
+        echo '<h2>よく質疑していることがらの、最近の動き</h2>'
+           . '<p class="note">' . g_e($name) . 'の質疑が多い'
+           . '「' . g_e(implode('」「', $labels)) . '」について、'
+           . '国会に出された議案と省庁の報道発表を新しい順に出しています。'
+           . '<b>この会派に関するニュースではありません。</b>'
+           . 'ことがらの語で機械的に拾ったもので、当サイトが選んだ話題でもありません。</p>';
+        foreach ($pnews as $n) { echo g_news_item($n, true); }
+        echo '<p><a href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
+    }
+
+    echo '<h2>' . g_e($name) . 'の議員</h2><div class="grid">';
+    foreach (g_all('SELECT * FROM giin WHERE party=? ORDER BY n_q DESC', [$name]) as $g) {
+        echo g_card($g);
+    }
+    echo '</div>';
+
+    // よく触れていることがら（先に数えた表から）
+    $th = g_all("SELECT tc.theme, SUM(tc.n) n FROM theme_count tc JOIN giin g ON g.id=tc.giin_id
+                 WHERE tc.kind='q' AND tc.giin_id>0 AND g.party=?
+                 GROUP BY tc.theme ORDER BY n DESC LIMIT 8", [$name]);
+    if ($th) {
+        echo '<h2>よく触れていることがら</h2><div class="grid">';
+        foreach ($th as $r) {
+            $t = g_theme($r['theme']);
+            if (!$t) { continue; }
+            echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
+               . '<div class="nm">' . g_e($t['name']) . '</div>'
+               . '<div class="n">' . number_format((int)$r['n']) . '件</div></a>';
+        }
+        echo '</div><p class="note">語がその発言に出てきた回数です。賛成・反対の判定はしていません。</p>';
+    }
+
+    echo '<p style="margin-top:20px"><a class="btn" href="' . g_url('party') . '">'
+       . '他の会派と比べる</a></p>';
     g_foot();
 }

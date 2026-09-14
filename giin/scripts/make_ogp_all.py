@@ -114,6 +114,32 @@ def main():
              f"xb4g.com/giin/theme/{t['slug']}")
         n += 1
 
+    # 会派ごと
+    slugmap = {'自民':'jimin','国民民主':'kokumin','立憲':'rikken','公明':'komei','維新':'ishin',
+               '共産':'kyosan','参政':'sansei','チームみらい':'mirai','中道改革連合':'chudo',
+               '無所属':'mushozoku'}
+    n_all = con.execute("SELECT COUNT(*) FROM giin").fetchone()[0]
+    q_all = con.execute("SELECT SUM(n_q) FROM giin").fetchone()[0] or 1
+    for r in con.execute("SELECT party, COUNT(*) n, SUM(n_q) q FROM giin GROUP BY party"):
+        sl = slugmap.get(r["party"], "p" + __import__("hashlib").md5(
+            r["party"].encode()).hexdigest()[:6])
+        pn = round(r["n"] / n_all * 100)
+        pq = round(r["q"] / q_all * 100)
+        card(os.path.join(OUT, f"party-{sl}.png"),
+             f"愛知の国会議員{n_all}人のうち {r['party']} は{r['n']}人",
+             f"人数は{pn}%、",
+             f"質疑は{pq}%。",
+             "件数の差は熱心さではなく、与党か野党かという立場で決まります。",
+             "このサイトは件数を数えるだけで、良し悪しの判定はしません。",
+             "愛知の国会議員 発言ログ", f"xb4g.com/giin/party/{sl}")
+        n += 1
+    card(os.path.join(OUT, "party.png"), "会派ごとの人数と質疑・答弁・議事整理",
+         "人数の割合と、", "質疑の割合のずれ。",
+         "ずれは立場の差です。与党は答弁と議事整理に回ります。",
+         "同じ立場の議員どうしで比べてください。",
+         "愛知の国会議員 発言ログ", "xb4g.com/giin/party")
+    n += 1
+
     tot = con.execute("SELECT COUNT(*) FROM giin").fetchone()[0]
     card(os.path.join(OUT, "list.png"), "衆院 愛知1〜16区・比例東海／参院 愛知県選挙区",
          f"愛知の国会議員 {tot}人を、", "ひとつの表で。",
