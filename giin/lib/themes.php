@@ -97,3 +97,25 @@ function g_theme_top(string $slug, int $limit = 3): array
                   FROM speech s JOIN giin g ON g.id=s.giin_id
                   WHERE s.kind='q' AND $w GROUP BY g.id ORDER BY c DESC LIMIT ?", $args);
 }
+
+/** 議員の公式リンク。**本人の公式サイトに載っているものだけ**を data/links.json に入れてある。
+ *  検索結果から拾ったものは入れない（なりすましを本人として出さないため）。 */
+function g_links(string $slug): array
+{
+    static $all = null;
+    if ($all === null) {
+        $all = json_decode((string)@file_get_contents(__DIR__ . '/../data/links.json'), true) ?: [];
+    }
+    return $all[$slug] ?? [];
+}
+
+/** 公式YouTubeの新着。チャンネルRSSから取り込んだもの（APIキー不使用）。 */
+function g_videos(int $giin_id, int $limit = 6): array
+{
+    try {
+        return g_all('SELECT * FROM video WHERE giin_id=? ORDER BY published DESC LIMIT ?',
+                     [$giin_id, $limit]);
+    } catch (PDOException $e) {
+        return [];   // video 表がまだ無い設置でも画面を壊さない
+    }
+}

@@ -148,6 +148,22 @@ background:#e6f4f2;color:#0a726b;border:1px solid #bfe3de;white-space:nowrap}
 .nw .lk{font-size:12.5px;color:#5d6b7a;margin-top:6px}
 .top3{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}
 .top3 a{font-size:13px;background:#e6f4f2;border:1px solid #bfe3de;border-radius:999px;padding:3px 11px;text-decoration:none}
+.offl{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}
+.offl a{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;background:#fff;border:1px solid #cfdae4;
+border-radius:999px;padding:6px 14px;text-decoration:none;color:#12202f}
+.offl a:hover{border-color:#0a9a8f}
+.offl a b{color:#0a726b;font-size:14px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:12px}
+.vcard{background:#fff;border:1px solid #e3e9ec;border-radius:12px;overflow:hidden}
+.vcard iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
+.vthumb{display:block;width:100%;padding:0;border:0;background:#000;cursor:pointer;position:relative;line-height:0}
+.vthumb img{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;display:block;opacity:.92}
+.vthumb:hover img{opacity:1}
+.vplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+font-size:34px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.vmeta{padding:9px 11px;font-size:13.5px;line-height:1.6}
+.vmeta a{display:block;margin-top:2px}
+.xtl{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:8px;max-width:560px}
 table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
 th,td{border:1px solid #e3e9ec;padding:8px 10px;text-align:left;vertical-align:top}
 th{background:#f5f8f9;white-space:nowrap}
@@ -206,4 +222,56 @@ function g_news_item(array $n, bool $compact = false): string
         $h .= '</div>';
     }
     return $h . '</div>';
+}
+
+/** 公式リンクの並び。どこで確認したかも一緒に出す。 */
+function g_official(array $L): string
+{
+    if (!$L) { return ''; }
+    $items = [
+        'site'      => ['公式サイト', '🔗'],
+        'x'         => ['X', '𝕏'],
+        'youtube'   => ['YouTube', '▶'],
+        'instagram' => ['Instagram', '◎'],
+        'facebook'  => ['Facebook', 'f'],
+        'line'      => ['LINE', 'L'],
+        'note'      => ['note', 'n'],
+    ];
+    $h = '<div class="offl">';
+    foreach ($items as $k => [$label, $icon]) {
+        if (empty($L[$k])) { continue; }
+        $h .= '<a href="' . g_e($L[$k]) . '" rel="nofollow noopener" target="_blank">'
+            . '<b>' . $icon . '</b>' . g_e($label) . '</a>';
+    }
+    $h .= '</div>';
+    if (!empty($L['source'])) {
+        $h .= '<p class="note">これらは <a href="' . g_e($L['source']) . '" rel="nofollow noopener" '
+            . 'target="_blank">本人の公式サイト</a>に掲載されているリンクです'
+            . (!empty($L['checked_at']) ? '（' . g_e($L['checked_at']) . ' 確認）' : '') . '。'
+            . '検索結果から拾ったものは載せていません。</p>';
+    }
+    return $h;
+}
+
+/** YouTube新着。**サムネを押すまで YouTube は読み込まない**（勝手に通信させない）。
+ *  再生は youtube-nocookie.com の公式埋め込みに任せる。 */
+function g_video_grid(array $vs): string
+{
+    if (!$vs) { return ''; }
+    $h = '<div class="vgrid">';
+    foreach ($vs as $v) {
+        $h .= '<div class="vcard" data-vid="' . g_e($v['video_id']) . '">'
+            . '<button class="vthumb" type="button" aria-label="再生: ' . g_e($v['title']) . '">'
+            . '<img src="' . g_e($v['thumb']) . '" alt="" loading="lazy" width="480" height="360">'
+            . '<span class="vplay">▶</span></button>'
+            . '<div class="vmeta"><span class="note">' . g_e(g_date($v['published'])) . '</span>'
+            . '<a href="https://www.youtube.com/watch?v=' . g_e($v['video_id'])
+            . '" rel="nofollow noopener" target="_blank">' . g_e($v['title']) . '</a></div></div>';
+    }
+    return $h . '</div>'
+        . '<script>document.querySelectorAll(".vcard .vthumb").forEach(function(b){'
+        . 'b.addEventListener("click",function(){var c=b.closest(".vcard"),i=document.createElement("iframe");'
+        . 'i.src="https://www.youtube-nocookie.com/embed/"+c.dataset.vid+"?autoplay=1&rel=0";'
+        . 'i.title="YouTube";i.allow="accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture";'
+        . 'i.allowFullscreen=true;i.loading="lazy";b.replaceWith(i)})});</script>';
 }

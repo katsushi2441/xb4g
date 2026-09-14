@@ -263,6 +263,11 @@ function g_page_giin(int $id, int $page): void
        . ($g['wins'] ? '　<span class="note">当選' . g_e($g['wins']) . '回</span>' : '')
        . '</p>';
 
+    $L = g_links($g['slug']);
+    if ($L) {
+        echo '<h2>本人の発信</h2>' . g_official($L);
+    }
+
     echo '<div class="panel">'
        . '<table><tr><th>議員として質問・討論した発言</th><td class="n"><b>'
        . number_format($counts['q']) . '</b>件</td></tr>'
@@ -326,6 +331,34 @@ function g_page_giin(int $id, int $page): void
            . '<p class="note">この議員が提出者・発議者として名前が出ている議案です'
            . '（出典: 参議院議案情報 / smartnews-smri, MIT）。</p>';
         foreach ($mine as $n) { echo g_news_item($n); }
+    }
+
+    // 公式YouTubeの新着（チャンネルRSSから取り込んだもの・APIキー不使用）
+    $vs = g_videos((int)$g['id'], 6);
+    if ($vs) {
+        echo '<h2>公式YouTubeの新着</h2>'
+           . '<p class="note">' . g_e($vs[0]['channel']) . ' の新しい動画です。'
+           . 'サムネイルを押すまで YouTube を読み込みません。'
+           . '当サイトは動画の中身を持っておらず、要約もしていません。</p>'
+           . g_video_grid($vs)
+           . (!empty($L['youtube'])
+              ? '<p style="margin-top:10px"><a href="' . g_e($L['youtube']) . '" rel="nofollow noopener" '
+                . 'target="_blank">チャンネルをすべて見る</a></p>' : '');
+    }
+
+    // Xは公式の埋め込みに任せる。**APIで取ってきて自前で並べない**
+    // （他人のポストの読み取りは従量課金で、規約も厳しい。埋め込みなら本家がそのまま出す）
+    if (!empty($L['x'])) {
+        $xu = preg_replace('#^https?://(www\.)?twitter\.com/#', 'https://x.com/', $L['x']);
+        echo '<h2>Xの新着</h2>'
+           . '<p class="note">X の公式の埋め込みです。当サイトが投稿を保存・加工しているわけではありません。'
+           . '読み込むと X に通信します。</p>'
+           . '<div class="xtl"><a class="twitter-timeline" data-height="520" data-dnt="true" '
+           . 'data-chrome="noheader nofooter transparent" href="' . g_e($xu) . '">'
+           . g_e($g['plain']) . 'のポスト</a></div>'
+           . '<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>'
+           . '<p style="margin-top:8px"><a href="' . g_e($xu) . '" rel="nofollow noopener" target="_blank">'
+           . 'Xで見る</a></p>';
     }
 
     // 発言一覧
@@ -625,6 +658,10 @@ function g_page_about(): void
          . '会派別議員一覧、参議院議員の名簿は smartnews-smri/house-of-councillors（MIT）、'
          . '議案は参議院の議案情報、報道発表は厚生労働省・国土交通省・総務省・内閣府・'
          . 'デジタル庁・文部科学省の各ホームページ（公共データ利用規約 PDL1.0）です。'],
+        ['議員の公式SNSはどうやって集めていますか？',
+         '本人の公式サイトに掲載されているリンクだけを採っています。検索結果から拾ったものは'
+         . '載せません。なりすましのアカウントを本人のものとして出さないためです。'
+         . 'どこで確認したかは各ページに書いています。'],
         ['AIは使っていますか？',
          '使っていません。発言の立場の分類も、ことがらへの割り当ても、'
          . '決めた語による機械的な判定です。要約も論評も生成していません。'],
@@ -685,6 +722,18 @@ function g_page_about(): void
        . 'ここに出るのは、商用利用が明文で許されている一次情報だけです。</p>'
        . '<p class="note">ことがらへの割り当ては、ことがらごとに決めた語が見出しに出てきたかどうかで'
        . '機械的に行っています。AIは使っていません。当サイトが話題を選んでいるわけではありません。</p>'
+
+       . '<h2>本人の発信について</h2>'
+       . '<p>議員ページに、公式サイト・X・YouTube などへのリンクを置いています。'
+       . '<b>本人の公式サイトに掲載されているリンクだけ</b>を採り、検索結果から拾ったものは載せません。'
+       . 'どこで確認したかもページに書いています。なりすましのアカウントを'
+       . '本人のものとして出さないためです。見つからない方は空のままにしています。</p>'
+       . '<p>公式YouTubeの新着は、チャンネルのRSSからタイトル・日付・サムネイルだけを取り込んでいます。'
+       . '<b>サムネイルを押すまで YouTube を読み込みません。</b>再生は YouTube の公式埋め込みに任せており、'
+       . '当サイトは動画の中身を持っていません。要約もしません。</p>'
+       . '<p>X は公式の埋め込みです。'
+       . '<b>APIで投稿を取ってきて自前で並べることはしていません。</b>'
+       . '本家がそのまま表示します（読み込むと X に通信します）。</p>'
 
        . '<h2>出典</h2><ul>'
        . '<li>議案：<a href="https://github.com/smartnews-smri/house-of-councillors" '

@@ -9,6 +9,7 @@
   1. 国会会議録から、議員45人の新しい発言を取り込む（増分）
   2. 立場（質疑／答弁／議事整理）を分類し直す
   3. 議案と省庁の報道発表を取り込み、ことがらに割り当てる
+  3.5 議員の公式YouTubeの新着（チャンネルRSS・APIキー不要）
   4. **SQLite を heteml へ送る。** ここまでやらないと公開サイトは古いまま
   5. 公開URLを実際に叩いて、更新が反映されたかを確かめる
 
@@ -60,6 +61,8 @@ def _counts():
         "speech_q": g("SELECT COUNT(*) FROM speech WHERE kind='q'"),
         "last_speech": g("SELECT MAX(date) FROM speech"),
         "news": g("SELECT COUNT(*) FROM news"),
+        "video": g("SELECT COUNT(*) FROM video") if g(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='video'") else 0,
         "last_news": g("SELECT MAX(date) FROM news"),
     }
     con.close()
@@ -124,6 +127,7 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("発言の増分", [PY, os.path.join(SCRIPTS, "fetch_speeches.py"), "--since-last"]),
         ("立場の分類", [PY, os.path.join(SCRIPTS, "classify.py")]),
         ("議案と報道発表", [PY, os.path.join(SCRIPTS, "fetch_news.py"), "--days", str(days_news)]),
+        ("公式YouTubeの新着", [PY, os.path.join(SCRIPTS, "fetch_youtube.py")]),
     ]:
         code, out, err = _run(args)
         steps.append({"step": name, "code": code, "tail": out.strip().splitlines()[-3:],
