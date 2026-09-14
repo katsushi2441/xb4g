@@ -97,8 +97,31 @@ function g_foot(): void
        . '収録の範囲は「愛知の有権者だけが投票用紙に書ける候補」＝'
        . '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区です。</p>'
        . '<p>収録期間 ' . g_e($f ?: '—') . ' 以降／最終更新 ' . g_e($u ?: '—')
-       . '　<a href="' . g_url('about') . '">このサイトについて</a>'
-       . '　<a href="https://xb4g.com/">株式会社エクスブリッジ</a></p>'
+       . '　<a href="' . g_url('about') . '">このサイトについて</a></p>'
+
+       // 作っている会社。**議員ページの本文には商用の案内を挟まない。**
+       // 収録している議員に売り込んでいるように見えると、この道具の中立が疑われる。
+       // 出すのはフッターの一箇所だけにする。
+       . '<div class="maker">'
+       . '<a class="mk-logo" href="https://exbridge.jp/?ref=giin">'
+       . '<img src="https://xb4g.com/images/logo-mark-64.png" alt="" width="40" height="40">'
+       . '<span><b>株式会社エクスブリッジ</b><small>名古屋のAIシステム開発会社。'
+       . 'この道具を作っています</small></span></a>'
+       . '<div class="mk-links">'
+       . '<a href="https://kappstore.exbridge.jp/app.php?id=dd868beae043026b&ref=giin">'
+       . 'この道具を買い切りで（55,000円税込・MIT・MCP同梱）</a>'
+       . '<a href="https://exbridge.jp/solution/seiji-dantai/?ref=giin">'
+       . '政治団体・後援会・議員事務所のITを業務ごとに安くする</a>'
+       . '<a href="https://exbridge.jp/ai-it-komon.html?ref=giin">AI-IT顧問契約</a>'
+       . '<a href="https://kappstore.exbridge.jp/?ref=giin">Kurage App Store</a>'
+       . '<a href="https://xb4g.com/">エクスブリッジ 第4世代</a>'
+       . '</div>'
+       . '<p class="note" style="margin:8px 0 0">'
+       . '当社は「政治活動の事務を安くする」範囲に限って支援します。'
+       . '特定の政党・候補者を支援することはありません。'
+       . '<b>この道具は当社の製品のデモを兼ねていますが、収録内容は収録対象や取引先に'
+       . '左右されません。</b></p>'
+       . '</div>'
        . '</div></footer>'
        . '<script>(function(){var s=document.createElement("script");'
        . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
@@ -167,6 +190,16 @@ font-size:34px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
 .xp .m{font-size:12.5px;color:#5d6b7a;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .xp .t{margin:6px 0 0;font-size:14.5px;line-height:1.75;white-space:pre-wrap}
 .xp .lk{font-size:12.5px;margin-top:7px}
+.maker{border-top:1px solid #e3e9ec;margin-top:14px;padding-top:14px}
+.mk-logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:#12202f}
+.mk-logo img{border-radius:8px}
+.mk-logo b{font-size:14px}
+.mk-logo small{display:block;font-size:12px;color:#5d6b7a;font-weight:400}
+.mk-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mk-links a{font-size:13px;background:#fff;border:1px solid #cfdae4;border-radius:999px;
+padding:6px 13px;text-decoration:none;color:#12202f}
+.mk-links a:hover{border-color:#0a9a8f}
+.mk-links a:first-child{background:#e6f4f2;border-color:#bfe3de;color:#0a726b;font-weight:700}
 table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
 th,td{border:1px solid #e3e9ec;padding:8px 10px;text-align:left;vertical-align:top}
 th{background:#f5f8f9;white-space:nowrap}
