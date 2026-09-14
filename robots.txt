@@ -15,3 +15,4 @@ Disallow: /decap-oauth.php
 Disallow: /deploy.php
 
 Sitemap: https://xb4g.com/sitemap.php
+Sitemap: https://xb4g.com/giin/sitemap.xml
