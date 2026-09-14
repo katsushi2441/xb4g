@@ -147,16 +147,16 @@ cron でも rqdb4ai でも呼べます。
 書かせる先は上限に当たると次へ移ります。
 
 ```bash
-python3 scripts/build_insight.py                    # codex → claude → ollama
-python3 scripts/build_insight.py --engine claude    # claude から始める
+python3 scripts/build_insight.py                    # claude → ollama（既定）
+python3 scripts/build_insight.py --engine codex     # codex から始める（枠を食うので明示したときだけ）
 python3 scripts/build_insight.py --slug tanaka-ken --dry   # 1人だけ試す
 python3 scripts/build_insight.py --stale-only       # 中断したところから
 ```
 
 | 生成先 | 何 |
 |---|---|
-| `codex` | Codex CLI（既定）。`~/.codex/config.toml` のモデルを使う |
-| `claude` | Claude Code CLI。codex が上限のときの受け皿 |
+| `claude` | Claude Code CLI（既定） |
+| `codex` | Codex CLI。**既定の鎖には入れていない。**このアカウントで使えるモデルが gpt-6-astra だけで、1件2万トークン近くを52回使うと対話用の枠を食い潰すため |
 | `ollama` | 手元の gemma4。外へ出さずに回したいとき |
 
 渡しているのは国会会議録と各省庁の公開情報だけで、ここにしかない情報は渡していません。

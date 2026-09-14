@@ -152,8 +152,11 @@ def _ask_claude(prompt: str, _temp: float) -> str:
 
 
 ENGINES = {"codex": _ask_codex, "claude": _ask_claude, "ollama": _ask_ollama}
-# 上限に当たったら下へ移る順。ユーザーの指示: codex が上限なら claude code cli
-CHAIN = ["codex", "claude", "ollama"]
+# 上限に当たったら下へ移る順。
+# **codex は既定の鎖に入れない。** このアカウントで使えるモデルは gpt-6-astra だけで、
+# 1件あたり2万トークン近くを52回使うため、対話用の枠を一度に食い潰す（実際に2回上限に達した）。
+# 使いたいときは --engine codex と明示する。
+CHAIN = ["claude", "ollama"]
 _dead: set = set()
 
 
@@ -331,8 +334,9 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--parties-only", action="store_true")
-    ap.add_argument("--engine", choices=["codex", "claude", "ollama", "auto"], default="codex",
-                    help="文章を書かせる先。上限に当たれば codex→claude→ollama と自動で移る")
+    ap.add_argument("--engine", choices=["codex", "claude", "ollama", "auto"], default="claude",
+                    help="文章を書かせる先。既定は claude→ollama。"
+                         "codex は枠を食うので明示したときだけ使う")
     ap.add_argument("--stale-only", action="store_true",
                     help="いまの生成先で作り直していないページだけをやる（中断からの続き）")
     a = ap.parse_args()
