@@ -2,7 +2,7 @@
 AddHandler application/x-httpd-php .php
 AddCharset UTF-8 .php
 
-# /giin/g/12 のようなURLを index.php に渡す。実在するファイルはそのまま返す。
+# /giin/mizuno-koichi のようなURLを index.php に渡す。実在するファイルはそのまま返す。
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /giin/

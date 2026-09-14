@@ -23,6 +23,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS giin(
   id INTEGER PRIMARY KEY, house TEXT, display TEXT, name TEXT, kana TEXT,
   district TEXT, wins TEXT, kaiha TEXT, party TEXT, profile TEXT, photo TEXT,
+  slug TEXT, plain TEXT,
   n_speech INTEGER DEFAULT 0, n_q INTEGER DEFAULT 0, n_gov INTEGER DEFAULT 0,
   n_chair INTEGER DEFAULT 0, first_date TEXT, last_date TEXT);
 CREATE TABLE IF NOT EXISTS speech(
@@ -63,13 +64,15 @@ def main():
 
     for r in roster:
         con.execute(
-            "INSERT INTO giin(id,house,display,name,kana,district,wins,kaiha,party,profile,photo)"
-            " VALUES(?,?,?,?,?,?,?,?,?,?,?)"
+            "INSERT INTO giin(id,house,display,name,kana,district,wins,kaiha,party,profile,photo,slug,plain)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"
             " ON CONFLICT(id) DO UPDATE SET house=excluded.house,display=excluded.display,"
             " name=excluded.name,kana=excluded.kana,district=excluded.district,wins=excluded.wins,"
-            " kaiha=excluded.kaiha,party=excluded.party,profile=excluded.profile,photo=excluded.photo",
+            " kaiha=excluded.kaiha,party=excluded.party,profile=excluded.profile,photo=excluded.photo,"
+            " slug=excluded.slug,plain=excluded.plain",
             (r["id"], r["house"], r["display"], r["name"], r.get("kana", ""), r["district"],
-             r.get("wins", ""), r["kaiha"], r["party"], r.get("profile", ""), r.get("photo", "")))
+             r.get("wins", ""), r["kaiha"], r["party"], r.get("profile", ""), r.get("photo", ""),
+             r.get("slug", ""), r["display"].replace("\u3000", "")))
     con.commit()
 
     total = 0

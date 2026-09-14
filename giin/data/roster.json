@@ -9,7 +9,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/005.html",
   "id": 1,
-  "party": "自民"
+  "party": "自民",
+  "slug": "aoyama-shuhei"
  },
  {
   "house": "衆議院",
@@ -21,7 +22,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/028.html",
   "id": 2,
-  "party": "自民"
+  "party": "自民",
+  "slug": "ishii-taku"
  },
  {
   "house": "衆議院",
@@ -33,7 +35,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/045.html",
   "id": 3,
-  "party": "自民"
+  "party": "自民",
+  "slug": "ito-tadahiko"
  },
  {
   "house": "衆議院",
@@ -45,7 +48,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/059.html",
   "id": 4,
-  "party": "自民"
+  "party": "自民",
+  "slug": "imaeda-soichiro"
  },
  {
   "house": "衆議院",
@@ -57,7 +61,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/094.html",
   "id": 5,
-  "party": "自民"
+  "party": "自民",
+  "slug": "okamoto-yasuhiro"
  },
  {
   "house": "衆議院",
@@ -69,7 +74,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/098.html",
   "id": 6,
-  "party": "自民"
+  "party": "自民",
+  "slug": "osada-koichiro"
  },
  {
   "house": "衆議院",
@@ -81,7 +87,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/151.html",
   "id": 7,
-  "party": "自民"
+  "party": "自民",
+  "slug": "kudo-shozo"
  },
  {
   "house": "衆議院",
@@ -93,7 +100,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/156.html",
   "id": 8,
-  "party": "自民"
+  "party": "自民",
+  "slug": "kumada-hiromichi"
  },
  {
   "house": "衆議院",
@@ -105,7 +113,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/187.html",
   "id": 9,
-  "party": "自民"
+  "party": "自民",
+  "slug": "saito-rie"
  },
  {
   "house": "衆議院",
@@ -117,7 +126,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/214.html",
   "id": 10,
-  "party": "自民"
+  "party": "自民",
+  "slug": "suzuki-junji"
  },
  {
   "house": "衆議院",
@@ -129,7 +139,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/225.html",
   "id": 11,
-  "party": "自民"
+  "party": "自民",
+  "slug": "seko-mamiko"
  },
  {
   "house": "衆議院",
@@ -141,7 +152,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/265.html",
   "id": 12,
-  "party": "自民"
+  "party": "自民",
+  "slug": "tsuji-hideki"
  },
  {
   "house": "衆議院",
@@ -153,7 +165,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/280.html",
   "id": 13,
-  "party": "自民"
+  "party": "自民",
+  "slug": "nakagawa-takamoto"
  },
  {
   "house": "衆議院",
@@ -165,7 +178,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/283.html",
   "id": 14,
-  "party": "自民"
+  "party": "自民",
+  "slug": "nagasaka-yasumasa"
  },
  {
   "house": "衆議院",
@@ -177,7 +191,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/318.html",
   "id": 15,
-  "party": "自民"
+  "party": "自民",
+  "slug": "niwa-hideki"
  },
  {
   "house": "衆議院",
@@ -189,7 +204,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/322.html",
   "id": 16,
-  "party": "自民"
+  "party": "自民",
+  "slug": "nemoto-yukinori"
  },
  {
   "house": "衆議院",
@@ -201,7 +217,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/359.html",
   "id": 17,
-  "party": "自民"
+  "party": "自民",
+  "slug": "fujisawa-tadamori"
  },
  {
   "house": "衆議院",
@@ -213,7 +230,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/377.html",
   "id": 18,
-  "party": "自民"
+  "party": "自民",
+  "slug": "hosoda-kenichi"
  },
  {
   "house": "衆議院",
@@ -225,7 +243,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/395.html",
   "id": 19,
-  "party": "自民"
+  "party": "自民",
+  "slug": "mizuno-yoshihiko"
  },
  {
   "house": "衆議院",
@@ -237,7 +256,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/432.html",
   "id": 20,
-  "party": "自民"
+  "party": "自民",
+  "slug": "yamashita-shizuo"
  },
  {
   "house": "衆議院",
@@ -249,7 +269,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/439.html",
   "id": 21,
-  "party": "自民"
+  "party": "自民",
+  "slug": "yamamoto-sakon"
  },
  {
   "house": "衆議院",
@@ -261,7 +282,8 @@
   "kaiha": "自由民主党・無所属の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/455.html",
   "id": 22,
-  "party": "自民"
+  "party": "自民",
+  "slug": "wakayama-shinji"
  },
  {
   "house": "衆議院",
@@ -273,7 +295,8 @@
   "kaiha": "中道改革連合・無所属",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/051.html",
   "id": 23,
-  "party": "中道改革連合"
+  "party": "中道改革連合",
+  "slug": "inukai-akiyoshi"
  },
  {
   "house": "衆議院",
@@ -285,7 +308,8 @@
   "kaiha": "中道改革連合・無所属",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/198.html",
   "id": 24,
-  "party": "中道改革連合"
+  "party": "中道改革連合",
+  "slug": "shigetoku-kazuhiko"
  },
  {
   "house": "衆議院",
@@ -297,7 +321,8 @@
   "kaiha": "中道改革連合・無所属",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/282.html",
   "id": 25,
-  "party": "中道改革連合"
+  "party": "中道改革連合",
+  "slug": "nakagawa-yasuhiro"
  },
  {
   "house": "衆議院",
@@ -309,7 +334,8 @@
   "kaiha": "中道改革連合・無所属",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/308.html",
   "id": 26,
-  "party": "中道改革連合"
+  "party": "中道改革連合",
+  "slug": "nishizono-katsuhide"
  },
  {
   "house": "衆議院",
@@ -321,7 +347,8 @@
   "kaiha": "日本維新の会",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/223.html",
   "id": 27,
-  "party": "維新"
+  "party": "維新",
+  "slug": "seki-kenichiro"
  },
  {
   "house": "衆議院",
@@ -333,7 +360,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/249.html",
   "id": 28,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "tanaka-ken"
  },
  {
   "house": "衆議院",
@@ -345,7 +373,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/263.html",
   "id": 29,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "tanno-midori"
  },
  {
   "house": "衆議院",
@@ -357,7 +386,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/327.html",
   "id": 30,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "nomura-miho"
  },
  {
   "house": "衆議院",
@@ -369,7 +399,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/344.html",
   "id": 31,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "hino-saria"
  },
  {
   "house": "衆議院",
@@ -381,7 +412,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/354.html",
   "id": 32,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "fukuta-toru"
  },
  {
   "house": "衆議院",
@@ -393,7 +425,8 @@
   "kaiha": "国民民主党・無所属クラブ",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/371.html",
   "id": 33,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "furukawa-motohisa"
  },
  {
   "house": "衆議院",
@@ -405,7 +438,8 @@
   "kaiha": "参政党",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/042.html",
   "id": 34,
-  "party": "参政"
+  "party": "参政",
+  "slug": "ito-keisuke"
  },
  {
   "house": "衆議院",
@@ -417,7 +451,8 @@
   "kaiha": "参政党",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/460.html",
   "id": 35,
-  "party": "参政"
+  "party": "参政",
+  "slug": "watanabe-airi"
  },
  {
   "house": "衆議院",
@@ -429,7 +464,8 @@
   "kaiha": "チームみらい",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/221.html",
   "id": 36,
-  "party": "チームみらい"
+  "party": "チームみらい",
+  "slug": "suda-eitaro"
  },
  {
   "house": "衆議院",
@@ -441,7 +477,8 @@
   "kaiha": "無所属",
   "profile": "https://www.shugiin.go.jp/internet/itdb_giinprof.nsf/html/profile/135.html",
   "id": 37,
-  "party": "無所属"
+  "party": "無所属",
+  "slug": "kawamura-takashi"
  },
  {
   "house": "参議院",
@@ -455,7 +492,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7016006.jpg",
   "term_end": "2028-07-25",
   "id": 38,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "ito-takae"
  },
  {
   "house": "参議院",
@@ -469,7 +507,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7010027.jpg",
   "term_end": "2028-07-25",
   "id": 39,
-  "party": "立憲"
+  "party": "立憲",
+  "slug": "saito-yoshitaka"
  },
  {
   "house": "参議院",
@@ -483,7 +522,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7013024.jpg",
   "term_end": "2031-07-28",
   "id": 40,
-  "party": "自民"
+  "party": "自民",
+  "slug": "sakai-yasuyuki"
  },
  {
   "house": "参議院",
@@ -497,7 +537,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7016020.jpg",
   "term_end": "2028-07-25",
   "id": 41,
-  "party": "公明"
+  "party": "公明",
+  "slug": "satomi-ryuji"
  },
  {
   "house": "参議院",
@@ -511,7 +552,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7025033.jpg",
   "term_end": "2031-07-28",
   "id": 42,
-  "party": "参政"
+  "party": "参政",
+  "slug": "sugimoto-junko"
  },
  {
   "house": "参議院",
@@ -525,7 +567,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7019024.jpg",
   "term_end": "2031-07-28",
   "id": 43,
-  "party": "立憲"
+  "party": "立憲",
+  "slug": "tajima-maiko"
  },
  {
   "house": "参議院",
@@ -539,7 +582,8 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7010046.jpg",
   "term_end": "2028-07-25",
   "id": 44,
-  "party": "自民"
+  "party": "自民",
+  "slug": "fujikawa-masahito"
  },
  {
   "house": "参議院",
@@ -553,6 +597,7 @@
   "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7025055.jpg",
   "term_end": "2031-07-28",
   "id": 45,
-  "party": "国民民主"
+  "party": "国民民主",
+  "slug": "mizuno-koichi"
  }
 ]

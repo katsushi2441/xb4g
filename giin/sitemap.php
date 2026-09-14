@@ -10,13 +10,13 @@ header('Content-Type: application/xml; charset=UTF-8');
 $last = substr(g_meta('updated_at'), 0, 10) ?: date('Y-m-d');
 $urls = [
     ['', '1.0', 'daily'],
-    ['giin', '0.9', 'weekly'],
-    ['themes', '0.9', 'weekly'],
+    ['list', '0.9', 'weekly'],
+    ['theme', '0.9', 'weekly'],
     ['compare', '0.7', 'weekly'],
     ['about', '0.5', 'monthly'],
 ];
-foreach (g_themes() as $t) { $urls[] = ['t/' . $t['slug'], '0.9', 'weekly']; }
-foreach (g_all('SELECT id FROM giin ORDER BY id') as $g) { $urls[] = ['g/' . $g['id'], '0.8', 'weekly']; }
+foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly']; }
+foreach (g_all('SELECT slug FROM giin ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.8', 'weekly']; }
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
    . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

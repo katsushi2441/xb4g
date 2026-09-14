@@ -33,16 +33,30 @@ try {
 
 function g_route(string $path, int $page): void
 {
-    if (preg_match('#^/g/(\d+)$#', $path, $m))      { g_page_giin((int)$m[1], $page); return; }
-    if (preg_match('#^/t/([a-z0-9-]+)$#', $path, $m)){ g_page_theme($m[1], $page); return; }
-    if (preg_match('#^/mt/(\d+)$#', $path, $m))      { g_page_meeting((int)$m[1], $page); return; }
+    // ---- 古いURLは 302 で新URLへ送る（公開当日なので検索インデックスの積み上げは無い）----
+    if (preg_match('#^/g/(\d+)$#', $path, $m)) {
+        $g = g_one('SELECT slug FROM giin WHERE id=?', [(int)$m[1]]);
+        if ($g) { g_redirect(g_url($g['slug'])); return; }
+    }
+    if (preg_match('#^/t/([a-z0-9-]+)$#', $path, $m)) { g_redirect(g_url('theme/' . $m[1])); return; }
+    if ($path === '/giin')   { g_redirect(g_url('list')); return; }
+    if ($path === '/themes') { g_redirect(g_url('theme')); return; }
+
+    // ---- いまのURL ----
+    if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
     switch ($path) {
         case '/':        g_page_top(); return;
         case '/search':  g_page_search($page); return;
-        case '/giin':    g_page_list(); return;
-        case '/themes':  g_page_themes(); return;
+        case '/list':    g_page_list(); return;
+        case '/theme':   g_page_themes(); return;
         case '/compare': g_page_compare(); return;
         case '/about':   g_page_about(); return;
+    }
+    // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
+    // 検索結果でも共有先でも「誰のページか」が伝わらない。
+    if (preg_match('#^/([a-z0-9-]+)$#', $path, $m) && !in_array($m[1], G_RESERVED, true)) {
+        $g = g_one('SELECT id FROM giin WHERE slug=?', [$m[1]]);
+        if ($g) { g_page_giin((int)$g['id'], $page); return; }
     }
     http_response_code(404);
     g_head('ページが見つかりません', '', $path, ['noindex' => true]);
@@ -78,8 +92,8 @@ function g_speech(array $s, string $kw = '', bool $show_name = true): void
        . '<b>' . g_e(g_date($s['date'])) . '</b>'
        . '<span class="pill gray">' . g_e($s['house']) . ' ' . g_e($s['meeting']) . '</span>'
        . ($s['issue'] ? '<span class="note">' . g_e($s['issue']) . '</span>' : '')
-       . ($show_name && !empty($s['display'])
-          ? '<a href="' . g_url('g/' . $s['giin_id']) . '">' . g_e($s['display']) . '</a>'
+       . ($show_name && !empty($s['plain'])
+          ? '<a href="' . g_url($s['slug']) . '">' . g_e($s['plain']) . '</a>'
             . '<span class="pill">' . g_e($s['party']) . '</span>' : '')
        . (!empty($s['kind']) && $s['kind'] !== 'q'
           ? '<span class="pill gray">' . g_e(g_kind_label($s['kind'])) . '</span>' : '')
@@ -100,7 +114,19 @@ function g_page_top(): void
     $n  = (int)g_val("SELECT COUNT(*) FROM speech WHERE kind='q'");
     $ng = (int)g_val('SELECT COUNT(*) FROM giin');
     g_head('', '愛知の有権者が選んだ国会議員45人（衆議院 愛知1〜16区・比例東海・参議院 愛知県選挙区）が、'
-        . '国会で何を質問したかを ' . number_format($n) . '件の質疑から引けます。要約はしません。', '/');
+        . '国会で何を質問したかを ' . number_format($n) . '件の質疑から引けます。要約はしません。', '/',
+        ['jsonld' => g_jsonld([
+            ['@type' => 'WebSite', '@id' => g_abs(''), 'url' => g_abs(''), 'name' => G_SITE,
+             'inLanguage' => 'ja',
+             'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
+                 . '国会議員45人が、国会でいつ・どの会議で何を質問したかを引ける道具。',
+             'publisher' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ',
+                             'url' => 'https://xb4g.com/'],
+             'potentialAction' => ['@type' => 'SearchAction',
+                 'target' => ['@type' => 'EntryPoint',
+                              'urlTemplate' => g_abs('search') . '?q={search_term_string}'],
+                 'query-input' => 'required name=search_term_string']],
+        ])]);
     echo '<h1>愛知の国会議員が、国会で何を話したか</h1>'
        . '<p class="lead">衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
        . '<b>' . $ng . '人</b>について、'
@@ -117,14 +143,14 @@ function g_page_top(): void
         $args = [];
         $w = g_words_where($t['words'], $args);
         $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind='q' AND $w", $args);
-        echo '<a class="card" href="' . g_url('t/' . $t['slug']) . '">'
+        echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
            . '<div class="n">' . number_format($c) . '件</div></a>';
     }
     echo '</div>';
 
     echo '<h2>最近の発言</h2>';
-    foreach (g_all('SELECT s.*,g.display,g.party FROM speech s JOIN giin g ON g.id=s.giin_id'
+    foreach (g_all('SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id'
                  . " WHERE s.kind='q' ORDER BY s.date DESC, s.speech_order DESC LIMIT 10") as $s) { g_speech($s); }
     echo '<p><a href="' . g_url('search') . '">もっと探す</a></p>';
 
@@ -154,21 +180,38 @@ function g_giin_grid(): void
 function g_page_giin(int $id, int $page): void
 {
     $g = g_one('SELECT * FROM giin WHERE id=?', [$id]);
-    if (!$g) { http_response_code(404); g_head('見つかりません', '', '/g/' . $id, ['noindex' => true]);
+    if (!$g) { http_response_code(404); g_head('見つかりません', '', '/list', ['noindex' => true]);
         echo '<h1>その議員は収録していません</h1>'; g_foot(); return; }
 
     $ku = g_ku($g['district']);
     $kind = g_kind();
     $counts = ['q' => (int)$g['n_q'], 'gov' => (int)$g['n_gov'], 'chair' => (int)$g['n_chair']];
-    $desc = $g['display'] . '（' . $g['house'] . ' ' . $ku . '・' . $g['party'] . '）が国会で行った質疑'
-          . number_format((int)$g['n_q']) . '件を、日付と会議名と会議録リンクつきで並べています。';
-    g_head($g['display'] . ' の国会発言', $desc, '/g/' . $id);
+    $desc = $g['plain'] . '（' . $g['house'] . ' ' . $ku . '・' . $g['party'] . '）が国会で行った質疑'
+          . number_format((int)$g['n_q']) . '件を、日付・会議名・会議録リンクつきで並べています。'
+          . '要約や論評はしていません。';
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['議員一覧', '/list'], [$g['plain'], '/' . $g['slug']]]),
+        ['@type' => 'ProfilePage', '@id' => g_abs($g['slug']),
+         'url' => g_abs($g['slug']), 'name' => $g['plain'] . 'の国会発言',
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')],
+         'mainEntity' => array_filter([
+             '@type' => 'Person', 'name' => $g['plain'],
+             'alternateName' => $g['kana'],
+             'jobTitle' => $g['house'] . '議員',
+             'affiliation' => ['@type' => 'Organization', 'name' => $g['kaiha']],
+             'url' => $g['profile'] ?: null,
+             'image' => $g['photo'] ?: null,
+         ])],
+    ]);
+    g_head($g['plain'] . 'の国会発言（' . $g['house'] . ' ' . $ku . '）', $desc,
+           '/' . $g['slug'], ['jsonld' => $ld]);
 
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › '
-       . '<a href="' . g_url('giin') . '">議員一覧</a> › ' . g_e($g['display']) . '</nav>';
-    echo '<h1>' . g_e($g['display']) . '</h1>'
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
+       . '<a href="' . g_url('list') . '">議員一覧</a> › ' . g_e($g['plain']) . '</nav>';
+    echo '<h1>' . g_e($g['plain']) . '</h1>'
        . '<p class="lead">' . g_e($g['house']) . '　' . g_e($ku)
        . '　<span class="pill">' . g_e($g['party']) . '</span>'
+       . '　<span class="note">' . g_e($g['kana']) . '</span>'
        . '　<span class="note">会派: ' . g_e($g['kaiha']) . '</span>'
        . ($g['wins'] ? '　<span class="note">当選' . g_e($g['wins']) . '回</span>' : '')
        . '</p>';
@@ -201,7 +244,7 @@ function g_page_giin(int $id, int $page): void
               . ' GROUP BY meeting ORDER BY c DESC LIMIT 12', [$id, $kind]);
     $max = $mt ? (int)$mt[0]['c'] : 1;
     echo '<h2>よく出ている会議</h2>';
-    g_kind_tabs($kind, $counts, g_url('g/' . $id));
+    g_kind_tabs($kind, $counts, g_url($g['slug']));
     if (!$mt) { echo '<div class="panel">この立場の発言はありません。</div>'; }
     else { echo '<div class="scroll"><table><tr><th>会議</th><th class="n">件数</th><th></th></tr>';
     foreach ($mt as $r) {
@@ -222,7 +265,7 @@ function g_page_giin(int $id, int $page): void
     if ($th) {
         echo '<h2>よく触れていることがら</h2><div class="grid">';
         foreach (array_slice($th, 0, 8) as [$t, $c]) {
-            echo '<a class="card" href="' . g_url('t/' . $t['slug']) . '?g=' . $id . '&k=' . $kind . '">'
+            echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '?g=' . $g['slug'] . '&k=' . $kind . '">'
                . '<div class="nm">' . g_e($t['name']) . '</div>'
                . '<div class="n">' . number_format($c) . '件</div></a>';
         }
@@ -235,7 +278,7 @@ function g_page_giin(int $id, int $page): void
     echo '<h2>' . g_e(g_kind_label($kind)) . '（' . number_format($total) . '件）</h2>';
     foreach (g_all('SELECT * FROM speech WHERE giin_id=? AND kind=? ORDER BY date DESC, speech_order DESC'
                  . ' LIMIT ? OFFSET ?', [$id, $kind, $per, $off]) as $s) { g_speech($s, '', false); }
-    g_pager($page, $total, $per, g_url('g/' . $id) . '?k=' . $kind);
+    g_pager($page, $total, $per, g_url($g['slug']) . '?k=' . $kind);
 
     if ($g['profile']) {
         echo '<p style="margin-top:20px"><a href="' . g_e($g['profile']) . '" rel="nofollow noopener" '
@@ -249,10 +292,13 @@ function g_page_giin(int $id, int $page): void
 function g_page_theme(string $slug, int $page): void
 {
     $t = g_theme($slug);
-    if (!$t) { http_response_code(404); g_head('見つかりません', '', '/t/' . $slug, ['noindex' => true]);
+    if (!$t) { http_response_code(404); g_head('見つかりません', '', '/theme', ['noindex' => true]);
         echo '<h1>そのことがらは登録されていません</h1>'; g_foot(); return; }
 
-    $only = (int)($_GET['g'] ?? 0);
+    $onlySlug = preg_replace('/[^a-z0-9-]/', '', (string)($_GET['g'] ?? ''));
+    $who  = $onlySlug !== '' ? g_one('SELECT * FROM giin WHERE slug=?', [$onlySlug]) : null;
+    $only = $who ? (int)$who['id'] : 0;
+    if (!$who) { $onlySlug = ''; }
     $kind = g_kind();
     $args = [];
     $w = g_words_where($t['words'], $args);
@@ -269,25 +315,32 @@ function g_page_theme(string $slug, int $page): void
         $counts[$k] = (int)g_val("SELECT COUNT(*) FROM speech s WHERE $w$e", $a);
     }
 
-    $who = $only ? g_one('SELECT * FROM giin WHERE id=?', [$only]) : null;
-    $title = $t['name'] . 'について、愛知の国会議員は何と言ったか' . ($who ? '（' . $who['display'] . '）' : '');
+    $title = $t['name'] . 'について、愛知の国会議員は何と言ったか' . ($who ? '（' . $who['plain'] . '）' : '');
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['ことがら一覧', '/theme'], [$t['name'], '/theme/' . $slug]]),
+        ['@type' => 'CollectionPage', '@id' => g_abs('theme/' . $slug),
+         'url' => g_abs('theme/' . $slug), 'name' => $title,
+         'about' => ['@type' => 'Thing', 'name' => $t['name']],
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
+    ]);
     g_head($title, $t['lead'] . '愛知の有権者が選んだ国会議員45人の発言から、'
-        . $t['name'] . 'に触れた' . number_format($total) . '件を集めました。', '/t/' . $slug);
+        . $t['name'] . 'に触れた' . number_format($total) . '件を集めました。',
+        '/theme/' . $slug, ['jsonld' => $ld]);
 
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › '
-       . '<a href="' . g_url('themes') . '">ことがら一覧</a> › ' . g_e($t['name']) . '</nav>';
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
+       . '<a href="' . g_url('theme') . '">ことがら一覧</a> › ' . g_e($t['name']) . '</nav>';
     echo '<h1>' . g_e($t['name']) . '</h1><p class="lead">' . g_e($t['lead'])
        . '　該当 <b>' . number_format($total) . '件</b>'
-       . ($who ? '（' . g_e($who['display']) . 'のみ　<a href="' . g_url('t/' . $slug) . '">全員に戻す</a>）' : '')
+       . ($who ? '（' . g_e($who['plain']) . 'のみ　<a href="' . g_url('theme/' . $slug) . '">全員に戻す</a>）' : '')
        . '</p>'
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
-    g_kind_tabs($kind, $counts, g_url('t/' . $slug) . ($only ? '?g=' . $only : ''));
+    g_kind_tabs($kind, $counts, g_url('theme/' . $slug) . ($only ? '?g=' . $onlySlug : ''));
 
     // 議員別の件数
     if (!$only) {
         $gArgs = $args; $gArgs[] = $kind;
-        $rows = g_all("SELECT g.id,g.display,g.party,g.district,g.house,COUNT(*) c
+        $rows = g_all("SELECT g.id,g.display,g.plain,g.slug,g.party,g.district,g.house,COUNT(*) c
                        FROM speech s JOIN giin g ON g.id=s.giin_id WHERE $w AND s.kind=?
                        GROUP BY g.id ORDER BY c DESC", $gArgs);
         if ($rows) {
@@ -295,8 +348,8 @@ function g_page_theme(string $slug, int $page): void
             echo '<h2>だれが何件ふれたか</h2><div class="scroll"><table>'
                . '<tr><th>議員</th><th>選挙区</th><th>会派</th><th class="n">件数</th><th></th></tr>';
             foreach ($rows as $r) {
-                echo '<tr><td><a href="' . g_url('t/' . $slug) . '?g=' . $r['id'] . '&k=' . $kind . '">'
-                   . g_e($r['display']) . '</a></td>'
+                echo '<tr><td><a href="' . g_url('theme/' . $slug) . '?g=' . $r['slug'] . '&k=' . $kind . '">'
+                   . g_e($r['plain']) . '</a></td>'
                    . '<td>' . g_e(g_ku($r['district'])) . '</td>'
                    . '<td><span class="pill">' . g_e($r['party']) . '</span></td>'
                    . '<td class="n">' . number_format((int)$r['c']) . '</td>'
@@ -310,12 +363,12 @@ function g_page_theme(string $slug, int $page): void
     $per = 20; $off = ($page - 1) * $per;
     $lArgs = $kArgs; $lArgs[] = $per; $lArgs[] = $off;
     echo '<h2>' . g_e(g_kind_label($kind)) . '</h2>';
-    foreach (g_all("SELECT s.*,g.display,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
+    foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
                     WHERE $w$extra ORDER BY s.date DESC LIMIT ? OFFSET ?", $lArgs) as $s) {
         g_speech($s, $t['words'][0]);
     }
     g_pager($page, $total, $per,
-            g_url('t/' . $slug) . '?k=' . $kind . ($only ? '&g=' . $only : ''));
+            g_url('theme/' . $slug) . '?k=' . $kind . ($only ? '&g=' . $onlySlug : ''));
     g_foot();
 }
 
@@ -359,7 +412,7 @@ function g_page_search(int $page): void
            . '例：<a href="' . g_url('search') . '?q=' . rawurlencode('南海トラフ') . '">南海トラフ</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('年収の壁') . '">年収の壁</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('リニア') . '">リニア</a></p>'
-           . '<p class="note">よく調べられることがらは<a href="' . g_url('themes') . '">ことがら一覧</a>'
+           . '<p class="note">よく調べられることがらは<a href="' . g_url('theme') . '">ことがら一覧</a>'
            . 'にまとめてあります。</p></div>';
         g_foot(); return;
     }
@@ -376,7 +429,7 @@ function g_page_search(int $page): void
                 . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
     echo '<p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
     $lArgs = $args; $lArgs[] = $per; $lArgs[] = $off;
-    foreach (g_all("SELECT s.*,g.display,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
+    foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
                     WHERE $w ORDER BY s.date DESC LIMIT ? OFFSET ?", $lArgs) as $s) {
         g_speech($s, $q);
     }
@@ -406,7 +459,7 @@ function g_page_list(): void
                          WHEN district LIKE '%東海%' THEN 2 ELSE 3 END,
                     CAST(REPLACE(district,'愛知','') AS INTEGER), display") as $g) {
         echo '<tr><td>' . g_e(g_ku($g['district'])) . '</td>'
-           . '<td><a href="' . g_url('g/' . $g['id']) . '">' . g_e($g['display']) . '</a></td>'
+           . '<td><a href="' . g_url($g['slug']) . '">' . g_e($g['display']) . '</a></td>'
            . '<td><span class="pill">' . g_e($g['party']) . '</span></td>'
            . '<td class="n">' . number_format((int)$g['n_q']) . '</td>'
            . '<td class="n">' . number_format((int)$g['n_gov']) . '</td>'
@@ -427,7 +480,7 @@ function g_page_themes(): void
     foreach (g_themes() as $t) {
         $args = []; $w = g_words_where($t['words'], $args);
         $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind='q' AND $w", $args);
-        echo '<a class="card" href="' . g_url('t/' . $t['slug']) . '">'
+        echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
            . '<div class="mt">' . g_e($t['lead']) . '</div>'
            . '<div class="n">' . number_format($c) . '件</div></a>';
@@ -438,8 +491,9 @@ function g_page_themes(): void
 
 function g_page_compare(): void
 {
-    g_head('ことがら × 議員', '愛知の国会議員45人が、どのことがらに何件ふれたかの一覧です。', '/compare');
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › ことがら × 議員</nav>';
+    g_head('ことがら × 議員', '愛知の国会議員45人が、どのことがらに何件ふれたかの一覧です。', '/compare',
+        ['jsonld' => g_jsonld([g_crumbs([['ホーム', '/'], ['ことがら × 議員', '/compare']])])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › ことがら × 議員</nav>';
     echo '<h1>ことがら × 議員</h1>'
        . '<p class="lead">縦が議員、横がことがら。数字は、その語が出てきた<b>質疑</b>の件数です。'
        . '委員長としての議事整理と、大臣としての答弁は数えていません。</p>'
@@ -452,12 +506,12 @@ function g_page_compare(): void
     foreach ($ts as $t) { echo '<th class="n">' . g_e($t['name']) . '</th>'; }
     echo '</tr>';
     foreach ($gs as $g) {
-        echo '<tr><td><a href="' . g_url('g/' . $g['id']) . '">' . g_e($g['display']) . '</a></td>'
+        echo '<tr><td><a href="' . g_url($g['slug']) . '">' . g_e($g['display']) . '</a></td>'
            . '<td><span class="pill">' . g_e($g['party']) . '</span></td>';
         foreach ($ts as $t) {
             $args = [$g['id']]; $w = g_words_where($t['words'], $args);
             $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.giin_id=? AND s.kind='q' AND $w", $args);
-            echo '<td class="n">' . ($c ? '<a href="' . g_url('t/' . $t['slug']) . '?g=' . $g['id'] . '">'
+            echo '<td class="n">' . ($c ? '<a href="' . g_url('theme/' . $t['slug']) . '?g=' . $g['slug'] . '">'
                 . number_format($c) . '</a>' : '<span class="note">-</span>') . '</td>';
         }
         echo '</tr>';
@@ -466,15 +520,11 @@ function g_page_compare(): void
     g_foot();
 }
 
-function g_page_meeting(int $id, int $page): void
-{
-    g_page_top();
-}
-
 function g_page_about(): void
 {
-    g_head('このサイトについて', '収録の範囲・出典・しないことを書いています。', '/about');
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › このサイトについて</nav>';
+    g_head('このサイトについて', '収録の範囲・出典・しないことを書いています。', '/about',
+        ['jsonld' => g_jsonld([g_crumbs([['ホーム', '/'], ['このサイトについて', '/about']])])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › このサイトについて</nav>';
     echo '<h1>このサイトについて</h1><div class="panel">'
        . '<h2 style="margin-top:0">何をするサイトか</h2>'
        . '<p>愛知の国会議員が、国会でいつ・どの会議で・何と言ったかを引くための道具です。'

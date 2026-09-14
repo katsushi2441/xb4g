@@ -5,8 +5,43 @@ declare(strict_types=1);
 const G_BASE = '/giin';
 const G_SITE = '愛知の国会議員 発言ログ';
 
+/** トップ直下で予約している語。議員の slug がここに当たらないよう守る。
+ *  **const は「その行が実行されたとき」に定義される**ので、ルーティングを
+ *  呼ぶより前に読み込まれるこのファイルに置く（index.php の下に書くと
+ *  Undefined constant になる。2026-09-14 に踏んだ）。 */
+const G_RESERVED = ['list', 'theme', 'compare', 'about', 'search', 'sitemap.xml',
+                    'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt'];
+
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }
 function g_abs(string $p = ''): string { return 'https://xb4g.com' . g_url($p); }
+
+/** 移す先へ送る。**302を使う**（この作業場の決め事。301は使わない）。 */
+function g_redirect(string $to): void
+{
+    header('Location: ' . $to, true, 302);
+    echo '<a href="' . g_e($to) . '">移動しました</a>';
+}
+
+/** 構造化データ。**検索結果に出るパンくずは、URLではなくこれが決める。**
+ *  URLはローマ字にしてコピペを壊さず、表示は日本語にする、という分担。 */
+function g_jsonld(array $nodes): string
+{
+    return '<script type="application/ld+json">'
+        . json_encode(['@context' => 'https://schema.org', '@graph' => $nodes],
+                      JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        . '</script>';
+}
+
+/** パンくず。[[表示名, パス], ...]（最後の1つは現在地） */
+function g_crumbs(array $items): array
+{
+    $list = [];
+    foreach ($items as $i => [$name, $path]) {
+        $list[] = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $name,
+                   'item' => g_abs(ltrim($path, '/'))];
+    }
+    return ['@type' => 'BreadcrumbList', 'itemListElement' => $list];
+}
 
 function g_head(string $title, string $desc = '', string $path = '/', array $x = []): void
 {
@@ -24,6 +59,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<meta property="og:url" content="' . g_e($can) . '">'
        . '<meta property="og:image" content="' . g_abs('ogp.png') . '">'
        . '<meta name="twitter:card" content="summary_large_image">'
+       . ($x['jsonld'] ?? '')
        . '<style>' . g_css() . '</style></head><body>';
     echo '<header class="site"><div class="inner">'
        . '<a class="brand" href="' . g_url('') . '">' . g_e(G_SITE)
@@ -109,8 +145,8 @@ CSS;
 /** 議員の小さなカード */
 function g_card(array $g): string
 {
-    return '<a class="card" href="' . g_url('g/' . $g['id']) . '">'
-        . '<div class="nm">' . g_e($g['display']) . '</div>'
+    return '<a class="card" href="' . g_url($g['slug']) . '">'
+        . '<div class="nm">' . g_e($g['plain']) . '</div>'
         . '<div class="mt">' . g_e($g['house']) . ' ' . g_e(g_ku($g['district'])) . '</div>'
         . '<div class="mt"><span class="pill">' . g_e($g['party']) . '</span></div>'
         . '<div class="n">質疑 ' . number_format((int)$g['n_q']) . '件</div></a>';
