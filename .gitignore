@@ -5,3 +5,4 @@ giin/data/*.sqlite
 giin/data/*.sqlite-journal
 giin/data/fetch.log
 giin/outputs/
+__pycache__/
