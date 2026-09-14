@@ -88,14 +88,12 @@ function g_hot_themes(int $days = 120, int $limit = 6): array
 /** そのことがらで、国会でよく質問している議員の上位。 */
 function g_theme_top(string $slug, int $limit = 3): array
 {
-    $t = g_theme($slug);
-    if (!$t) { return []; }
-    $args = [];
-    $w = g_words_where($t['words'], $args);
-    $args[] = $limit;
-    return g_all("SELECT g.id,g.plain,g.slug,g.party,g.district,COUNT(*) c
-                  FROM speech s JOIN giin g ON g.id=s.giin_id
-                  WHERE s.kind='q' AND $w GROUP BY g.id ORDER BY c DESC LIMIT ?", $args);
+    // **先に数えた表を読む。** 以前はここで LIKE の全走査をしていて、
+    // トップに4つ出すだけで4秒かかっていた（2026-09-15 実測）。
+    return g_all("SELECT g.id,g.plain,g.slug,g.party,g.district,tc.n c
+                  FROM theme_count tc JOIN giin g ON g.id=tc.giin_id
+                  WHERE tc.theme=? AND tc.kind='q' AND tc.giin_id>0 AND tc.n>0
+                  ORDER BY tc.n DESC LIMIT ?", [$slug, $limit]);
 }
 
 /** 議員の公式リンク。**本人の公式サイトに載っているものだけ**を data/links.json に入れてある。
@@ -138,4 +136,38 @@ function g_links_count(): int
 {
     $all = json_decode((string)@file_get_contents(__DIR__ . '/../data/links.json'), true) ?: [];
     return count($all);
+}
+
+/** ことがらの件数。**毎回 LIKE を走らせず、先に数えた表を読む。**
+ *  giin_id=0 は全員ぶんの合計。表が無い設置では LIKE に落ちる。 */
+function g_theme_n(string $theme, string $kind = 'q', int $giin_id = 0): int
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='theme_count'");
+    }
+    if ($has) {
+        return (int)g_val('SELECT n FROM theme_count WHERE theme=? AND giin_id=? AND kind=?',
+                          [$theme, $giin_id, $kind]);
+    }
+    $t = g_theme($theme);
+    if (!$t) { return 0; }
+    $a = [$kind]; $w = g_words_where($t['words'], $a);
+    if ($giin_id > 0) { $a[] = $giin_id; return (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind=? AND $w AND s.giin_id=?", $a); }
+    return (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind=? AND $w", $a);
+}
+
+/** ことがらの発言を引くための WHERE 断片。対応表があれば索引つきの IN を使う。 */
+function g_theme_where(string $theme, array &$args): string
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='speech_theme'");
+    }
+    if ($has) {
+        $args[] = $theme;
+        return 's.speech_id IN (SELECT speech_id FROM speech_theme WHERE theme=?)';
+    }
+    $t = g_theme($theme);
+    return $t ? g_words_where($t['words'], $args) : '1=0';
 }

@@ -187,9 +187,7 @@ function g_page_top(): void
 
     echo '<h2>ことがらから探す</h2><div class="grid">';
     foreach (g_themes() as $t) {
-        $args = [];
-        $w = g_words_where($t['words'], $args);
-        $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind='q' AND $w", $args);
+        $c = g_theme_n($t['slug']);
         echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
            . '<div class="n">' . number_format($c) . '件</div></a>';
@@ -308,9 +306,7 @@ function g_page_giin(int $id, int $page): void
     // よく触れていることがら（質疑のなかだけで数える）
     $th = [];
     foreach (g_themes() as $t) {
-        $args = [$id, $kind];
-        $w = g_words_where($t['words'], $args);
-        $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.giin_id=? AND s.kind=? AND $w", $args);
+        $c = g_theme_n($t['slug'], $kind, $id);
         if ($c > 0) { $th[] = [$t, $c]; }
     }
     usort($th, fn($a, $b) => $b[1] <=> $a[1]);
@@ -395,18 +391,16 @@ function g_page_theme(string $slug, int $page): void
     if (!$who) { $onlySlug = ''; }
     $kind = g_kind();
     $args = [];
-    $w = g_words_where($t['words'], $args);
+    $w = g_theme_where($slug, $args);
     $extra = ' AND s.kind=?';
     $kArgs = $args; $kArgs[] = $kind;
     if ($only) { $extra .= ' AND s.giin_id=?'; $kArgs[] = $only; }
     $total = (int)g_val("SELECT COUNT(*) FROM speech s WHERE $w$extra", $kArgs);
 
-    // 立場ごとの件数（タブ用）
+    // 立場ごとの件数（タブ用）。先に数えた表から読む
     $counts = [];
     foreach (array_keys(G_KINDS) as $k) {
-        $a = $args; $a[] = $k; $e = ' AND s.kind=?';
-        if ($only) { $e .= ' AND s.giin_id=?'; $a[] = $only; }
-        $counts[$k] = (int)g_val("SELECT COUNT(*) FROM speech s WHERE $w$e", $a);
+        $counts[$k] = g_theme_n($slug, $k, $only);
     }
 
     $title = $t['name'] . 'について、愛知の国会議員は何と言ったか' . ($who ? '（' . $who['plain'] . '）' : '');
@@ -442,10 +436,10 @@ function g_page_theme(string $slug, int $page): void
 
     // 議員別の件数
     if (!$only) {
-        $gArgs = $args; $gArgs[] = $kind;
-        $rows = g_all("SELECT g.id,g.display,g.plain,g.slug,g.party,g.district,g.house,COUNT(*) c
-                       FROM speech s JOIN giin g ON g.id=s.giin_id WHERE $w AND s.kind=?
-                       GROUP BY g.id ORDER BY c DESC", $gArgs);
+        $rows = g_all("SELECT g.id,g.display,g.plain,g.slug,g.party,g.district,g.house,tc.n c
+                       FROM theme_count tc JOIN giin g ON g.id=tc.giin_id
+                       WHERE tc.theme=? AND tc.kind=? AND tc.giin_id>0 AND tc.n>0
+                       ORDER BY tc.n DESC", [$slug, $kind]);
         if ($rows) {
             $max = (int)$rows[0]['c'];
             echo '<h2>だれが何件ふれたか</h2><div class="scroll"><table>'
@@ -600,8 +594,7 @@ function g_page_themes(): void
        . '<p class="lead">それぞれ、決めた語が発言に出てきたものを機械的に集めています。'
        . '賛成・反対の判定はしていません。</p><div class="grid">';
     foreach (g_themes() as $t) {
-        $args = []; $w = g_words_where($t['words'], $args);
-        $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.kind='q' AND $w", $args);
+        $c = g_theme_n($t['slug']);
         echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
            . '<div class="mt">' . g_e($t['lead']) . '</div>'
@@ -624,6 +617,12 @@ function g_page_compare(): void
 
     $gs = g_all('SELECT * FROM giin WHERE n_q>0 ORDER BY party, n_q DESC');
     $ts = g_themes();
+    // **1回の問い合わせで全部読む。** 以前はここで 45人×20ことがら＝900回
+    // 走査していて3秒近くかかっていた（2026-09-15 実測）
+    $cnt = [];
+    foreach (g_all("SELECT theme, giin_id, n FROM theme_count WHERE kind='q' AND giin_id>0") as $r) {
+        $cnt[$r['theme']][(int)$r['giin_id']] = (int)$r['n'];
+    }
     echo '<div class="scroll"><table><tr><th>議員</th><th>会派</th>';
     foreach ($ts as $t) { echo '<th class="n">' . g_e($t['name']) . '</th>'; }
     echo '</tr>';
@@ -631,8 +630,7 @@ function g_page_compare(): void
         echo '<tr><td><a href="' . g_url($g['slug']) . '">' . g_e($g['display']) . '</a></td>'
            . '<td><span class="pill">' . g_e($g['party']) . '</span></td>';
         foreach ($ts as $t) {
-            $args = [$g['id']]; $w = g_words_where($t['words'], $args);
-            $c = (int)g_val("SELECT COUNT(*) FROM speech s WHERE s.giin_id=? AND s.kind='q' AND $w", $args);
+            $c = (int)($cnt[$t['slug']][$g['id']] ?? 0);
             echo '<td class="n">' . ($c ? '<a href="' . g_url('theme/' . $t['slug']) . '?g=' . $g['slug'] . '">'
                 . number_format($c) . '</a>' : '<span class="note">-</span>') . '</td>';
         }
