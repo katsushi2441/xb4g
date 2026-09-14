@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 const G_BASE = '/giin';
 const G_SITE = '愛知の国会議員 発言ログ';
+const G_GA4  = 'G-BP0650KDFR';        // xb4g.com 本体と同じ計測ID
 
 /** トップ直下で予約している語。議員の slug がここに当たらないよう守る。
  *  **const は「その行が実行されたとき」に定義される**ので、ルーティングを
@@ -57,9 +58,16 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<meta property="og:title" content="' . g_e($full) . '">'
        . '<meta property="og:description" content="' . g_e($desc) . '">'
        . '<meta property="og:url" content="' . g_e($can) . '">'
-       . '<meta property="og:image" content="' . g_abs('ogp.png') . '">'
+       . '<meta property="og:image" content="' . g_e($x['image'] ?? g_abs('ogp.png')) . '">'
+       . '<meta property="og:image:width" content="1200">'
+       . '<meta property="og:image:height" content="630">'
+       . '<meta property="og:locale" content="ja_JP">'
        . '<meta name="twitter:card" content="summary_large_image">'
        . ($x['jsonld'] ?? '')
+       // 計測は xb4g.com 本体と同じものを使う（GA4 と kurage の simpletrack）
+       . '<script async src="https://www.googletagmanager.com/gtag/js?id=' . G_GA4 . '"></script>'
+       . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}'
+       . 'gtag(\'js\',new Date());gtag(\'config\',\'' . G_GA4 . '\');</script>'
        . '<style>' . g_css() . '</style></head><body>';
     echo '<header class="site"><div class="inner">'
        . '<a class="brand" href="' . g_url('') . '">' . g_e(G_SITE)
@@ -85,7 +93,11 @@ function g_foot(): void
        . '<p>収録期間 ' . g_e($f ?: '—') . ' 以降／最終更新 ' . g_e($u ?: '—')
        . '　<a href="' . g_url('about') . '">このサイトについて</a>'
        . '　<a href="https://xb4g.com/">株式会社エクスブリッジ</a></p>'
-       . '</div></footer></body></html>';
+       . '</div></footer>'
+       . '<script>(function(){var s=document.createElement("script");'
+       . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
+       . '+"&ref="+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>'
+       . '</body></html>';
 }
 
 function g_css(): string

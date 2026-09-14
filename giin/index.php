@@ -127,6 +127,27 @@ function g_page_top(): void
                  'target' => ['@type' => 'EntryPoint',
                               'urlTemplate' => g_abs('search') . '?q={search_term_string}'],
                  'query-input' => 'required name=search_term_string']],
+            // AI検索に「これは何のデータか」を機械可読で渡す
+            ['@type' => 'Dataset', '@id' => g_abs('') . '#dataset',
+             'name' => '愛知の国会議員45人の国会発言',
+             'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
+                 . '国会議員45人について、国会会議録から取得した発言 '
+                 . number_format((int)g_val('SELECT COUNT(*) FROM speech')) . '件。'
+                 . '議員としての質疑・大臣としての答弁・委員長としての議事整理を分けて数えている。'
+                 . '要約や論評は含まない。',
+             'url' => g_abs(''), 'inLanguage' => 'ja',
+             'license' => 'https://www.digital.go.jp/resources/open_data/public_data_license_v1.0',
+             'temporalCoverage' => g_meta('range_from') . '/..',
+             'spatialCoverage' => ['@type' => 'Place', 'name' => '愛知県'],
+             'creator' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ',
+                           'url' => 'https://xb4g.com/'],
+             'isBasedOn' => [
+                 ['@type' => 'Dataset', 'name' => '国会会議録検索システム',
+                  'url' => 'https://kokkai.ndl.go.jp/'],
+                 ['@type' => 'Dataset', 'name' => '参議院議案情報（smartnews-smri／MIT）',
+                  'url' => 'https://github.com/smartnews-smri/house-of-councillors'],
+             ],
+             'variableMeasured' => ['発言日', '会議名', '発言者', '会派', '発言の立場', '選挙区']],
         ])]);
     echo '<h1>愛知の国会議員が、国会で何を話したか</h1>'
        . '<p class="lead">衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
@@ -230,7 +251,7 @@ function g_page_giin(int $id, int $page): void
          ])],
     ]);
     g_head($g['plain'] . 'の国会発言（' . $g['house'] . ' ' . $ku . '）', $desc,
-           '/' . $g['slug'], ['jsonld' => $ld]);
+           '/' . $g['slug'], ['jsonld' => $ld, 'image' => g_abs('img/og/' . $g['slug'] . '.png')]);
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('list') . '">議員一覧</a> › ' . g_e($g['plain']) . '</nav>';
@@ -360,7 +381,7 @@ function g_page_theme(string $slug, int $page): void
     ]);
     g_head($title, $t['lead'] . '愛知の有権者が選んだ国会議員45人の発言から、'
         . $t['name'] . 'に触れた' . number_format($total) . '件を集めました。',
-        '/theme/' . $slug, ['jsonld' => $ld]);
+        '/theme/' . $slug, ['jsonld' => $ld, 'image' => g_abs('img/og/theme-' . $slug . '.png')]);
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('theme') . '">ことがら一覧</a> › ' . g_e($t['name']) . '</nav>';
@@ -487,9 +508,19 @@ function g_page_search(int $page): void
 function g_page_list(): void
 {
     $n = (int)g_val('SELECT COUNT(*) FROM giin');
+    $gsAll = g_all('SELECT plain,slug FROM giin ORDER BY id');
     g_head('議員一覧', '愛知の有権者が選んだ国会議員' . $n . '人（衆議院 愛知1〜16区・比例東海・'
-        . '参議院 愛知県選挙区）の一覧です。', '/giin');
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › 議員一覧</nav>';
+        . '参議院 愛知県選挙区）の一覧です。', '/list',
+        ['image' => g_abs('img/og/list.png'), 'jsonld' => g_jsonld([
+            g_crumbs([['ホーム', '/'], ['議員一覧', '/list']]),
+            ['@type' => 'ItemList', 'name' => '愛知の国会議員 ' . $n . '人',
+             'numberOfItems' => $n,
+             'itemListElement' => array_map(
+                 fn($i, $g) => ['@type' => 'ListItem', 'position' => $i + 1,
+                                'name' => $g['plain'], 'url' => g_abs($g['slug'])],
+                 array_keys($gsAll), $gsAll)],
+        ])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 議員一覧</nav>';
     echo '<h1>愛知の国会議員 ' . $n . '人</h1>'
        . '<p class="lead">衆議院 愛知1〜16区、衆議院 比例東海ブロック、参議院 愛知県選挙区。'
        . '党派では選んでいません。</p>';
@@ -515,9 +546,18 @@ function g_page_list(): void
 
 function g_page_themes(): void
 {
+    $ts = g_themes();
     g_head('ことがら一覧', '年収の壁・南海トラフ・自動車産業など、愛知の国会議員が'
-        . '国会で触れたことがらから発言を引けます。', '/themes');
-    echo '<nav class="crumb"><a href="' . g_url('') . '">トップ</a> › ことがら一覧</nav>';
+        . '国会で触れたことがらから発言を引けます。', '/theme',
+        ['image' => g_abs('img/og/theme.png'), 'jsonld' => g_jsonld([
+            g_crumbs([['ホーム', '/'], ['ことがら一覧', '/theme']]),
+            ['@type' => 'ItemList', 'name' => 'ことがら一覧', 'numberOfItems' => count($ts),
+             'itemListElement' => array_map(
+                 fn($i, $t) => ['@type' => 'ListItem', 'position' => $i + 1,
+                                'name' => $t['name'], 'url' => g_abs('theme/' . $t['slug'])],
+                 array_keys($ts), $ts)],
+        ])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › ことがら一覧</nav>';
     echo '<h1>ことがらから探す</h1>'
        . '<p class="lead">それぞれ、決めた語が発言に出てきたものを機械的に集めています。'
        . '賛成・反対の判定はしていません。</p><div class="grid">';
@@ -566,8 +606,39 @@ function g_page_compare(): void
 
 function g_page_about(): void
 {
+    $faq = [
+        ['このサイトは何をするものですか？',
+         '愛知の国会議員が、国会でいつ・どの会議で何を質問したかを引くための道具です。'
+         . '発言の抜粋と、国会会議録へのリンクを並べています。要約や論評はしません。'],
+        ['だれを収録していますか？',
+         '愛知の有権者だけが投票用紙に書ける候補を収録しています。衆議院 愛知1区〜16区、'
+         . '衆議院 比例代表 東海ブロック、参議院 愛知県選挙区の45人です。'
+         . '参議院の比例代表は全国共通なので入れていません。党派では選んでいません。'],
+        ['発言の件数はどう数えていますか？',
+         '議員として質問・討論した発言だけを既定で数えています。委員長としての議事整理'
+         . '（「次に、○○君。」）や、大臣・副大臣としての答弁は別に数えています。'
+         . '混ぜると、委員長を務めた議員の件数が跳ね上がって「よく質問している人」に'
+         . '見えてしまうためです。ある議員は収録期間の発言601件のうち、'
+         . '議員としての質疑は5件で、596件は委員長としての議事整理でした。'],
+        ['データの出典はどこですか？',
+         '発言は国立国会図書館の国会会議録検索システム、衆議院議員の名簿は衆議院の'
+         . '会派別議員一覧、参議院議員の名簿は smartnews-smri/house-of-councillors（MIT）、'
+         . '議案は参議院の議案情報、報道発表は厚生労働省・国土交通省・総務省・内閣府・'
+         . 'デジタル庁・文部科学省の各ホームページ（公共データ利用規約 PDL1.0）です。'],
+        ['AIは使っていますか？',
+         '使っていません。発言の立場の分類も、ことがらへの割り当ても、'
+         . '決めた語による機械的な判定です。要約も論評も生成していません。'],
+        ['特定の政党を応援するサイトですか？',
+         'いいえ。党派を問わず、愛知の有権者が投票できる国会議員を全員収録しています。'
+         . '選挙運動を目的としたサイトではありません。'],
+    ];
     g_head('このサイトについて', '収録の範囲・出典・しないことを書いています。', '/about',
-        ['jsonld' => g_jsonld([g_crumbs([['ホーム', '/'], ['このサイトについて', '/about']])])]);
+        ['jsonld' => g_jsonld([
+            g_crumbs([['ホーム', '/'], ['このサイトについて', '/about']]),
+            ['@type' => 'FAQPage', 'mainEntity' => array_map(
+                fn($q) => ['@type' => 'Question', 'name' => $q[0],
+                           'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]]], $faq)],
+        ])]);
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › このサイトについて</nav>';
     echo '<h1>このサイトについて</h1><div class="panel">'
        . '<h2 style="margin-top:0">何をするサイトか</h2>'
@@ -633,6 +704,11 @@ function g_page_about(): void
        . '<p>収録の誤り、人物の取り違え、掲載をやめてほしいというご連絡は '
        . '<a href="mailto:info@exbridge.jp">info@exbridge.jp</a> までお願いします。'
        . '確認のうえ、速やかに直すか取り下げます。</p>'
+
+       . '<h2>よくある質問</h2>'
+       . implode('', array_map(
+           fn($q) => '<h3 style="font-size:15px;margin:14px 0 4px">' . g_e($q[0]) . '</h3>'
+                   . '<p>' . g_e($q[1]) . '</p>', $faq))
 
        . '<h2>運営</h2>'
        . '<p>株式会社エクスブリッジ（名古屋市瑞穂区）。'

@@ -12,3 +12,5 @@ __pycache__/
 # 上書きしてしまう（2026-09-14に実際に起きた。ブログ一覧が8/28へ巻き戻った）。
 content/cache/
 giin/data/update_report.json
+# ページごとのOGPは scripts/make_ogp_all.py で作り直せる生成物（67枚・10MB）
+giin/img/og/
