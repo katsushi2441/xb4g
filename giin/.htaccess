@@ -1,0 +1,19 @@
+# xb4g.com の既定PHPは5.6。このハンドラで8.3になる（親の .htaccess と同じ書式にそろえる）。
+AddHandler application/x-httpd-php .php
+AddCharset UTF-8 .php
+
+# /giin/g/12 のようなURLを index.php に渡す。実在するファイルはそのまま返す。
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /giin/
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ index.php [L]
+</IfModule>
+
+# SQLite とスクリプトは配らない
+<FilesMatch "\.(sqlite|sqlite-journal|json|py|log)$">
+  Require all denied
+</FilesMatch>

@@ -28,6 +28,8 @@ $BANNERS = [
     ['url' => 'https://exbridge.jp/saas/',            'eyebrow' => 'SaaS→OSS対応表', 'title' => 'いま使っているSaaSの名前から探す', 'desc' => 'サービス名を入口に、置き換え候補と移行の勘所をまとめました。', 'tone' => 'blue'],
     ['url' => 'https://exbridge.jp/solution/',        'eyebrow' => '業種・業務別ソリューション', 'title' => 'あなたの業種で、何をやめられるか', 'desc' => '業種ごとに固定費の減らし方と、買い切りで置き換える道筋を示します。', 'tone' => 'violet'],
     ['url' => 'https://exbridge.jp/ai-system/',       'eyebrow' => 'AIでできること', 'title' => '経営課題から、AIの使い道を探す', 'desc' => '「何ができるか」ではなく「何が解決するか」から引ける一覧です。', 'tone' => 'amber'],
+    // 第4世代のテーマ「政治・社会の課題に対応する情報技術」の1本目
+    ['url' => 'https://xb4g.com/giin/',               'eyebrow' => '政治・社会の課題', 'title' => 'その議員は国会で、何と言いましたか', 'desc' => '愛知の有権者が選んだ国会議員45人の質疑を、日付と会議名と会議録リンクで引けます。要約も論評もしません。', 'tone' => 'teal'],
 ];
 $SERVICES = [
     ['url' => 'https://exbridge.jp/outsourcing/',               'title' => '業務のAI自動化（全48業務）', 'desc' => '外注・代行を探す前に。データ入力・経理・SNS運用などをAIの仕組みで社内に残す。'],

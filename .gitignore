@@ -1,3 +1,7 @@
 decap-oauth-config.php
 deploy-config.php
 google*.html
+giin/data/*.sqlite
+giin/data/*.sqlite-journal
+giin/data/fetch.log
+giin/outputs/
