@@ -132,3 +132,10 @@ function g_xposts(int $giin_id, int $limit = 6, bool $with_rt = false): array
         return [];
     }
 }
+
+/** 公式リンクを入れ終えた人数。**「全員ぶんある」と誤解させないため、実数を画面に出す。** */
+function g_links_count(): int
+{
+    $all = json_decode((string)@file_get_contents(__DIR__ . '/../data/links.json'), true) ?: [];
+    return count($all);
+}
