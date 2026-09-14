@@ -163,7 +163,10 @@ border-radius:999px;padding:6px 14px;text-decoration:none;color:#12202f}
 font-size:34px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
 .vmeta{padding:9px 11px;font-size:13.5px;line-height:1.6}
 .vmeta a{display:block;margin-top:2px}
-.xtl{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:8px;max-width:560px}
+.xp{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.xp .m{font-size:12.5px;color:#5d6b7a;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.xp .t{margin:6px 0 0;font-size:14.5px;line-height:1.75;white-space:pre-wrap}
+.xp .lk{font-size:12.5px;margin-top:7px}
 table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
 th,td{border:1px solid #e3e9ec;padding:8px 10px;text-align:left;vertical-align:top}
 th{background:#f5f8f9;white-space:nowrap}
@@ -274,4 +277,18 @@ function g_video_grid(array $vs): string
         . 'i.src="https://www.youtube-nocookie.com/embed/"+c.dataset.vid+"?autoplay=1&rel=0";'
         . 'i.title="YouTube";i.allow="accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture";'
         . 'i.allowFullscreen=true;i.loading="lazy";b.replaceWith(i)})});</script>';
+}
+
+/** Xの投稿1件。**抜粋とXへのリンクだけ。本文の全文はXで読んでもらう。** */
+function g_xpost(array $p): string
+{
+    $u = 'https://x.com/' . rawurlencode($p['screen_name']) . '/status/' . rawurlencode($p['post_id']);
+    $t = g_excerpt($p['body'], 220);
+    return '<div class="xp"><div class="m"><b>' . g_e($p['posted']) . '</b>'
+        . '<span class="pill gray">@' . g_e($p['screen_name']) . '</span>'
+        . ((int)$p['is_repost'] ? '<span class="pill gray">リポスト</span>' : '')
+        . '</div>'
+        . '<p class="t">' . g_e($t) . '</p>'
+        . '<div class="lk"><a href="' . g_e($u) . '" rel="nofollow noopener" target="_blank">'
+        . 'Xで読む</a></div></div>';
 }

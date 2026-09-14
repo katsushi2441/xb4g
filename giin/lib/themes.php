@@ -119,3 +119,16 @@ function g_videos(int $giin_id, int $limit = 6): array
         return [];   // video 表がまだ無い設置でも画面を壊さない
     }
 }
+
+/** 公式Xの新着。Xの埋め込みが読んでいる公開ページから取り込んだもの（APIキー不使用）。
+ *  既定では**本人の投稿だけ**。RTは本人の言葉ではないので混ぜない。 */
+function g_xposts(int $giin_id, int $limit = 6, bool $with_rt = false): array
+{
+    $w = $with_rt ? '' : ' AND is_repost=0';
+    try {
+        return g_all("SELECT * FROM xpost WHERE giin_id=?$w ORDER BY posted DESC LIMIT ?",
+                     [$giin_id, $limit]);
+    } catch (PDOException $e) {
+        return [];
+    }
+}

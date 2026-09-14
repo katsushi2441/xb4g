@@ -346,19 +346,24 @@ function g_page_giin(int $id, int $page): void
                 . 'target="_blank">チャンネルをすべて見る</a></p>' : '');
     }
 
-    // Xは公式の埋め込みに任せる。**APIで取ってきて自前で並べない**
-    // （他人のポストの読み取りは従量課金で、規約も厳しい。埋め込みなら本家がそのまま出す）
-    if (!empty($L['x'])) {
-        $xu = preg_replace('#^https?://(www\.)?twitter\.com/#', 'https://x.com/', $L['x']);
-        echo '<h2>Xの新着</h2>'
-           . '<p class="note">X の公式の埋め込みです。当サイトが投稿を保存・加工しているわけではありません。'
-           . '読み込むと X に通信します。</p>'
-           . '<div class="xtl"><a class="twitter-timeline" data-height="520" data-dnt="true" '
-           . 'data-chrome="noheader nofooter transparent" href="' . g_e($xu) . '">'
-           . g_e($g['plain']) . 'のポスト</a></div>'
-           . '<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>'
-           . '<p style="margin-top:8px"><a href="' . g_e($xu) . '" rel="nofollow noopener" target="_blank">'
-           . 'Xで見る</a></p>';
+    // 公式Xの新着。**Xの埋め込みが読んでいる公開ページ**から取り込んだもの（APIキー不使用）。
+    // 自分のログインで他人のタイムラインを取りに行くことはしない。
+    $xps = g_xposts((int)$g['id'], 5);
+    if ($xps || !empty($L['x'])) {
+        $xu = !empty($L['x'])
+            ? preg_replace('#^https?://(www\.)?twitter\.com/#', 'https://x.com/', $L['x']) : '';
+        echo '<h2>公式Xの新着</h2>';
+        if ($xps) {
+            echo '<p class="note">本人の投稿だけを出しています（リポストは除いています）。'
+               . '抜粋なので、全文はXでご確認ください。当サイトは要約していません。</p>';
+            foreach ($xps as $p) { echo g_xpost($p); }
+        } else {
+            echo '<p class="note">まだ取り込めていません。</p>';
+        }
+        if ($xu) {
+            echo '<p style="margin-top:8px"><a href="' . g_e($xu) . '" rel="nofollow noopener" '
+               . 'target="_blank">Xですべて見る</a></p>';
+        }
     }
 
     // 発言一覧
@@ -731,9 +736,12 @@ function g_page_about(): void
        . '<p>公式YouTubeの新着は、チャンネルのRSSからタイトル・日付・サムネイルだけを取り込んでいます。'
        . '<b>サムネイルを押すまで YouTube を読み込みません。</b>再生は YouTube の公式埋め込みに任せており、'
        . '当サイトは動画の中身を持っていません。要約もしません。</p>'
-       . '<p>X は公式の埋め込みです。'
-       . '<b>APIで投稿を取ってきて自前で並べることはしていません。</b>'
-       . '本家がそのまま表示します（読み込むと X に通信します）。</p>'
+       . '<p>公式Xの新着は、<b>Xの埋め込みウィジェットが読んでいるのと同じ公開ページ</b>から'
+       . '取り込んでいます。開発者APIもキーも使っていません。'
+       . '当サイトのログインで他人のタイムラインを取りに行くこともしていません。</p>'
+       . '<p>持っているのは本文・日付・投稿IDだけで、画像も動画も持ちません。'
+       . '出しているのは抜粋なので、全文はXでご確認ください。要約はしていません。'
+       . '<b>リポストは本人の言葉ではないので、既定では出していません。</b></p>'
 
        . '<h2>出典</h2><ul>'
        . '<li>議案：<a href="https://github.com/smartnews-smri/house-of-councillors" '
