@@ -134,6 +134,9 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("公式Xの新着", [PY, os.path.join(SCRIPTS, "fetch_x.py")]),
         # **画面で LIKE を走らせないための対応表。** 発言やことがらを足したら作り直す
         ("ことがらの対応表", [PY, os.path.join(SCRIPTS, "build_theme_index.py")]),
+        # この議員だけが言っている語。**発言が増えると「唯一」でなくなることがあるので毎日作り直す**
+        ("その議員だけの語", [PY, os.path.join(SCRIPTS, "build_uniq_terms.py")]),
+        ("共有カード", [PY, os.path.join(SCRIPTS, "make_uniq_cards.py")]),
         # 新しい材料が入ったあとに考察を作り直す。**必ず対応表のあと**（ことがらの順位を使うため）
         ("いまの時点でのAI考察", [PY, os.path.join(SCRIPTS, "build_insight.py")]),
     ]:

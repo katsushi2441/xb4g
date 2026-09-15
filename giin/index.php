@@ -282,8 +282,13 @@ function g_page_giin(int $id, int $page): void
              'image' => $g['photo'] ?: null,
          ])],
     ]);
+    // 固有の語があるなら、共有カードをOGPにする。SNSに貼られたとき、
+    // 「この議員だけが取り上げていること」が最初に目に入るほうが読まれる。
+    $ogimg = g_uniq_count((int)$g['id']) > 0
+        ? g_abs('img/uniq/' . $g['slug'] . '.png')
+        : g_abs('img/og/' . $g['slug'] . '.png');
     g_head($g['plain'] . 'の国会発言（' . $g['house'] . ' ' . $ku . '）', $desc,
-           '/' . $g['slug'], ['jsonld' => $ld, 'image' => g_abs('img/og/' . $g['slug'] . '.png')]);
+           '/' . $g['slug'], ['jsonld' => $ld, 'image' => $ogimg]);
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('list') . '">議員一覧</a> › ' . g_e($g['plain']) . '</nav>';
@@ -312,6 +317,45 @@ function g_page_giin(int $id, int $page): void
        . '</div>';
 
     echo g_insight_html(g_insight('giin', $g['slug']), 'いま何に取り組んでいるか');
+
+    // **この議員だけが国会で言っている語。** 件数の多い少ないは立場で決まるので
+    // 順位はつけられないが、「この人だけが取り上げている」は立場と関係がない。
+    $uq = g_uniq_terms((int)$g['id'], 8);
+    if ($uq) {
+        $all = g_uniq_count((int)$g['id']);
+        echo '<h2>' . g_e($g['plain']) . '議員だけが国会で取り上げていること</h2>'
+           . '<div class="panel uniq"><p>愛知の有権者の一票が当落に効く国会議員'
+           . (int)g_val('SELECT COUNT(*) FROM giin') . '人のうち、'
+           . '<b>この言葉を国会で使っているのは' . g_e($g['plain']) . '議員だけ</b>です。</p>'
+           . '<div class="scroll"><table><tr><th>言葉</th><th class="n">回数</th><th class="n">日数</th></tr>';
+        foreach ($uq as $t) {
+            echo '<tr><td><a href="' . g_url('search') . '?q=' . rawurlencode($t['term'])
+               . '&amp;g=' . g_e($g['slug']) . '">' . g_e($t['term']) . '</a></td>'
+               . '<td class="n"><b>' . (int)$t['n'] . '</b></td>'
+               . '<td class="n">' . (int)$t['days'] . '日</td></tr>';
+        }
+        echo '</table></div>';
+        if ($all > count($uq)) {
+            echo '<p class="note">ほかに' . ($all - count($uq)) . '語あります。</p>';
+        }
+        echo '<p class="note">45人の質疑' . number_format((int)g_val('SELECT SUM(n_q) FROM giin'))
+           . '件を全部読み、<b>4回以上・2日以上にまたがって使われた語</b>のうち、'
+           . 'ほかの44人が一度も使っていないものを機械的に拾いました。'
+           . '多い少ないの比較ではありません。</p>';
+        // 貼れる1枚。**議員本人・事務所が使えるように、保存先をそのまま示す。**
+        $card = g_abs('img/uniq/' . $g['slug'] . '.png');
+        $share = 'https://twitter.com/intent/tweet?text='
+               . rawurlencode($g['plain'] . '議員だけが国会で取り上げていること') . '&url='
+               . rawurlencode(g_abs($g['slug']));
+        echo '<p><img src="' . g_e($card) . '" alt="'
+           . g_e($g['plain']) . '議員だけが国会で取り上げていること" loading="lazy"'
+           . ' style="width:100%;max-width:100%;border:1px solid #e3e9ec;border-radius:12px"></p>'
+           . '<p class="note">この画像は自由にお使いいただけます（出典として'
+           . g_e(G_HOST . G_BASE . '/' . $g['slug']) . 'を添えてください）。'
+           . '　<a href="' . g_e($card) . '" download>画像を保存</a>'
+           . '　<a href="' . g_e($share) . '" rel="nofollow noopener" target="_blank">Xで共有</a></p>'
+           . '</div>';
+    }
 
     if ((int)$g['n_speech'] === 0) {
         echo '<div class="panel"><p>この期間（' . g_e(g_meta('range_from')) . ' 以降）に、'

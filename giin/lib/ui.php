@@ -155,6 +155,7 @@ h2{font-size:18px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid 
 .crumb{font-size:13px;color:#5d6b7a;margin-bottom:10px}
 .panel{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:16px;margin-bottom:14px}
 .panel.insight{border-left:4px solid #0a9a8f}
+.panel.uniq{border-left:4px solid #2b4a8b}
 .panel.insight p{line-height:1.85;margin:0 0 10px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:12px}
 .card{display:block;background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:13px 14px;

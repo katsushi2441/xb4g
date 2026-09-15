@@ -319,3 +319,26 @@ function g_ai_years(string $kind = 'q'): array
                   JOIN speech_theme st ON st.speech_id = s.speech_id AND st.theme='ai'
                   WHERE s.kind=? GROUP BY y ORDER BY y", [$kind]);
 }
+
+/** この議員だけが国会で言っている語。**この道具にしか出せない数字。**
+ *  本家の会議録検索は全文検索なので「誰だけが言っているか」を出せない。
+ *  表が無い設置では空を返す（配布物がいきなり壊れない）。 */
+function g_uniq_terms(int $giin_id, int $limit = 8): array
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='uniq_term'");
+    }
+    if (!$has) { return []; }
+    return g_all('SELECT term, n, days FROM uniq_term WHERE giin_id=?'
+               . ' ORDER BY n DESC, term LIMIT ?', [$giin_id, $limit]);
+}
+
+function g_uniq_count(int $giin_id): int
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='uniq_term'");
+    }
+    return $has ? (int)g_val('SELECT COUNT(*) FROM uniq_term WHERE giin_id=?', [$giin_id]) : 0;
+}
