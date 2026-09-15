@@ -132,6 +132,12 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("議案と報道発表", [PY, os.path.join(SCRIPTS, "fetch_news.py"), "--days", str(days_news)]),
         ("公式YouTubeの新着", [PY, os.path.join(SCRIPTS, "fetch_youtube.py")]),
         ("公式Xの新着", [PY, os.path.join(SCRIPTS, "fetch_x.py")]),
+        # **RSSは新着15本しか返さない。** 過去の質疑と対応づけるには全部が要る
+        ("公式YouTubeの全動画", [PY, os.path.join(SCRIPTS, "fetch_youtube_all.py")]),
+        ("質疑と動画の対応づけ", [PY, os.path.join(SCRIPTS, "build_speech_video.py")]),
+        # **子どもの自殺の統計。** 事務所が「知らない」状態をなくすために毎日見る。
+        # 報道ではなく公表統計を軸にする（報道されなかった子も数に入る）
+        ("子どもの自殺の統計", [PY, os.path.join(SCRIPTS, "fetch_jisatsu.py")]),
         # **画面で LIKE を走らせないための対応表。** 発言やことがらを足したら作り直す
         ("ことがらの対応表", [PY, os.path.join(SCRIPTS, "build_theme_index.py")]),
         # この議員だけが言っている語。**発言が増えると「唯一」でなくなることがあるので毎日作り直す**

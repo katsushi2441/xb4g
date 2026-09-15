@@ -400,6 +400,91 @@ function g_page_giin(int $id, int $page): void
         echo '</div><p class="note">語がその発言に出てきた回数です。賛成・反対の判定はしていません。</p>';
     }
 
+    // **その議員が扱っていることがらの、公開データ。**
+    // 議員ごとに数字を選ぶと恣意が入るので、ことがら単位で持っているものを
+    // 「よく取り上げていることがら」の上位から順に出す。
+    $st = [];
+    foreach (g_themes() as $t) {
+        if (g_theme_n($t['slug'], 'q', $id) > 0) {
+            foreach (g_stats($t['slug']) as $one) { $st[] = $one; }
+        }
+        if (count($st) >= 3) { break; }
+    }
+    echo g_stats_html(array_slice($st, 0, 3),
+        g_e($g['plain']) . '議員が国会で取り上げていることがらについて、'
+      . '国や自治体が公表している数字です。議員ごとに選んだものではなく、'
+      . 'ことがらごとに登録しているものを出しています。');
+
+    // **注目してほしい会議録。** こちらが重要だと選ぶと論評になるので、
+    // 本人・事務所から教わったものを data/links.json に登録して出す。
+    // 抜粋は会議録そのものから取り、要約はしない。
+    $hl = g_highlights($g['slug']);
+    if ($hl) {
+        echo '<h2>注目してほしい会議録</h2>'
+           . '<p class="note">' . g_e($g['plain']) . '議員ご本人の発信をもとに登録したものです。'
+           . '<b>当サイトが重要だと判断して選んだものではありません。</b>'
+           . '抜粋は会議録そのままで、要約はしていません。</p>';
+        foreach ($hl as $h) {
+            echo '<div class="panel hl"><h3 style="margin-top:0">' . g_e($h['title']) . '</h3>'
+               . '<p class="note">' . g_e($h['date']) . '　' . g_e($h['meeting']) . '</p>';
+            // **発言ごとに、その中で最も特徴的な1文だけを抜く。** 同じ言葉を
+            // 何度も出すと、同じ抜粋が並んで読みにくくなる（実際にそうなった）。
+            $words = $h['words'] ?? [];
+            $shown = [];
+            foreach (($h['speeches'] ?? []) as $sid) {
+                $e = g_kaigi_excerpt($sid, $words, 3);
+                if (!$e || !$e['excerpts']) { continue; }
+                foreach ($e['excerpts'] as $x) {
+                    if (in_array($x, $shown, true)) { continue; }
+                    $shown[] = $x;
+                    echo '<blockquote class="kaigi">' . g_e($x)
+                       . '<br><a class="note" href="' . g_e($e['speech_url'])
+                       . '" rel="nofollow noopener" target="_blank">この発言を会議録で読む</a>'
+                       . '</blockquote>';
+                }
+            }
+            if (!empty($h['video'])) {
+                echo '<p><a href="https://www.youtube.com/watch?v=' . g_e($h['video'])
+                   . '" rel="nofollow noopener" target="_blank">'
+                   . g_e($h['video_note'] ?: '本人の動画を見る') . '</a></p>';
+            }
+            echo '<p class="note">登録の根拠：' . g_e($h['source'] ?? '—')
+               . '（' . g_e($h['checked_at'] ?? '') . '確認）</p></div>';
+        }
+    }
+
+    // **質疑をした日と、その日の公式動画。** 会議録は読むもの、動画は聞くもので、
+    // 同じ日の仕事を両側から辿れるのは、両方を持っているこの道具だけである。
+    $sv = g_speech_videos($id);
+    if ($sv) {
+        $days = g_all("SELECT date, meeting, COUNT(*) n FROM speech
+                       WHERE giin_id=? AND kind='q' GROUP BY date, meeting
+                       ORDER BY date DESC", [$id]);
+        echo '<h2>その日の質疑と、本人の動画</h2>'
+           . '<p class="note">質疑をした日と、'
+           . g_e($g['plain']) . '議員の公式YouTubeにある同じ日の動画を並べました。'
+           . '会議録で読むか、動画で聞くかを選べます。'
+           . '<b>動画の題名に日付が入っているものだけ</b>を機械的に対応づけています。</p>'
+           . '<div class="scroll"><table>'
+           . '<tr><th>日</th><th>会議</th><th class="n">質疑</th><th>本人の動画</th></tr>';
+        foreach ($days as $d) {
+            $k = substr($d['date'], 0, 10);
+            $vs = $sv[$k] ?? [];
+            echo '<tr><td>' . g_e($k) . '</td><td>' . g_e($d['meeting']) . '</td>'
+               . '<td class="n">' . (int)$d['n'] . '件</td><td>';
+            if ($vs) {
+                foreach ($vs as $v) {
+                    echo '<a href="https://www.youtube.com/watch?v=' . g_e($v['video_id']) . '"'
+                       . ' rel="nofollow noopener" target="_blank">' . g_e($v['title']) . '</a><br>';
+                }
+            } else {
+                echo '<span class="note">—</span>';
+            }
+            echo '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+
     // この議員が提出者になっている議案
     $mine = g_news('', 10, $id);
     if ($mine) {
@@ -502,6 +587,10 @@ function g_page_theme(string $slug, int $page): void
        . '</p>'
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
+    echo g_stats_html(g_stats($slug),
+        'このことがらに関わる、国や自治体が公表している数字です。'
+      . '当サイトが公表資料から書き写したもので、要約も推計もしていません。');
+
     // このことがらの最近の動き（議案・省庁の報道発表）
     $nw = g_news($slug, 6);
     echo '<h2>このことがらの最近の動き</h2>'

@@ -1,0 +1,40 @@
+{
+ "checked_at": "2026-09-15",
+ "year": {
+  "total": 538,
+  "diff": 9,
+  "record_since": 1980,
+  "is_record": true,
+  "breakdown": {
+   "小学生": 10,
+   "中学生": 172,
+   "高校生": 356
+  },
+  "era": "令和７年",
+  "source_url": "https://www.npa.go.jp/safetylife/seianki/jisatsu/R08/R7jisatsunojoukyou.pdf",
+  "source": "警察庁・厚生労働省「自殺の状況」"
+ },
+ "month": {
+  "asof": "７月",
+  "total": 10605,
+  "monthly": [
+   1542,
+   1381,
+   1701,
+   1556,
+   1614,
+   1498,
+   1313,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "source_url": "https://www.npa.go.jp/safetylife/seianki/jisatsu/R08/zantei0807.pdf",
+  "source": "警察庁「月別の自殺者数について（暫定値）」",
+  "note": "総数のみ。小中高生の内訳は月次では公表されていない。"
+ },
+ "mext_note": "背景調査の実施件数・遺族への説明件数は 文部科学省「児童生徒の問題行動・不登校等調査」から。様式が毎年変わるため data/stats.json に人が登録する。",
+ "changed": true
+}

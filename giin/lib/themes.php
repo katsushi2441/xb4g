@@ -342,3 +342,90 @@ function g_uniq_count(int $giin_id): int
     }
     return $has ? (int)g_val('SELECT COUNT(*) FROM uniq_term WHERE giin_id=?', [$giin_id]) : 0;
 }
+
+/** 質疑をした日と、その日の公式動画。**会議録と動画の両方を持つ道具にしかできない。**
+ *  表が無い設置では空を返す。 */
+function g_speech_videos(int $giin_id): array
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='speech_video'");
+    }
+    if (!$has) { return []; }
+    $rows = g_all("SELECT sv.date, v.video_id, v.title, v.thumb
+                   FROM speech_video sv JOIN video v ON v.video_id = sv.video_id
+                   WHERE sv.giin_id=? ORDER BY sv.date DESC, v.title", [$giin_id]);
+    $by = [];
+    foreach ($rows as $r) { $by[$r['date']][] = $r; }
+    return $by;
+}
+
+/** 注目してほしい会議録。**こちらが「重要だ」と選ぶと論評になる。**
+ *  公式サイトのURLと同じで、本人・事務所から教わったものを data/links.json に登録する。
+ *  抜粋は会議録そのものから取り、要約はしない。 */
+function g_highlights(string $slug): array
+{
+    $L = g_links($slug);
+    return is_array($L['highlights'] ?? null) ? $L['highlights'] : [];
+}
+
+/** 会議録の発言を、指定の語のまわりで抜き出す。**要約しない。** */
+function g_kaigi_excerpt(string $speech_id, array $words, int $max = 3): array
+{
+    $r = g_one('SELECT body, speech_url, date, meeting FROM speech WHERE speech_id=?', [$speech_id]);
+    if (!$r) { return []; }
+    $body = preg_replace('/\s+/u', ' ', (string)$r['body']);
+    $out = [];
+    // 文の区切りで切る。語の前後を字数で切ると文の途中から始まって読みにくい。
+    $sentences = preg_split('/(?<=。)/u', $body, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    foreach ($words as $w) {
+        foreach ($sentences as $sent) {
+            if (mb_strpos($sent, $w, 0, 'UTF-8') !== false) {
+                $t = trim($sent);
+                if ($t !== '' && !in_array($t, $out, true)) { $out[] = $t; }
+                break;
+            }
+        }
+        if (count($out) >= $max) { break; }
+    }
+    $r['excerpts'] = $out;
+    return $r;
+}
+
+/** ことがらに関連する公開統計。**数値はAIに書かせず、公表資料から人が書き写したもの。**
+ *  議員ごとではなく、ことがらごとに持つ。45人全員に同じものが出るので中立が保てる。 */
+function g_stats(string $theme): array
+{
+    static $all = null;
+    if ($all === null) {
+        $j = json_decode((string)@file_get_contents(__DIR__ . '/../data/stats.json'), true);
+        $all = is_array($j['stats'] ?? null) ? $j['stats'] : [];
+    }
+    return array_values(array_filter($all, fn($s) => ($s['theme'] ?? '') === $theme));
+}
+
+/** 統計の描画。**出典と時点を必ず一緒に出す。** 数字だけを切り離して見せない。 */
+function g_stats_html(array $list, string $lead = ''): string
+{
+    if (!$list) { return ''; }
+    $h = '<h2>関連する公開データ</h2>';
+    if ($lead !== '') { $h .= '<p class="note">' . g_e($lead) . '</p>'; }
+    foreach ($list as $s) {
+        $h .= '<div class="panel stat"><h3 style="margin-top:0">' . g_e($s['title']) . '</h3>'
+            . '<p class="note">' . g_e($s['asof']) . '</p>'
+            . '<div class="scroll"><table>';
+        foreach ($s['rows'] as $r) {
+            $h .= '<tr><td>' . g_e($r['label']) . '</td><td class="n"><b>' . g_e($r['value']) . '</b>'
+                . (!empty($r['note']) ? '<br><span class="note">' . g_e($r['note']) . '</span>' : '')
+                . '</td></tr>';
+        }
+        $h .= '</table></div>';
+        if (!empty($s['caveat'])) {
+            $h .= '<p class="note"><b>読むときの注意：</b>' . g_e($s['caveat']) . '</p>';
+        }
+        $h .= '<p class="note">出典：<a href="' . g_e($s['source_url'])
+            . '" rel="nofollow noopener" target="_blank">' . g_e($s['source']) . '</a>'
+            . '（' . g_e($s['checked_at']) . '確認）</p></div>';
+    }
+    return $h;
+}

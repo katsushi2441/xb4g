@@ -156,6 +156,9 @@ h2{font-size:18px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid 
 .panel{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:16px;margin-bottom:14px}
 .panel.insight{border-left:4px solid #0a9a8f}
 .panel.uniq{border-left:4px solid #2b4a8b}
+.panel.hl{border-left:4px solid #b3621e}
+.panel.stat{border-left:4px solid #4a6fa5}
+blockquote.kaigi{margin:8px 0;padding:10px 14px;background:#fafbfc;border-left:3px solid #cfd8dd;font-size:.93rem;line-height:1.85;border-radius:0 8px 8px 0}
 .panel.insight p{line-height:1.85;margin:0 0 10px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:12px}
 .card{display:block;background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:13px 14px;
