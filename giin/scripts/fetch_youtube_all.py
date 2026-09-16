@@ -41,9 +41,13 @@ def db():
 def listing(channel_id: str):
     """チャンネルの動画を全部。--flat-playlist なので1本ずつ開かない（速い・軽い）。"""
     url = f"https://www.youtube.com/channel/{channel_id}/videos"
-    r = subprocess.run([YTDLP, "--flat-playlist", "--no-warnings",
+    # lang=ja を付けないと YouTube の自動翻訳題名（英語）が返り、
+    # 題名の日付で質疑と結びつける build_speech_video.py がほぼ空振りする。
+    # 2026-09-16 実測: 伊藤孝恵議員の558本が全部英語題名で、対応づけは1日だけだった。
+    r = subprocess.run([YTDLP, "--flat-playlist", "--no-warnings", "--no-update",
+                        "--extractor-args", "youtube:lang=ja",
                         "--print", "%(id)s\t%(title)s", url],
-                       capture_output=True, text=True, timeout=600)
+                       capture_output=True, text=True, timeout=900)
     out = []
     for line in (r.stdout or "").splitlines():
         if "\t" in line:
