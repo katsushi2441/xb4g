@@ -282,6 +282,7 @@ function g_official(array $L): string
         'facebook'  => ['Facebook', 'f'],
         'line'      => ['LINE', 'L'],
         'note'      => ['note', 'n'],
+        'blog'      => ['ブログ', '✎'],
     ];
     $h = '<div class="offl">';
     foreach ($items as $k => [$label, $icon]) {
@@ -291,8 +292,9 @@ function g_official(array $L): string
     }
     $h .= '</div>';
     if (!empty($L['source'])) {
+        $slabel = !empty($L['source_label']) ? $L['source_label'] : '本人の公式サイト';
         $h .= '<p class="note">これらは <a href="' . g_e($L['source']) . '" rel="nofollow noopener" '
-            . 'target="_blank">本人の公式サイト</a>に掲載されているリンクです'
+            . 'target="_blank">' . g_e($slabel) . '</a>に掲載されているリンクです'
             . (!empty($L['checked_at']) ? '（' . g_e($L['checked_at']) . ' 確認）' : '') . '。'
             . '検索結果から拾ったものは載せていません。</p>';
     }
