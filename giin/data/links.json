@@ -253,5 +253,52 @@
     ]
    }
   ]
+ },
+ "nomura-miho": {
+  "site": "https://miho-nomura.com",
+  "youtube": "https://www.youtube.com/@nomuramiho_channel",
+  "youtube_channel_id": "UCFToRCN9F5u6cThOMxVKSdg",
+  "x": "https://x.com/nomuramiho3434",
+  "instagram": "https://www.instagram.com/nomuramiho3434/",
+  "facebook": "https://www.facebook.com/nomuramiho3434",
+  "tiktok": "https://www.tiktok.com/@nomuramiho3434",
+  "source": "https://miho-nomura.com",
+  "checked_at": "2026-09-17",
+  "source_note": "本人の公式サイト(miho-nomura.com)に X・Facebook・Instagram、国民民主党の議員ページ(new-kokumin.jp/member/nomura-miho)にその3つと YouTube(@nomuramiho_channel = UCFToRCN9F5u6cThOMxVKSdg)・TikTok が載っている。YouTube・TikTok は党ページのみだが本人名のアカウント。LINE は党の公式(page.line.me/qwd5735d)しか無いので入れない",
+  "highlights": [
+   {
+    "title": "男女の更年期症状を「国民的健康課題」として問う（内閣委員会）",
+    "date": "2026-05-20",
+    "meeting": "内閣委員会",
+    "speeches": [
+     "122104889X01320260520_062"
+    ],
+    "video": "4a28AwxYjfI",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付とテーマ）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "省庁横断的な取組の司令塔として",
+     "更年期症状という国民的健康課題"
+    ]
+   },
+   {
+    "title": "カスタマーハラスメントの定義と国の判断基準（内閣委員会）",
+    "date": "2026-06-12",
+    "meeting": "内閣委員会",
+    "speeches": [
+     "122104889X01920260612_129"
+    ],
+    "video": "QjjMpHAwpRo",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付とテーマ）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "令和八年十月一日から施行される改正労働施策総合推進法により",
+     "国として十分な解釈指針や判断基準を示すべきだと考えます",
+     "カスタマーハラスメントの定義について"
+    ]
+   }
+  ]
  }
 }

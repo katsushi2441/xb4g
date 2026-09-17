@@ -37,6 +37,12 @@ def dates_in(title: str, year_hint: set) -> set:
     out = set()
     for m in re.finditer(r"(20\d{2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", title):
         out.add(f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}")
+    # 「2026/7/10」「26/7/10」「2026.7.10」も拾う（野村美穂議員の題名が「26/7/10」形式）
+    for m in re.finditer(r"(?<!\d)(20\d{2}|\d{2})[/.](\d{1,2})[/.](\d{1,2})(?!\d)", title):
+        y = m.group(1) if len(m.group(1)) == 4 else "20" + m.group(1)
+        mo, d = int(m.group(2)), int(m.group(3))
+        if 1 <= mo <= 12 and 1 <= d <= 31:
+            out.add(f"{y}-{mo:02d}-{d:02d}")
     if not out:
         for m in re.finditer(r"(?<!\d)(\d{1,2})\s*月\s*(\d{1,2})\s*日", title):
             for y in year_hint:
