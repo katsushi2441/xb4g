@@ -1094,6 +1094,12 @@ function g_page_tracker(string $key, int $page): void
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
     echo '<h1>' . g_e($title) . '</h1><p class="lead">' . g_e($t['lead']) . '</p>';
+    // 自殺など、読む人の安全に関わることがらは、数字より先に相談先を出す（trackers.json の notice）
+    if (!empty($t['notice'])) {
+        $nl = is_array($t['links'] ?? null) && $t['links'] ? $t['links'][0] : null;
+        echo '<div class="panel" style="border-color:#0a9a8f"><p style="margin:0">' . g_e($t['notice'])
+           . ($nl ? '　<a href="' . g_e($nl['url']) . '" rel="noopener" target="_blank">' . g_e($nl['label']) . '</a>' : '') . '</p></div>';
+    }
     echo '<div class="kv">'
        . '<div class="c"><b>' . number_format((int)$st['q']) . '</b><span>議員の質疑</span></div>'
        . '<div class="c"><b>' . number_format((int)$st['gov']) . '</b><span>政府の答弁</span></div>'
