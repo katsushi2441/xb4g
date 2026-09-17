@@ -54,5 +54,58 @@
   "blog": "https://ameblo.jp/furukawa-motohisa/",
   "source": "https://www.furukawa.cc/",
   "checked_at": "2026-09-16"
+ },
+ "fukuta-toru": {
+  "site": "https://toru-fukuta.com",
+  "youtube": "https://www.youtube.com/channel/UCn99ji8uiM1rMZTVrb2IaJw",
+  "youtube_channel_id": "UCn99ji8uiM1rMZTVrb2IaJw",
+  "x": "https://x.com/Toru_Fukuta",
+  "instagram": "https://www.instagram.com/toru.fukuta/",
+  "facebook": "https://www.facebook.com/profile.php?id=100026864392969",
+  "tiktok": "https://www.tiktok.com/@toru.fukuta",
+  "line": "https://page.line.me/qwd5735d",
+  "source": "https://toru-fukuta.com",
+  "checked_at": "2026-09-17",
+  "source_note": "本人の公式サイト(toru-fukuta.com)と国民民主党の議員ページ(new-kokumin.jp/member/fukuta-toru)の両方に同じリンクが載っていることを確認。LINEは党の議員ページに載る page.line.me の友だち追加リンク。YouTubeは党のチャンネル(UCJc_jL0…)ではなく本人の「救急医政治家・福田とおるチャンネル」",
+  "highlights": [
+   {
+    "title": "救急車の適正利用について（予算委員会）",
+    "date": "2026-03-12",
+    "meeting": "予算委員会",
+    "speeches": [
+     "122105261X01020260312_193",
+     "122105261X01020260312_195",
+     "122105261X01020260312_203"
+    ],
+    "video": "B3cV_BLHJt0",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "救急車の適正利用を呼びかける広報",
+     "シャープ七一一九",
+     "救急車有料化以外の"
+    ]
+   },
+   {
+    "title": "小泉防衛相・茂木外相 所信質疑（安全保障委員会）",
+    "date": "2026-04-09",
+    "meeting": "安全保障委員会",
+    "speeches": [
+     "122103815X00220260409_085",
+     "122103815X00220260409_087",
+     "122103815X00220260409_091"
+    ],
+    "video": "Uf8hTqW0TVU",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "救命救急センターの救急医として働いてまいりました",
+     "わが国周辺の安全保障環境",
+     "ホルムズ海峡は国際公共財"
+    ]
+   }
+  ]
  }
 }

@@ -281,6 +281,7 @@ function g_official(array $L): string
         'instagram' => ['Instagram', '◎'],
         'facebook'  => ['Facebook', 'f'],
         'line'      => ['LINE', 'L'],
+        'tiktok'    => ['TikTok', '♪'],
         'note'      => ['note', 'n'],
         'blog'      => ['ブログ', '✎'],
     ];
