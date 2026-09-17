@@ -63,10 +63,10 @@
   "instagram": "https://www.instagram.com/toru.fukuta/",
   "facebook": "https://www.facebook.com/profile.php?id=100026864392969",
   "tiktok": "https://www.tiktok.com/@toru.fukuta",
-  "line": "https://page.line.me/qwd5735d",
+  "line": "https://liff.line.me/1645278921-kWRPP32q/?accountId=601lvdrg",
   "source": "https://toru-fukuta.com",
   "checked_at": "2026-09-17",
-  "source_note": "本人の公式サイト(toru-fukuta.com)と国民民主党の議員ページ(new-kokumin.jp/member/fukuta-toru)の両方に同じリンクが載っていることを確認。LINEは党の議員ページに載る page.line.me の友だち追加リンク。YouTubeは党のチャンネル(UCJc_jL0…)ではなく本人の「救急医政治家・福田とおるチャンネル」",
+  "source_note": "本人の公式サイト(toru-fukuta.com)と国民民主党の議員ページ(new-kokumin.jp/member/fukuta-toru)の両方に同じリンクが載っていることを確認。LINEは本人の公式サイトに載る友だち追加リンク（page.line.me/qwd5735d は党の公式アカウントなので使わない）。YouTubeは党のチャンネル(UCJc_jL0…)ではなく本人の「救急医政治家・福田とおるチャンネル」",
   "highlights": [
    {
     "title": "救急車の適正利用について（予算委員会）",
@@ -154,6 +154,54 @@
      "日本の介護を単なるコストではなく産業として捉え",
      "不交付団体の一般財源が圧迫され",
      "訪問介護サービスの報酬の見直し"
+    ]
+   }
+  ]
+ },
+ "tanno-midori": {
+  "site": "https://tannomidori.com",
+  "youtube": "https://www.youtube.com/@tannomidori",
+  "youtube_channel_id": "UCK8324qPpO08o8RP3xQ-9jQ",
+  "x": "https://x.com/tannomidori",
+  "instagram": "https://www.instagram.com/midorimarron/",
+  "facebook": "https://www.facebook.com/profile.php?id=100009917971941",
+  "blog": "https://ameblo.jp/tanno-midori/",
+  "source": "https://tannomidori.com",
+  "checked_at": "2026-09-17",
+  "source_note": "本人の公式サイト(tannomidori.com)と国民民主党の議員ページ(new-kokumin.jp/member/tanno-midori)の両方に同じリンクが載っていることを確認。YouTube は本人の「丹野みどり ちゃんねる」(@tannomidori = UCK8324qPpO08o8RP3xQ-9jQ)。LINE はどちらにも本人のものが無い（page.line.me/qwd5735d は党の公式）ので入れない",
+  "highlights": [
+   {
+    "title": "取引の適正化と賃上げの定着：中小企業をいかに救うか（経済産業委員会）",
+    "date": "2026-05-13",
+    "meeting": "経済産業委員会",
+    "speeches": [
+     "122104080X00720260513_125",
+     "122104080X00720260513_127"
+    ],
+    "video": "epr8Hjqr7Sw",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "昨年の委員会で取適法の改正を審議しまして、今年の一月に施行されています",
+     "そのセミナーが平日のお昼間に開かれました",
+     "実効性をどう担保するかというのに、本当にもう尽きるなと思っておりまして"
+    ]
+   },
+   {
+    "title": "家具の転倒防止（経済産業委員会）",
+    "date": "2026-05-20",
+    "meeting": "経済産業委員会",
+    "speeches": [
+     "122104080X00820260520_127"
+    ],
+    "video": "Q_-V1iOzSsI",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "この家具の固定の普及において、私は義務化が必要かなと思っている",
+     "業者の方が搬入するときに必ずつけるんだみたいな義務化をする"
     ]
    }
   ]
