@@ -205,5 +205,53 @@
     ]
    }
   ]
+ },
+ "kawamura-takashi": {
+  "site": "https://takashi-kawamura.com",
+  "youtube": "https://www.youtube.com/channel/UCBcp6Gc8sHU1kNPVi105TnQ",
+  "youtube_channel_id": "UCBcp6Gc8sHU1kNPVi105TnQ",
+  "x": "https://x.com/kawamura758",
+  "instagram": "https://www.instagram.com/kawamura.takashi/",
+  "source": "https://genzeinippon.com/member/kawamura",
+  "checked_at": "2026-09-17",
+  "source_label": "減税日本（代表を務める政党）の議員ページ",
+  "source_note": "本人の公式サイト(takashi-kawamura.com、題名に【公式】)は X(@kawamura758)と本人チャンネルの再生リストを載せるだけなので、減税日本の議員ページ(genzeinippon.com/member/kawamura)を一次情報にした。YouTube は党の「【公式】減税日本チャンネル」(UCNCRx…)ではなく本人の「河村たかしチャンネル」(UCBcp6…)。Facebook・LINE はどちらにも無い",
+  "highlights": [
+   {
+    "title": "地方財政法5条の廃止を迫る（財務金融委員会）",
+    "date": "2026-04-10",
+    "meeting": "財務金融委員会",
+    "speeches": [
+     "122104376X00620260410_135",
+     "122104376X00620260410_141",
+     "122104376X00620260410_148"
+    ],
+    "video": "1BwWk8MJafY",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "財政法四条、地財法五条も廃止して",
+     "日本ただ一つの減税を続ける",
+     "減税というのが大きなインセンティブになるだろう"
+    ]
+   },
+   {
+    "title": "財政法4条と日銀の「金余り」を問う（財務金融委員会）",
+    "date": "2026-03-04",
+    "meeting": "財務金融委員会",
+    "speeches": [
+     "122104376X00220260304_200"
+    ],
+    "video": "-iTLMj3EuR0",
+    "video_note": "本人の公式YouTubeに、この質疑の動画が上がっています",
+    "source": "本人の公式YouTubeの動画（題名にこの質疑の日付と委員会名）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "それをやってはいかぬと書いてあるのが財政法四条で",
+     "財政法四条は廃止する、税金だけでやれという国はできるわけないわけですよ"
+    ]
+   }
+  ]
  }
 }
