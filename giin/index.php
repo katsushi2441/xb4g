@@ -620,9 +620,9 @@ function g_page_theme(string $slug, int $page): void
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
     // このことがらに全国トラッカーがあれば、先に案内する（愛知の45人の発言だけでは法整備の進み方が分からない）
-    $tr = g_tracker_for_theme($slug);
-    $trSt = $tr ? g_tracker_stats($tr['key']) : [];
-    if ($tr && $trSt) {
+    foreach (g_trackers_for_theme($slug) as $tr) {
+        $trSt = g_tracker_stats($tr['key']);
+        if (!$trSt) { continue; }
         echo '<div class="panel"><p><b>国会トラッカー：</b>' . g_e($tr['name']) . 'は、愛知の45人に限らず'
            . '<b>全国の国会議員の発言</b>も追っています。質疑' . number_format((int)$trSt['q']) . '件・政府の答弁'
            . number_format((int)$trSt['gov']) . '件・取り上げた議員' . (int)$trSt['speakers'] . '人（'
@@ -1166,6 +1166,14 @@ function g_page_tracker(string $key, int $page): void
            . g_e($theme['name']) . '」</a>にまとめています（こちらは' . g_e(g_meta('range_from')) . '以降）。</p>';
     }
     echo '</div>';
+    // 公的な案内。**当サイトで一覧を作り直さない。** 国が事業者一覧・相談窓口・制度説明を出しているものはそこへ渡す
+    if (!empty($t['links'])) {
+        echo '<h2>制度そのものを調べるなら</h2><div class="panel"><ul>';
+        foreach ($t['links'] as $lk) {
+            echo '<li><a href="' . g_e($lk['url']) . '" rel="noopener" target="_blank">' . g_e($lk['label']) . '</a></li>';
+        }
+        echo '</ul><p class="note">事業者の一覧や相談窓口は国が公表しているものが最新です。当サイトは会議録の側だけを扱います。</p></div>';
+    }
     if ($theme) {
         echo g_stats_html(g_stats($theme['slug']), 'このことがらに関わる、国や自治体が公表している数字です。当サイトが公表資料から書き写したもので、要約も推計もしていません。');
     }

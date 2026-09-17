@@ -22,10 +22,10 @@ function g_tracker(string $key): ?array
     return null;
 }
 
-function g_tracker_for_theme(string $theme): ?array
+/** そのことがらに結びついたトラッカー（複数あることがある）。 */
+function g_trackers_for_theme(string $theme): array
 {
-    foreach (g_trackers() as $t) { if (($t['theme'] ?? '') === $theme) { return $t; } }
-    return null;
+    return array_values(array_filter(g_trackers(), fn($t) => ($t['theme'] ?? '') === $theme));
 }
 
 function g_tracker_ready(): bool
