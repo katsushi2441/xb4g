@@ -1197,6 +1197,18 @@ function g_page_tracker(string $key, int $page): void
        . '質疑ができるのはその日その委員会で質問に立った議員だけなので、<b>件数の差はそのまま熱心さの差ではありません。</b>'
        . '会議録は国会の会議から数日〜数週間後に公開されるため、直近の審議はまだ載っていないことがあります。'
        . '<br><a href="' . g_url('about') . '">この道具の作り方</a></div>';
+
+    // このことがらを歌にした PV（Kurage 動画ページの再生窓）。**会議録とは別物**なので一番下に置き、断りを添える
+    $v = is_array($t['video'] ?? null) ? $t['video'] : null;
+    if ($v && preg_match('/^[a-z0-9]{8,32}$/', (string)($v['job_id'] ?? ''))) {
+        $kv = 'https://kurage.exbridge.jp/kuragev.php?id=' . $v['job_id'];
+        echo '<h2>この問題を歌にしました</h2><div class="panel">'
+           . '<p><b>' . g_e($v['title'] ?? '') . '</b></p>'
+           . '<div style="position:relative;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden">'
+           . '<iframe src="' . g_e($kv) . '&embed=1" title="' . g_e($v['title'] ?? '') . '" loading="lazy" allowfullscreen '
+           . 'style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>'
+           . '<p class="note">' . g_e($v['note'] ?? '') . '　<a href="' . g_e($kv) . '" target="_blank" rel="noopener">歌詞つきの動画ページで見る</a></p></div>';
+    }
     g_foot();
 }
 
