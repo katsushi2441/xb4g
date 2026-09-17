@@ -157,11 +157,23 @@ function g_page_top(): void
              ],
              'variableMeasured' => ['発言日', '会議名', '発言者', '会派', '発言の立場', '選挙区']],
         ])]);
-    echo '<h1>愛知の国会議員が、国会で何を話したか</h1>'
+    // ヒーロー。数字は表から出す（人数・質疑・トラッカー本数・収録開始年）
+    $ntr = count(g_trackers());
+    $from = (string)g_meta('range_from');
+    echo '<section class="hero"><p class="kick">Aichi &times; Diet &middot; Speech Log</p>'
+       . '<h1>愛知の国会議員が、<br>国会で何を話したか</h1>'
        . '<p class="lead">衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
        . '<b>' . $ng . '人</b>について、'
        . '<b>' . number_format($n) . '件</b>の質疑を、日付と会議名と一次情報リンクつきで並べています。'
-       . '<br>党派では選んでいません。要約も論評もしません。</p>'
+       . '党派では選んでいません。要約も論評もしません。</p>'
+       . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
+       . 'placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）"><button>探す</button></form>'
+       . '<div class="facts">'
+       . '<div class="f"><b>' . $ng . '<i>人</i></b><span>収録している国会議員</span></div>'
+       . '<div class="f"><b>' . number_format($n) . '<i>件</i></b><span>議員としての質疑</span></div>'
+       . '<div class="f"><b>' . $ntr . '<i>本</i></b><span>全国の会議録を追う国会トラッカー</span></div>'
+       . '<div class="f"><b>' . g_e(substr($from, 0, 4)) . '<i>年〜</i></b><span>収録期間（' . g_e($from) . ' 以降）</span></div>'
+       . '</div></section>'
        . '<div class="panel note"><b>件数の読み方</b>：数えているのは'
        . '<b>議員として質問・討論した発言</b>だけです。委員長としての議事整理'
        . '（「次に、○○君。」）や、大臣としての答弁は別に数えています。'
@@ -170,7 +182,7 @@ function g_page_top(): void
 
     $hot = g_hot_themes(150, 4);
     if ($hot) {
-        echo '<h2>いま動いていることがら</h2>'
+        echo '<h2 data-en="Now">いま動いていることがら</h2>'
            . '<p class="note">国会に出された議案と、省庁の報道発表から、'
            . 'ことがらの語で機械的に拾ったものです。当サイトが選んだ話題ではありません。</p>';
         foreach ($hot as $t) {
@@ -190,7 +202,7 @@ function g_page_top(): void
             }
             echo '</div>';
         }
-        echo '<p><a href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
+        echo '<p class="more"><a class="btn o" href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
     }
 
     // AIの特集への導線。愛知は自動車・半導体・工作機械の土地なので、
@@ -199,12 +211,12 @@ function g_page_top(): void
     $ai_n = (int)g_val("SELECT COUNT(DISTINCT s.giin_id) FROM speech s
         JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai' WHERE s.kind='q'");
     if ($ai_q > 0) {
-        echo '<h2>特集：AIを国会でどう論じているか</h2>'
+        echo '<h2 data-en="Feature">特集：AIを国会でどう論じているか</h2>'
            . '<div class="panel"><p>AIに触れた質疑は<b>' . number_format($ai_q) . '件</b>、'
            . '持ち出した議員は<b>' . $ai_n . '人</b>です。'
            . 'いちばん多く一緒に語られているのは<b>学校と教育</b>で、'
            . '件数より<b>何日・いくつの会議で持ち出したか</b>で並べています。</p>'
-           . '<p><a href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
+           . '<p class="more"><a class="btn" href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
     }
 
     // 全国トラッカーへの導線。**愛知の45人に限らず**全国の発言を追っていることがら（1つの枠にまとめて出す）
@@ -214,7 +226,7 @@ function g_page_top(): void
         if ($st) { $trs[] = [$tr, $st]; }
     }
     if ($trs) {
-        echo '<h2>国会トラッカー：法整備はどこまで来たか</h2>'
+        echo '<h2 data-en="Tracker">国会トラッカー：法整備はどこまで来たか</h2>'
            . '<div class="panel"><p>これらのことがらだけは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
            . 'だれが取り上げ、政府が何と答えてきたかを日付順に並べています。</p><div class="grid">';
         foreach ($trs as [$tr, $st]) {
@@ -223,10 +235,10 @@ function g_page_top(): void
                . '<div class="n">質疑 ' . number_format((int)$st['q']) . '件・答弁 ' . number_format((int)$st['gov']) . '件・議員 ' . (int)$st['speakers'] . '人'
                . '<br><span class="note">' . g_e(g_date($st['last'])) . 'まで</span></div></a>';
         }
-        echo '</div><p><a href="' . g_url('tracker') . '">国会トラッカーの一覧</a></p></div>';
+        echo '</div><p class="more"><a class="btn o" href="' . g_url('tracker') . '">国会トラッカーの一覧</a></p></div>';
     }
 
-    echo '<h2>ことがらから探す</h2><div class="grid">';
+    echo '<h2 data-en="Topics">ことがらから探す</h2><div class="grid">';
     foreach (g_themes() as $t) {
         $c = g_theme_n($t['slug']);
         echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
@@ -235,12 +247,12 @@ function g_page_top(): void
     }
     echo '</div>';
 
-    echo '<h2>最近の発言</h2>';
+    echo '<h2 data-en="Latest">最近の発言</h2>';
     foreach (g_all('SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id'
                  . " WHERE s.kind='q' ORDER BY s.date DESC, s.speech_order DESC LIMIT 10") as $s) { g_speech($s); }
-    echo '<p><a href="' . g_url('search') . '">もっと探す</a></p>';
+    echo '<p class="more"><a class="btn o" href="' . g_url('search') . '">もっと探す</a></p>';
 
-    echo '<h2>会派から見る</h2>'
+    echo '<h2 data-en="Parties">会派から見る</h2>'
        . '<p class="note">人数の割合と質疑の割合のずれが分かります。'
        . '<b>ずれは熱心さではなく、与党か野党かという立場で決まります。</b></p><div class="grid">';
     $tot = (int)g_val('SELECT COUNT(*) FROM giin');
@@ -253,9 +265,9 @@ function g_page_top(): void
            . '<div class="mt">' . (int)$p['n'] . '人（' . round($pn) . '%）</div>'
            . '<div class="n">質疑 ' . number_format((int)$p['q']) . '件（' . round($pq) . '%）</div></a>';
     }
-    echo '</div><p><a href="' . g_url('party') . '">会派の一覧を見る</a></p>';
+    echo '</div><p class="more"><a class="btn o" href="' . g_url('party') . '">会派の一覧を見る</a></p>';
 
-    echo '<h2>議員から探す</h2>';
+    echo '<h2 data-en="Members">議員から探す</h2>';
     g_giin_grid();
     echo '<p class="note">' . g_e(g_meta('range_from')) . ' 以降の発言を収録しています。'
        . '発言が0件の議員は、この期間に会議録へ発言が載っていない方です。</p>';
@@ -314,29 +326,25 @@ function g_page_giin(int $id, int $page): void
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('list') . '">議員一覧</a> › ' . g_e($g['plain']) . '</nav>';
-    echo '<h1>' . g_e($g['plain']) . '</h1>'
-       . '<p class="lead">' . g_e($g['house']) . '　' . g_e($ku)
-       . '　<span class="pill">' . g_e($g['party']) . '</span>'
-       . '　<span class="note">' . g_e($g['kana']) . '</span>'
+    echo '<section class="hero p"><p class="kick">' . g_e($g['house']) . ' &middot; ' . g_e($ku) . '</p>'
+       . '<h1>' . g_e($g['plain']) . '<small>' . g_e($g['kana']) . '</small></h1>'
+       . '<p class="lead" style="margin-bottom:0"><span class="pill">' . g_e($g['party']) . '</span>'
        . '　<span class="note">会派: ' . g_e($g['kaiha']) . '</span>'
        . ($g['wins'] ? '　<span class="note">当選' . g_e($g['wins']) . '回</span>' : '')
-       . '</p>';
+       . '</p>'
+       . '<div class="kv">'
+       . '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言</span></div>'
+       . '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>'
+       . '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>'
+       . '</div></section>';
 
     $L = g_links($g['slug']);
     if ($L) {
-        echo '<h2>本人の発信</h2>' . g_official($L);
+        echo '<h2 data-en="Official">本人の発信</h2>' . g_official($L);
     }
 
-    echo '<div class="panel">'
-       . '<table><tr><th>議員として質問・討論した発言</th><td class="n"><b>'
-       . number_format($counts['q']) . '</b>件</td></tr>'
-       . '<tr><th>大臣・副大臣・政務官としての答弁</th><td class="n">'
-       . number_format($counts['gov']) . '件</td></tr>'
-       . '<tr><th>委員長・議長としての議事整理</th><td class="n">'
-       . number_format($counts['chair']) . '件</td></tr></table>'
-       . '<p class="note">「議事整理」は「次に、○○君。」のような進行の発言です。'
-       . 'これを質疑と混ぜて数えると、委員長を務めた議員ほど件数が多く見えてしまうので分けています。</p>'
-       . '</div>';
+    echo '<div class="panel note">「議事整理」は「次に、○○君。」のような進行の発言です。'
+       . 'これを質疑と混ぜて数えると、委員長を務めた議員ほど件数が多く見えてしまうので分けています。</div>';
 
     echo g_insight_html(g_insight('giin', $g['slug']), 'いま何に取り組んでいるか');
 
@@ -431,7 +439,7 @@ function g_page_giin(int $id, int $page): void
     }
     if ($trs) {
         usort($trs, fn($a, $b) => $b[0]['days'] <=> $a[0]['days'] ?: $b[0]['n'] <=> $a[0]['n']);
-        echo '<h2>国会トラッカー：' . g_e($g['plain']) . '議員が取り上げていることがらは、国会全体でどこまで来たか</h2>'
+        echo '<h2 data-en="Tracker">国会トラッカー：' . g_e($g['plain']) . '議員が取り上げていることがらは、国会全体でどこまで来たか</h2>'
            . '<div class="panel"><p>これらのことがらは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集めています。'
            . '件数は' . g_e($g['plain']) . '議員の質疑の数と日数、その下が全国の規模です。</p><div class="grid">';
         foreach ($trs as [$tr, $st]) {
@@ -463,7 +471,7 @@ function g_page_giin(int $id, int $page): void
     // 抜粋は会議録そのものから取り、要約はしない。
     $hl = g_highlights($g['slug']);
     if ($hl) {
-        echo '<h2>注目してほしい会議録</h2>'
+        echo '<h2 data-en="Highlights">注目してほしい会議録</h2>'
            . '<p class="note">' . g_e($g['plain']) . '議員ご本人の発信をもとに登録したものです。'
            . '<b>当サイトが重要だと判断して選んだものではありません。</b>'
            . '抜粋は会議録そのままで、要約はしていません。</p>';
@@ -540,7 +548,7 @@ function g_page_giin(int $id, int $page): void
     // 公式YouTubeの新着（チャンネルRSSから取り込んだもの・APIキー不使用）
     $vs = g_videos((int)$g['id'], 6);
     if ($vs) {
-        echo '<h2>公式YouTubeの新着</h2>'
+        echo '<h2 data-en="YouTube">公式YouTubeの新着</h2>'
            . '<p class="note">' . g_e($vs[0]['channel']) . ' の新しい動画です。'
            . 'サムネイルを押すまで YouTube を読み込みません。</p>'
            . g_video_grid($vs)
@@ -555,7 +563,7 @@ function g_page_giin(int $id, int $page): void
     if ($xps || !empty($L['x'])) {
         $xu = !empty($L['x'])
             ? preg_replace('#^https?://(www\.)?twitter\.com/#', 'https://x.com/', $L['x']) : '';
-        echo '<h2>公式Xの新着</h2>';
+        echo '<h2 data-en="X">公式Xの新着</h2>';
         if ($xps) {
             echo '<p class="note">本人の投稿だけを出しています（リポストは除いています）。'
                . '抜粋なので、全文はXでご確認ください。当サイトは要約していません。</p>';
@@ -1045,13 +1053,24 @@ function g_page_trackers(): void
           . '会議録から機械的に集め、日付順に並べています。';
     g_head('国会トラッカー', $desc, '/tracker', ['jsonld' => g_jsonld([
         g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker']])])]);
-    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 国会トラッカー</nav>'
-       . '<h1>国会トラッカー</h1><p class="lead">' . g_e($desc) . '</p><div class="grid">';
+    $rows = []; $sq = 0; $sg = 0;
     foreach (g_trackers() as $t) {
         $st = g_tracker_stats($t['key']);
+        $rows[] = [$t, $st];
+        if ($st) { $sq += (int)$st['q']; $sg += (int)$st['gov']; }
+    }
+    echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 国会トラッカー</nav>'
+       . '<p class="kick">Diet Tracker</p><h1>国会トラッカー</h1><p class="lead" style="margin-bottom:0">' . g_e($desc) . '</p>'
+       . '<div class="kv">'
+       . '<div class="c"><b>' . count($rows) . '</b><span>追っていることがら</span></div>'
+       . '<div class="c"><b>' . number_format($sq) . '</b><span>全国の議員の質疑</span></div>'
+       . '<div class="c"><b>' . number_format($sg) . '</b><span>政府の答弁</span></div>'
+       . '</div></section><div class="grid">';
+    foreach ($rows as [$t, $st]) {
         echo '<a class="card" href="' . g_url('tracker/' . $t['key']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
-           . '<div class="n">' . ($st ? number_format((int)$st['n']) . '件・' . g_e(g_date($st['last'])) . 'まで' : '準備中') . '</div></a>';
+           . '<div class="n">' . ($st ? '質疑 ' . number_format((int)$st['q']) . '件・答弁 ' . number_format((int)$st['gov']) . '件<br><span class="note">'
+                                  . g_e(g_date($st['last'])) . 'まで</span>' : '準備中') . '</div></a>';
     }
     echo '</div>';
     g_foot();
@@ -1091,9 +1110,9 @@ function g_page_tracker(string $key, int $page): void
     ]);
     g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png')]);
 
-    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
+    echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
-    echo '<h1>' . g_e($title) . '</h1><p class="lead">' . g_e($t['lead']) . '</p>';
+    echo '<p class="kick">Diet Tracker</p><h1>' . g_e($title) . '</h1><p class="lead">' . g_e($t['lead']) . '</p>';
     // 自殺など、読む人の安全に関わることがらは、数字より先に相談先を出す（trackers.json の notice）
     if (!empty($t['notice'])) {
         $nl = is_array($t['links'] ?? null) && $t['links'] ? $t['links'][0] : null;
@@ -1105,7 +1124,7 @@ function g_page_tracker(string $key, int $page): void
        . '<div class="c"><b>' . number_format((int)$st['gov']) . '</b><span>政府の答弁</span></div>'
        . '<div class="c"><b>' . (int)$st['speakers'] . '</b><span>取り上げた<br>議員</span></div>'
        . '<div class="c"><b>' . g_e(substr((string)$st['last'], 0, 4)) . '</b><span>最新 ' . g_e(substr((string)$st['last'], 5)) . '<br>（最初 ' . g_e(substr((string)$st['first'], 0, 7)) . '）</span></div>'
-       . '</div>';
+       . '</div></section>';
     echo '<p class="note">集め方：「' . g_e(implode('」「', $words)) . '」を含む発言を、国立国会図書館の国会会議録検索システムから'
        . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の45人に限りません）。'
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
@@ -1113,13 +1132,13 @@ function g_page_tracker(string $key, int $page): void
 
     // ---- 政府の最新の答え ----
     if ($latestGov) {
-        echo '<h2>いま、政府は何と答えているか</h2>'
+        echo '<h2 data-en="Government">いま、政府は何と答えているか</h2>'
            . '<p>大臣・副大臣・政務官・政府参考人としての<b>直近の答弁</b>です。語を含む文をそのまま抜いています。'
            . '答弁は質問への答えなので、「この回の会議録」で質問とあわせて読んでください。</p>';
         foreach ($latestGov as $s) { g_tracker_speech($s, $words); }
     }
     if ($latestQ) {
-        echo '<h2>直近の質疑</h2>';
+        echo '<h2 data-en="Latest">直近の質疑</h2>';
         foreach ($latestQ as $s) { g_tracker_speech($s, $words); }
     }
 
@@ -1147,7 +1166,7 @@ function g_page_tracker(string $key, int $page): void
 
     // ---- だれが取り上げているか ----
     if ($qs) {
-        echo '<h2>だれが国会で取り上げているか</h2>'
+        echo '<h2 data-en="Who">だれが国会で取り上げているか</h2>'
            . '<p><b>「日数」で並べています。</b>同じ日の質疑で何度言っても1日です。別の日、別の委員会で繰り返し'
            . '持ち出しているなら、続けて取り組んでいる印になります。名前は会議録の表記のままです。</p>'
            . '<div class="scroll"><table><tr><th>議員</th><th>会派（会議録の表記）</th><th class="n">日数</th><th class="n">件数</th>'
@@ -1219,7 +1238,7 @@ function g_page_tracker(string $key, int $page): void
     $per = 20; $off = ($page - 1) * $per;
     $total = g_tracker_count($key, $kind === 'all' ? '' : $kind);
     $base = g_url('tracker/' . $key);
-    echo '<h2>発言のあゆみ</h2><p class="lead">';
+    echo '<h2 data-en="Timeline">発言のあゆみ</h2><p class="lead">';
     foreach (['all' => '全部', 'q' => '質疑', 'gov' => '答弁', 'ref' => '参考人'] as $k => $label) {
         $c = g_tracker_count($key, $k === 'all' ? '' : $k);
         if ($c === 0 && $k !== 'all') { continue; }
@@ -1636,7 +1655,7 @@ function g_page_party(string $slug): void
            . '国会に出された議案と省庁の報道発表を新しい順に出しています。'
            . '<b>この会派に関するニュースではありません。</b></p>';
         foreach ($pnews as $n) { echo g_news_item($n, true); }
-        echo '<p><a href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
+        echo '<p class="more"><a class="btn o" href="' . g_url('news') . '">最近の動きをまとめて見る</a></p>';
     }
 
     echo '<h2>' . g_e($name) . 'の議員</h2><div class="grid">';
