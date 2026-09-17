@@ -91,6 +91,9 @@ def main():
         rows = []
         for sid, r in seen.items():
             body = r.get("speech") or ""
+            # 「会議録情報」は出席者名簿などの見出しレコードで人の発言ではない（話者として数えると壊れる）
+            if (r.get("speaker") or "") == "会議録情報" or int(r.get("speechOrder") or 0) == 0:
+                continue
             hit = [w for w in t["words"] if _has(body, w)]
             if not hit:
                 continue
