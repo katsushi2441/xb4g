@@ -20,7 +20,7 @@ REMOTE = os.environ.get("GIIN_REMOTE_ROOT", "/web/xb4g_com/giin")
 # links.json（本人の発信・注目してほしい会議録）と stats.json（関連する公開データ）も
 # 画面が読むので一緒に配る。入れ忘れると、登録したのに節が出ない。
 TARGETS = ["index.php", "sitemap.php", "giin_mcp.php", "ogp.png", "lib", "img",
-           "data/themes.json", "data/links.json", "data/stats.json"]
+           "data/themes.json", "data/links.json", "data/stats.json", "data/trackers.json"]
 SKIP_NAMES = {"giin_config.php", "giin_config.php.example", "giin.sqlite", ".DS_Store"}
 
 

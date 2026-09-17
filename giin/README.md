@@ -22,8 +22,10 @@ scripts/
   fetch_news.py      議案と省庁の報道発表を取り込む
   make_ogp.py        共通OGP
   make_ogp_all.py    ページごとのOGP（議員・ことがら）
+  fetch_tracker.py   国会トラッカー: 愛知の45人に限らず全国の発言を集める（表 tracker_speech）
   giin_jobs.py       日次更新のジョブ（rqdb4ai / cron から）
 data/themes.json     ことがらの定義（語はここで足す。コードは触らない）
+data/trackers.json   国会トラッカー（全国の発言を追うことがら）の定義
 .htaccess            PHPのバージョン指定とルーティング
 ```
 
@@ -101,6 +103,28 @@ python3 scripts/make_ogp.py && python3 scripts/make_ogp_all.py
 **単独で広すぎる語（「労働」「外国人」など）は入れないでください。**
 同じ語を発言の照合にも使うので、テーマが薄まります。法令名のような精度の高い語
 （「公職選挙法」「建築士法」「住民税」）のほうが効きます。
+
+## 国会トラッカー（全国の発言を追う） — `/tracker/<key>`
+
+議員立法で法整備が動いていることがら（例: 内密出産）は、愛知の45人の発言だけでは
+「法整備はどこまで来たか」が分かりません。そこで `data/trackers.json` に書いたことがらだけ、
+**全国の国会議員の質疑と政府の答弁**を会議録 API から語で集め、別の表 `tracker_speech` に持ちます
+（`speech` 表には混ぜません。あちらは45人の発言を数える表なので、混ぜると件数の意味が変わります）。
+
+```bash
+python3 scripts/fetch_tracker.py                 # data/trackers.json の全部
+python3 scripts/fetch_tracker.py --key naimitsu-shussan
+```
+
+画面（`/tracker/naimitsu-shussan`）に出すのは、政府の直近の答弁・直近の質疑・年ごとの件数・
+だれが何日取り上げたか・答えた側・参考人・愛知の議員への導線・発言のあゆみ（全件、新しい順）です。
+立場は `classify.py` と同じ規則で機械的に分け、**参考人・公述人・証人は議員ではないので `ref` に分けて
+「取り上げた議員」に数えません**（「政府参考人」は答弁＝`gov`）。要約も賛否の判定もしません。
+
+導線: トップの特集枠、ことがらページの案内枠、**そのことがらを取り上げている議員のページ**の枠、
+検索結果（語がトラッカーの語に当たるとき）から `/tracker/<key>` へ渡します。
+`trackers.json` の `theme` にことがらの slug を書くと、愛知の45人の発言（ことがらページ）と相互に結びます。
+日次ジョブに入っているので、毎日集め直されます。
 
 ## MCP（Claude Code / Codex から引く）
 

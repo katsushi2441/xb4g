@@ -138,6 +138,9 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         # **子どもの自殺の統計。** 事務所が「知らない」状態をなくすために毎日見る。
         # 報道ではなく公表統計を軸にする（報道されなかった子も数に入る）
         ("子どもの自殺の統計", [PY, os.path.join(SCRIPTS, "fetch_jisatsu.py")]),
+        # **全国トラッカー。** 愛知の45人に限らず、議員立法で法整備が動いていることがら
+        # （data/trackers.json）の全発言を会議録から集め直す（表 tracker_speech）
+        ("全国トラッカー", [PY, os.path.join(SCRIPTS, "fetch_tracker.py")]),
         # **画面で LIKE を走らせないための対応表。** 発言やことがらを足したら作り直す
         ("ことがらの対応表", [PY, os.path.join(SCRIPTS, "build_theme_index.py")]),
         # この議員だけが言っている語。**発言が増えると「唯一」でなくなることがあるので毎日作り直す**

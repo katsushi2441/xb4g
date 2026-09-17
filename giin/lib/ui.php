@@ -16,7 +16,7 @@ if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php
  *  Undefined constant になる。2026-09-14 に踏んだ）。 */
 const G_RESERVED = ['list', 'theme', 'party', 'compare', 'about', 'search', 'sitemap.xml',
                     'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt',
-                    'news', 'ai'];
+                    'news', 'ai', 'tracker'];
 
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }
 function g_abs(string $p = ''): string { return G_HOST . g_url($p); }
@@ -153,7 +153,7 @@ h1{font-size:23px;margin:0 0 6px}
 h2{font-size:18px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid #e3e9ec}
 .lead{color:#5d6b7a;margin:0 0 18px}
 .crumb{font-size:13px;color:#5d6b7a;margin-bottom:10px}
-.panel{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:16px;margin-bottom:14px}
+.panel{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:16px;margin-bottom:14px}.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0}.kv .c{background:#fff;border:1px solid #e3e9ec;border-radius:12px;padding:14px 12px;text-align:center;min-width:0}.kv .c b{display:block;font-size:30px;line-height:1.1;color:#0a726b}.kv .c span{display:block;font-size:12px;color:#5d6b7a;margin-top:6px}
 .panel.insight{border-left:4px solid #0a9a8f}
 .panel.uniq{border-left:4px solid #2b4a8b}
 .panel.hl{border-left:4px solid #b3621e}

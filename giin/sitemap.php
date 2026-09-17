@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
+require __DIR__ . '/lib/trackers.php';
 require __DIR__ . '/lib/ui.php';
 header('Content-Type: application/xml; charset=UTF-8');
 
@@ -19,6 +20,7 @@ $urls = [
     ['about', '0.5', 'monthly'],
 ];
 foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly']; }
+foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'daily']; }
 foreach (g_parties() as $p) { $urls[] = ['party/' . g_party_slug($p['party']), '0.8', 'weekly']; }
 foreach (g_all('SELECT slug FROM giin ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.8', 'weekly']; }
 

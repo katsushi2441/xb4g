@@ -15,6 +15,7 @@ declare(strict_types=1);
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
+require __DIR__ . '/lib/trackers.php';
 require __DIR__ . '/lib/ui.php';
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
@@ -46,6 +47,7 @@ function g_route(string $path, int $page): void
 
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
+    if (preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
     switch ($path) {
         case '/':        g_page_top(); return;
@@ -57,6 +59,7 @@ function g_route(string $path, int $page): void
         case '/compare': g_page_compare(); return;
         case '/about':   g_page_about(); return;
         case '/ai':      g_page_ai(); return;
+        case '/tracker': g_page_trackers(); return;
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
     // 検索結果でも共有先でも「誰のページか」が伝わらない。
@@ -202,6 +205,18 @@ function g_page_top(): void
            . 'いちばん多く一緒に語られているのは<b>学校と教育</b>で、'
            . '件数より<b>何日・いくつの会議で持ち出したか</b>で並べています。</p>'
            . '<p><a href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
+    }
+
+    // 全国トラッカーへの導線。**愛知の45人に限らず**全国の発言を追っていることがら
+    foreach (g_trackers() as $tr) {
+        $st = g_tracker_stats($tr['key']);
+        if (!$st) { continue; }
+        echo '<h2>国会トラッカー：' . g_e($tr['name']) . 'はどこまで来たか</h2>'
+           . '<div class="panel"><p>このことがらだけは、愛知の45人に限らず<b>全国の国会議員の発言</b>を会議録から集めています。'
+           . '質疑<b>' . number_format((int)$st['q']) . '件</b>、政府の答弁<b>' . number_format((int)$st['gov']) . '件</b>、'
+           . '取り上げた議員<b>' . (int)$st['speakers'] . '人</b>（' . g_e(g_date($st['last'])) . 'まで）。'
+           . ((int)$st['aichi'] > 0 ? '愛知の議員の質疑も入っています。' : '')
+           . '</p><p><a href="' . g_url('tracker/' . $tr['key']) . '">' . g_e($tr['name']) . 'は国会でどこまで来たか</a></p></div>';
     }
 
     echo '<h2>ことがらから探す</h2><div class="grid">';
@@ -400,6 +415,23 @@ function g_page_giin(int $id, int $page): void
         echo '</div><p class="note">語がその発言に出てきた回数です。賛成・反対の判定はしていません。</p>';
     }
 
+    // **この議員が取り上げていることがらに全国トラッカーがあれば、そこへ渡す。**
+    // 愛知の発言だけでは「法整備はどこまで来たか」が分からないので、全国の質疑と政府の答弁へ導く。
+    foreach (g_tracker_of_giin($id) as $tr) {
+        $st = g_tracker_stats($tr['key']);
+        if (!$st) { continue; }
+        echo '<h2>国会トラッカー：' . g_e($tr['name']) . '</h2>'
+           . '<div class="panel"><p>' . g_e($g['plain']) . '議員は' . g_e($tr['short'] ?? $tr['name'])
+           . 'を国会で<b>' . $tr['n'] . '件・' . $tr['days'] . '日</b>取り上げています（最後は'
+           . g_e(g_date($tr['last'])) . '）。全国では取り上げた議員が<b>' . (int)$st['speakers'] . '人</b>、'
+           . '質疑<b>' . number_format((int)$st['q']) . '件</b>、政府の答弁<b>' . number_format((int)$st['gov'])
+           . '件</b>あります。だれが質問し、政府が何と答えてきたかを日付順に読めます。</p>'
+           . '<p><a href="' . g_url('tracker/' . $tr['key']) . '">' . g_e($tr['name']) . 'は国会でどこまで来たか（全国）</a>'
+           . (!empty($tr['theme']) && g_theme($tr['theme'])
+              ? '　<a href="' . g_url('theme/' . $tr['theme']) . '?g=' . $g['slug'] . '">' . g_e($g['plain']) . '議員のこのことがらの発言</a>' : '')
+           . '</p></div>';
+    }
+
     // **その議員が扱っていることがらの、公開データ。**
     // 議員ごとに数字を選ぶと恣意が入るので、ことがら単位で持っているものを
     // 「よく取り上げていることがら」の上位から順に出す。
@@ -587,6 +619,16 @@ function g_page_theme(string $slug, int $page): void
        . '</p>'
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
+    // このことがらに全国トラッカーがあれば、先に案内する（愛知の45人の発言だけでは法整備の進み方が分からない）
+    $tr = g_tracker_for_theme($slug);
+    $trSt = $tr ? g_tracker_stats($tr['key']) : [];
+    if ($tr && $trSt) {
+        echo '<div class="panel"><p><b>国会トラッカー：</b>' . g_e($tr['name']) . 'は、愛知の45人に限らず'
+           . '<b>全国の国会議員の発言</b>も追っています。質疑' . number_format((int)$trSt['q']) . '件・政府の答弁'
+           . number_format((int)$trSt['gov']) . '件・取り上げた議員' . (int)$trSt['speakers'] . '人（'
+           . g_e(g_date($trSt['last'])) . 'まで）。</p>'
+           . '<p><a href="' . g_url('tracker/' . $tr['key']) . '">' . g_e($tr['name']) . 'は国会でどこまで来たか</a></p></div>';
+    }
     echo g_stats_html(g_stats($slug),
         'このことがらに関わる、国や自治体が公表している数字です。'
       . '当サイトが公表資料から書き写したもので、要約も推計もしていません。');
@@ -698,6 +740,12 @@ function g_page_search(int $page): void
     g_kind_tabs($kind, $counts, g_url('search') . '?q=' . rawurlencode($q)
                 . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
     echo '<p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
+    // 検索語が全国トラッカーの語なら、愛知の45人の外へも案内する
+    $tr = g_tracker_for_query($q);
+    if ($tr && g_tracker_stats($tr['key'])) {
+        echo '<div class="panel note">「' . g_e($q) . '」は<a href="' . g_url('tracker/' . $tr['key']) . '">国会トラッカー：'
+           . g_e($tr['name']) . '</a>で、愛知の45人に限らず全国の国会議員の質疑と政府の答弁を追っています。</div>';
+    }
     $lArgs = $args; $lArgs[] = $per; $lArgs[] = $off;
     foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
                     WHERE $w ORDER BY s.date DESC LIMIT ? OFFSET ?", $lArgs) as $s) {
@@ -954,6 +1002,193 @@ function g_page_ai(): void
        . 'AIに賛成か反対かは判定していません。'
        . '<br><a href="' . g_url('about') . '">この道具の作り方</a></div>';
 
+    g_foot();
+}
+
+// ---------------------------------------------------------------- 国会トラッカー（全国）
+
+/** トラッカーの一覧。ことがら一覧と違い、**全国の発言**を追っているものだけ。 */
+function g_page_trackers(): void
+{
+    $desc = '議員立法で法整備が動いていることがらについて、愛知の45人に限らず全国の国会議員の質疑と政府の答弁を'
+          . '会議録から機械的に集め、日付順に並べています。';
+    g_head('国会トラッカー', $desc, '/tracker', ['jsonld' => g_jsonld([
+        g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker']])])]);
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 国会トラッカー</nav>'
+       . '<h1>国会トラッカー</h1><p class="lead">' . g_e($desc) . '</p><div class="grid">';
+    foreach (g_trackers() as $t) {
+        $st = g_tracker_stats($t['key']);
+        echo '<a class="card" href="' . g_url('tracker/' . $t['key']) . '">'
+           . '<div class="nm">' . g_e($t['name']) . '</div>'
+           . '<div class="n">' . ($st ? number_format((int)$st['n']) . '件・' . g_e(g_date($st['last'])) . 'まで' : '準備中') . '</div></a>';
+    }
+    echo '</div>';
+    g_foot();
+}
+
+/** ひとつのことがらの全国トラッカー。
+ *  **愛知の45人の発言だけでは「法整備はどこまで来たか」が分からない**ので、
+ *  この画面だけは会議録の全発言（質疑と政府の答弁）を集めて出す。
+ *  要約はしない。政府の答弁も質疑も、語を含む文をそのまま抜いて会議録へつなぐ。 */
+function g_page_tracker(string $key, int $page): void
+{
+    $t = g_tracker($key);
+    $st = $t ? g_tracker_stats($key) : [];
+    if (!$t || !$st) { http_response_code(404); g_head('見つかりません', '', '/tracker', ['noindex' => true]);
+        echo '<h1>そのトラッカーはありません</h1>'; g_foot(); return; }
+    $words = $t['words'];
+    $theme = !empty($t['theme']) ? g_theme($t['theme']) : null;
+    $kind = (string)($_GET['k'] ?? 'all');
+    if (!in_array($kind, ['all', 'q', 'gov', 'ref'], true)) { $kind = 'all'; }
+    $years = g_tracker_years($key);
+    $qs = g_tracker_speakers($key, 'q');
+    $govs = g_tracker_speakers($key, 'gov');
+    $latestGov = g_tracker_list($key, 'gov', 3);
+    $latestQ = g_tracker_list($key, 'q', 3);
+    $updated = g_meta('tracker_' . $key . '_at');
+    $title = $t['name'] . 'は国会でどこまで来たか';
+    $desc = $t['name'] . 'について、全国の国会議員の質疑' . number_format((int)$st['q']) . '件と政府の答弁'
+          . number_format((int)$st['gov']) . '件を国会会議録から集めました（' . g_date($st['first']) . '〜'
+          . g_date($st['last']) . '）。だれが質問し、政府が何と答えたかを日付と会議録リンクで並べています。';
+    $ld = g_jsonld([
+        g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker'], [$t['name'], '/tracker/' . $key]]),
+        ['@type' => 'Article', '@id' => g_abs('tracker/' . $key), 'url' => g_abs('tracker/' . $key),
+         'headline' => $title, 'description' => $desc, 'inLanguage' => 'ja',
+         'dateModified' => substr($updated, 0, 10),
+         'about' => ['@type' => 'Thing', 'name' => $t['name']],
+         'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
+    ]);
+    g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png')]);
+
+    echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
+       . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
+    echo '<h1>' . g_e($title) . '</h1><p class="lead">' . g_e($t['lead']) . '</p>';
+    echo '<div class="kv">'
+       . '<div class="c"><b>' . number_format((int)$st['q']) . '</b><span>議員の質疑</span></div>'
+       . '<div class="c"><b>' . number_format((int)$st['gov']) . '</b><span>政府の答弁</span></div>'
+       . '<div class="c"><b>' . (int)$st['speakers'] . '</b><span>取り上げた<br>議員</span></div>'
+       . '<div class="c"><b>' . g_e(substr((string)$st['last'], 0, 4)) . '</b><span>最新 ' . g_e(substr((string)$st['last'], 5)) . '<br>（最初 ' . g_e(substr((string)$st['first'], 0, 7)) . '）</span></div>'
+       . '</div>';
+    echo '<p class="note">集め方：「' . g_e(implode('」「', $words)) . '」を含む発言を、国立国会図書館の国会会議録検索システムから'
+       . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の45人に限りません）。'
+       . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
+       . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
+
+    // ---- 政府の最新の答え ----
+    if ($latestGov) {
+        echo '<h2>いま、政府は何と答えているか</h2>'
+           . '<p>大臣・副大臣・政務官・政府参考人としての<b>直近の答弁</b>です。語を含む文をそのまま抜いています。'
+           . '答弁は質問への答えなので、「この回の会議録」で質問とあわせて読んでください。</p>';
+        foreach ($latestGov as $s) { g_tracker_speech($s, $words); }
+    }
+    if ($latestQ) {
+        echo '<h2>直近の質疑</h2>';
+        foreach ($latestQ as $s) { g_tracker_speech($s, $words); }
+    }
+
+    // ---- 論点（人が書いた枠。数字は入れない） ----
+    if (!empty($t['questions'])) {
+        echo '<h2>会議録に繰り返し出てくる論点</h2><div class="panel"><ul>';
+        foreach ($t['questions'] as $qq) { echo '<li>' . g_e($qq) . '</li>'; }
+        echo '</ul><p class="note">当サイトが会議録を読んで整理した問いです。どの立場が正しいかは判定していません。</p></div>';
+    }
+
+    // ---- 年ごと ----
+    if ($years) {
+        $max = max(array_map(fn($r) => (int)$r['n'], $years));
+        $lastY = (int)$years[count($years) - 1]['y'];
+        echo '<h2>年ごとの件数</h2><div class="scroll"><table><tr><th>年</th><th class="n">質疑</th><th class="n">答弁</th><th></th></tr>';
+        foreach ($years as $r) {
+            echo '<tr><td>' . g_e($r['y']) . '年'
+               . ((int)$r['y'] === $lastY ? ' <span class="note">' . g_e(substr((string)$st['last'], 5, 2)) . '月まで</span>' : '')
+               . '</td><td class="n">' . (int)$r['q'] . '</td><td class="n">' . (int)$r['gov'] . '</td>'
+               . '<td><div class="bar"><i style="width:' . round((int)$r['n'] / max(1, $max) * 100) . '%"></i></div></td></tr>';
+        }
+        echo '</table></div><p class="note">最後の年は年の途中までの数字なので、前の年とそのまま比べられません。'
+           . '国会の会期や委員会の開かれ方でも件数は変わります。</p>';
+    }
+
+    // ---- だれが取り上げているか ----
+    if ($qs) {
+        echo '<h2>だれが国会で取り上げているか</h2>'
+           . '<p><b>「日数」で並べています。</b>同じ日の質疑で何度言っても1日です。別の日、別の委員会で繰り返し'
+           . '持ち出しているなら、続けて取り組んでいる印になります。名前は会議録の表記のままです。</p>'
+           . '<div class="scroll"><table><tr><th>議員</th><th>会派（会議録の表記）</th><th class="n">日数</th><th class="n">件数</th>'
+           . '<th class="n">会議の種類</th><th>最後に触れた日</th></tr>';
+        foreach ($qs as $r) {
+            echo '<tr><td>' . (!empty($r['slug'])
+                    ? '<a href="' . g_url($r['slug']) . '">' . g_e($r['plain']) . '</a> <span class="pill">愛知</span>'
+                    : g_e($r['speaker']))
+               . '<br><span class="note">' . g_e($r['house']) . '</span></td>'
+               . '<td><span class="note">' . g_e($r['kaiha'] ?? '') . '</span></td>'
+               . '<td class="n"><b>' . (int)$r['days'] . '</b></td><td class="n">' . (int)$r['n'] . '</td>'
+               . '<td class="n">' . (int)$r['meetings'] . '</td><td class="note">' . g_e($r['last']) . '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+    $refs = g_tracker_speakers($key, 'ref');
+    if ($refs) {
+        echo '<h2>参考人として意見を述べた人</h2><p>委員会に呼ばれて意見を述べた<b>議員ではない人</b>です（会議録の表記のまま）。'
+           . '現場の医療機関や研究者の声はここに出ます。</p>'
+           . '<div class="scroll"><table><tr><th>名前</th><th>肩書（会議録の表記）</th><th class="n">日数</th><th class="n">件数</th><th>日付</th></tr>';
+        foreach ($refs as $r) {
+            echo '<tr><td>' . g_e($r['speaker']) . '</td><td><span class="note">' . g_e($r['position'] ?? '') . '</span></td>'
+               . '<td class="n">' . (int)$r['days'] . '</td><td class="n">' . (int)$r['n'] . '</td><td class="note">' . g_e($r['last']) . '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+    if ($govs) {
+        echo '<h2>答えた側</h2><p>大臣・副大臣・政務官・政府参考人として<b>答えた側</b>です。質問する側とは立場が違うので別に出しています。</p>'
+           . '<div class="scroll"><table><tr><th>名前</th><th>役職（最後の答弁時）</th><th class="n">日数</th><th class="n">件数</th></tr>';
+        foreach ($govs as $r) {
+            echo '<tr><td>' . g_e($r['speaker']) . '</td><td><span class="note">' . g_e($r['position'] ?? '') . '</span></td>'
+               . '<td class="n">' . (int)$r['days'] . '</td><td class="n">' . (int)$r['n'] . '</td></tr>';
+        }
+        echo '</table></div>';
+    }
+
+    // ---- 愛知の議員は ----
+    $aichi = array_values(array_filter($qs, fn($r) => !empty($r['slug'])));
+    echo '<h2>愛知の議員は</h2><div class="panel">';
+    if ($aichi) {
+        echo '<p>愛知の有権者の一票が当落に効く45人のうち、' . g_e($t['short'] ?? $t['name']) . 'を国会で取り上げているのは次の議員です。</p><ul>';
+        foreach ($aichi as $r) {
+            echo '<li><a href="' . g_url($r['slug']) . '">' . g_e($r['plain']) . '</a>（' . g_e($r['house']) . '）　'
+               . (int)$r['n'] . '件・' . (int)$r['days'] . '日、最後は' . g_e(g_date($r['last']))
+               . ($theme ? '　<a href="' . g_url('theme/' . $theme['slug']) . '?g=' . $r['slug'] . '">発言を読む</a>' : '') . '</li>';
+        }
+        echo '</ul>';
+    } else {
+        echo '<p>愛知の45人には、このことがらの質疑がまだありません。</p>';
+    }
+    if ($theme) {
+        echo '<p class="note">愛知の45人の発言は<a href="' . g_url('theme/' . $theme['slug']) . '">ことがら「'
+           . g_e($theme['name']) . '」</a>にまとめています（こちらは' . g_e(g_meta('range_from')) . '以降）。</p>';
+    }
+    echo '</div>';
+    if ($theme) {
+        echo g_stats_html(g_stats($theme['slug']), 'このことがらに関わる、国や自治体が公表している数字です。当サイトが公表資料から書き写したもので、要約も推計もしていません。');
+    }
+
+    // ---- 発言のあゆみ ----
+    $per = 20; $off = ($page - 1) * $per;
+    $total = g_tracker_count($key, $kind === 'all' ? '' : $kind);
+    $base = g_url('tracker/' . $key);
+    echo '<h2>発言のあゆみ</h2><p class="lead">';
+    foreach (['all' => '全部', 'q' => '質疑', 'gov' => '答弁', 'ref' => '参考人'] as $k => $label) {
+        $c = g_tracker_count($key, $k === 'all' ? '' : $k);
+        if ($c === 0 && $k !== 'all') { continue; }
+        echo '<a class="pill' . ($k === $kind ? '' : ' gray') . '" href="' . g_e($base . '?k=' . $k) . '#ayumi">' . $label . ' ' . number_format($c) . '</a> ';
+    }
+    echo '<span class="note">新しい順</span></p><div id="ayumi"></div>';
+    foreach (g_tracker_list($key, $kind === 'all' ? '' : $kind, $per, $off) as $s) { g_tracker_speech($s, $words); }
+    g_pager($page, $total, $per, $base . '?k=' . $kind);
+
+    echo '<h2>この数字の読み方</h2>'
+       . '<div class="panel note">数えているのは会議録に語が出てきた発言の数で、賛成・反対は判定していません。'
+       . '質疑ができるのはその日その委員会で質問に立った議員だけなので、<b>件数の差はそのまま熱心さの差ではありません。</b>'
+       . '会議録は国会の会議から数日〜数週間後に公開されるため、直近の審議はまだ載っていないことがあります。'
+       . '<br><a href="' . g_url('about') . '">この道具の作り方</a></div>';
     g_foot();
 }
 
