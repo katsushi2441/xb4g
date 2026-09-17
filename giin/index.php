@@ -708,12 +708,29 @@ function g_page_search(int $page): void
     $total = $q === '' && $party === '' ? 0
         : (int)g_val("SELECT COUNT(*) FROM speech s JOIN giin g ON g.id=s.giin_id WHERE $w", $args);
 
-    g_head($q !== '' ? '「' . $q . '」の発言' : '発言をさがす',
+    // 議員名でも探せる。漢字・かな・一部・ローマ字slug（空白は無視）
+    $nq = preg_replace('/[\s　]+/u', '', $q);
+    $members = $nq === '' ? [] : g_all("SELECT plain, slug, party, house, district, n_q FROM giin
+        WHERE REPLACE(REPLACE(plain,'　',''),' ','') LIKE ? OR REPLACE(REPLACE(display,'　',''),' ','') LIKE ?
+           OR REPLACE(REPLACE(kana,'　',''),' ','') LIKE ? OR slug LIKE ?
+        ORDER BY n_q DESC LIMIT 12", ['%' . $nq . '%', '%' . $nq . '%', '%' . $nq . '%', '%' . strtolower($nq) . '%']);
+
+    g_head($q !== '' ? '「' . $q . '」の発言' : '議員名、またはことばで探す',
         $q !== '' ? '愛知の国会議員45人の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
-                  : '愛知の国会議員45人の国会発言を、ことばで検索できます。', '/search',
+                  . ($members ? '名前に一致する議員は' . count($members) . '人です。' : '')
+                  : '愛知の国会議員45人を名前で、国会発言をことばで検索できます。', '/search',
         ['q' => $q, 'noindex' => $q === '']);
 
-    echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」をふくむ発言' : '発言をさがす') . '</h1>';
+    echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
+    if ($members) {
+        echo '<h2>名前に一致する議員</h2><div class="grid">';
+        foreach ($members as $m) {
+            echo '<a class="card" href="' . g_url($m['slug']) . '"><div class="nm">' . g_e($m['plain'])
+               . ' <span class="pill">' . g_e($m['party']) . '</span></div>'
+               . '<div class="n">' . g_e($m['house']) . ' ' . g_e(g_ku($m['district'])) . '　質疑 ' . number_format((int)$m['n_q']) . '件</div></a>';
+        }
+        echo '</div>';
+    }
 
     // 会派でしぼる
     echo '<p class="lead">';
@@ -727,10 +744,12 @@ function g_page_search(int $page): void
     echo '</p>';
 
     if ($q === '' && $party === '') {
-        echo '<div class="panel"><p>上の窓にことばを入れてください。'
-           . '例：<a href="' . g_url('search') . '?q=' . rawurlencode('南海トラフ') . '">南海トラフ</a>、'
+        echo '<div class="panel"><p>上の窓に<b>議員の名前</b>か<b>ことば</b>を入れてください。'
+           . '例：<a href="' . g_url('search') . '?q=' . rawurlencode('福田徹') . '">福田徹</a>、'
+           . '<a href="' . g_url('search') . '?q=' . rawurlencode('南海トラフ') . '">南海トラフ</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('年収の壁') . '">年収の壁</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('リニア') . '">リニア</a></p>'
+           . '<p class="note">議員は<a href="' . g_url('list') . '">一覧</a>からも選べます。'
            . '<p class="note">よく調べられることがらは<a href="' . g_url('theme') . '">ことがら一覧</a>'
            . 'にまとめてあります。</p></div>';
         g_foot(); return;
@@ -746,7 +765,7 @@ function g_page_search(int $page): void
     }
     g_kind_tabs($kind, $counts, g_url('search') . '?q=' . rawurlencode($q)
                 . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
-    echo '<p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
+    echo '<h2>「' . g_e($q) . '」をふくむ発言</h2><p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
     // 検索語が全国トラッカーの語なら、愛知の45人の外へも案内する
     $tr = g_tracker_for_query($q);
     if ($tr && g_tracker_stats($tr['key'])) {
@@ -759,7 +778,8 @@ function g_page_search(int $page): void
         g_speech($s, $q);
     }
     if ($total === 0) {
-        echo '<div class="panel"><p>見つかりませんでした。ことばを短くすると見つかることがあります。</p></div>';
+        echo '<div class="panel"><p>' . ($members ? 'このことばをふくむ発言はありません。上の議員名のほうをご覧ください。'
+                                                : '見つかりませんでした。ことばを短くすると見つかることがあります。') . '</p></div>';
     }
     g_pager($page, $total, $per, $base . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
     g_foot();

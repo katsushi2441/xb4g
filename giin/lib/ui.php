@@ -80,7 +80,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<a class="brand" href="' . g_url('') . '">' . g_e(G_SITE)
        . '<small>愛知の有権者が選んだ45人が、国会で何を話したか</small></a>'
        . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
-       . 'value="' . g_e($x['q'] ?? '') . '" placeholder="ことばで探す（例: 年収の壁）">'
+       . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）">'
        . '<button>探す</button></form>'
        . '</div></header><main class="wrap">';
 }
