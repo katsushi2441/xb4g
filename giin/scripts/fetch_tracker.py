@@ -11,7 +11,7 @@
   /usr/bin/python3 scripts/fetch_tracker.py            # 全部のトラッカー
   /usr/bin/python3 scripts/fetch_tracker.py --key naimitsu-shussan
 
-- 語ごとに any=語 で引き、speechID で重ねる（同じ発言に複数の語があっても1行）。
+- 語ごとに any=語 で引き、speechID で重ねる（同じ発言に複数の語があっても1行）。語に空白があれば全部含む発言だけ（AND）。
 - 立場（q/gov/chair）は classify.py と同じ規則で本文の冒頭から機械的に決める。
   参考人・公述人・証人は議員ではないので kind=ref に分け、「取り上げた議員」に数えない。
 - 愛知の45人の発言は giin.id を持たせ、画面からその議員のページへ渡せるようにする。
@@ -84,11 +84,14 @@ def main():
                     seen[sid] = r
                 n += 1
             print(f"  {t['key']}: 「{w}」 {n}件")
-        # 語が本文に実在するものだけ（any= はカナ・表記ゆれを拾うことがある）
+        # 語が本文に実在するものだけ（any= はカナ・表記ゆれを拾うことがある）。
+        # 語に空白があれば「全部含む」（API 側も any= の空白区切りは AND）。「後期高齢者 二割」のような組み合わせ用
+        def _has(body, w):
+            return all(part in body for part in w.split())
         rows = []
         for sid, r in seen.items():
             body = r.get("speech") or ""
-            hit = [w for w in t["words"] if w in body]
+            hit = [w for w in t["words"] if _has(body, w)]
             if not hit:
                 continue
             sp = (r.get("speaker") or "").replace("　", "").replace(" ", "")

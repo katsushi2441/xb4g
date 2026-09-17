@@ -207,16 +207,23 @@ function g_page_top(): void
            . '<p><a href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
     }
 
-    // 全国トラッカーへの導線。**愛知の45人に限らず**全国の発言を追っていることがら
+    // 全国トラッカーへの導線。**愛知の45人に限らず**全国の発言を追っていることがら（1つの枠にまとめて出す）
+    $trs = [];
     foreach (g_trackers() as $tr) {
         $st = g_tracker_stats($tr['key']);
-        if (!$st) { continue; }
-        echo '<h2>国会トラッカー：' . g_e($tr['name']) . 'はどこまで来たか</h2>'
-           . '<div class="panel"><p>このことがらだけは、愛知の45人に限らず<b>全国の国会議員の発言</b>を会議録から集めています。'
-           . '質疑<b>' . number_format((int)$st['q']) . '件</b>、政府の答弁<b>' . number_format((int)$st['gov']) . '件</b>、'
-           . '取り上げた議員<b>' . (int)$st['speakers'] . '人</b>（' . g_e(g_date($st['last'])) . 'まで）。'
-           . ((int)$st['aichi'] > 0 ? '愛知の議員の質疑も入っています。' : '')
-           . '</p><p><a href="' . g_url('tracker/' . $tr['key']) . '">' . g_e($tr['name']) . 'は国会でどこまで来たか</a></p></div>';
+        if ($st) { $trs[] = [$tr, $st]; }
+    }
+    if ($trs) {
+        echo '<h2>国会トラッカー：法整備はどこまで来たか</h2>'
+           . '<div class="panel"><p>これらのことがらだけは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
+           . 'だれが取り上げ、政府が何と答えてきたかを日付順に並べています。</p><div class="grid">';
+        foreach ($trs as [$tr, $st]) {
+            echo '<a class="card" href="' . g_url('tracker/' . $tr['key']) . '">'
+               . '<div class="nm">' . g_e($tr['name']) . '</div>'
+               . '<div class="n">質疑 ' . number_format((int)$st['q']) . '件・答弁 ' . number_format((int)$st['gov']) . '件・議員 ' . (int)$st['speakers'] . '人'
+               . '<br><span class="note">' . g_e(g_date($st['last'])) . 'まで</span></div></a>';
+        }
+        echo '</div><p><a href="' . g_url('tracker') . '">国会トラッカーの一覧</a></p></div>';
     }
 
     echo '<h2>ことがらから探す</h2><div class="grid">';
