@@ -107,5 +107,55 @@
     ]
    }
   ]
+ },
+ "hino-saria": {
+  "site": "https://hinosaria.com",
+  "youtube": "https://www.youtube.com/@sariahino",
+  "youtube_channel_id": "UC2z2VDOBZAgWogPsthObavw",
+  "x": "https://x.com/saria_hino",
+  "instagram": "https://www.instagram.com/saria.hino/",
+  "facebook": "https://www.facebook.com/saria.hino",
+  "line": "https://lin.ee/1uKeSMO",
+  "source": "https://hinosaria.com",
+  "checked_at": "2026-09-17",
+  "source_note": "本人の公式サイト(hinosaria.com のヘッダー・プロフィール・お問い合わせ各ページ)と国民民主党の議員ページ(new-kokumin.jp/member/hino-saria)の両方に同じリンクが載っていることを確認。YouTube は党のチャンネルではなく本人の「ひのさりチャンネル」(@sariahino = UC2z2VDOBZAgWogPsthObavw)",
+  "highlights": [
+   {
+    "title": "初めての質疑：保育園・保育業界の実情（地域・こども・デジタル特別委員会）",
+    "date": "2024-12-18",
+    "meeting": "地域活性化・こども政策・デジタル社会形成に関する特別委員会",
+    "speeches": [
+     "121605367X00320241218_101",
+     "121605367X00320241218_103",
+     "121605367X00320241218_105"
+    ],
+    "video": "Y83S45fia3E",
+    "video_note": "本人の公式YouTube「初めての質疑を行いました！保育園/保育業界の実情について」がこの質疑を扱っています",
+    "source": "本人の公式YouTubeの動画（題名がこの質疑の内容を示す）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "異次元の保育人材対策制度の創設",
+     "預けやすい環境が制度化されれば制度化されるほど現場は疲弊し"
+    ]
+   },
+   {
+    "title": "財政課題と介護改革（予算委員会）",
+    "date": "2025-02-21",
+    "meeting": "予算委員会",
+    "speeches": [
+     "121705261X01420250221_366",
+     "121705261X01420250221_371"
+    ],
+    "video": "4vnKokIXX60",
+    "video_note": "本人の公式YouTube「〈質疑の様子をお届け〉財政課題、介護改革について」がこの質疑を扱っています",
+    "source": "本人の公式YouTubeの動画（題名がこの質疑の内容を示す）にもとづき登録",
+    "checked_at": "2026-09-17",
+    "words": [
+     "日本の介護を単なるコストではなく産業として捉え",
+     "不交付団体の一般財源が圧迫され",
+     "訪問介護サービスの報酬の見直し"
+    ]
+   }
+  ]
  }
 }

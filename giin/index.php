@@ -423,20 +423,24 @@ function g_page_giin(int $id, int $page): void
     }
 
     // **この議員が取り上げていることがらに全国トラッカーがあれば、そこへ渡す。**
-    // 愛知の発言だけでは「法整備はどこまで来たか」が分からないので、全国の質疑と政府の答弁へ導く。
+    // 愛知の発言だけでは「法整備はどこまで来たか」が分からないので、全国の質疑と政府の答弁へ導く（1枠にカードでまとめる）
+    $trs = [];
     foreach (g_tracker_of_giin($id) as $tr) {
         $st = g_tracker_stats($tr['key']);
-        if (!$st) { continue; }
-        echo '<h2>国会トラッカー：' . g_e($tr['name']) . '</h2>'
-           . '<div class="panel"><p>' . g_e($g['plain']) . '議員は' . g_e($tr['short'] ?? $tr['name'])
-           . 'を国会で<b>' . $tr['n'] . '件・' . $tr['days'] . '日</b>取り上げています（最後は'
-           . g_e(g_date($tr['last'])) . '）。全国では取り上げた議員が<b>' . (int)$st['speakers'] . '人</b>、'
-           . '質疑<b>' . number_format((int)$st['q']) . '件</b>、政府の答弁<b>' . number_format((int)$st['gov'])
-           . '件</b>あります。だれが質問し、政府が何と答えてきたかを日付順に読めます。</p>'
-           . '<p><a href="' . g_url('tracker/' . $tr['key']) . '">' . g_e($tr['name']) . 'は国会でどこまで来たか（全国）</a>'
-           . (!empty($tr['theme']) && g_theme($tr['theme'])
-              ? '　<a href="' . g_url('theme/' . $tr['theme']) . '?g=' . $g['slug'] . '">' . g_e($g['plain']) . '議員のこのことがらの発言</a>' : '')
-           . '</p></div>';
+        if ($st) { $trs[] = [$tr, $st]; }
+    }
+    if ($trs) {
+        usort($trs, fn($a, $b) => $b[0]['days'] <=> $a[0]['days'] ?: $b[0]['n'] <=> $a[0]['n']);
+        echo '<h2>国会トラッカー：' . g_e($g['plain']) . '議員が取り上げていることがらは、国会全体でどこまで来たか</h2>'
+           . '<div class="panel"><p>これらのことがらは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集めています。'
+           . '件数は' . g_e($g['plain']) . '議員の質疑の数と日数、その下が全国の規模です。</p><div class="grid">';
+        foreach ($trs as [$tr, $st]) {
+            echo '<a class="card" href="' . g_url('tracker/' . $tr['key']) . '">'
+               . '<div class="nm">' . g_e($tr['name']) . '</div>'
+               . '<div class="n">' . g_e($g['plain']) . '議員 ' . $tr['n'] . '件・' . $tr['days'] . '日（最後は' . g_e(g_date($tr['last'])) . '）'
+               . '<br><span class="note">全国: 質疑 ' . number_format((int)$st['q']) . '件・答弁 ' . number_format((int)$st['gov']) . '件・議員 ' . (int)$st['speakers'] . '人</span></div></a>';
+        }
+        echo '</div></div>';
     }
 
     // **その議員が扱っていることがらの、公開データ。**
