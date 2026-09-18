@@ -307,8 +307,22 @@ footer.site p{font-size:12.5px;color:var(--gray);margin:0 0 8px}
 /* 統計は「ラベル｜値」の2列しかない。520pxを強いると、スマホで値が画面の外に出て
    ラベルだけ見える状態になる（数字を見せる表なのに数字が見えない）。ここだけ外す。 */
 .stat .scroll table{min-width:0}
+/* 制度の説明（explain）。ラベルを見出しに、説明をぶら下げる。 */
+.explain{margin:0}
+.explain dt{font-weight:700;color:var(--ink);margin:0 0 .25em}
+.explain dd{margin:0 0 1em;padding:0 0 0 .9em;border-left:3px solid var(--mint-xl)}
+.explain dd:last-child{margin-bottom:0}
 .stat .scroll table td:first-child{width:auto}
-.stat .scroll table td.n{white-space:nowrap}
+/* **数字だけ**を折り返さない。セル全体に nowrap を掛けると、
+   ぶら下がる注記が枠を越え、さらに値側が幅を取ってラベルが「愛知/県」と割れる。 */
+.stat .scroll table td.n{white-space:normal}
+.stat .scroll table td.n b{white-space:nowrap}
+.stat .scroll table td.n .note{display:block}
+/* **列幅を中身に決めさせない。** 自動だと、注記の長い値側が幅を取り、
+   「愛知県」が『愛知/県』と割れる。keep-all で短い語は割らず、
+   収まらない長いラベルだけ break-word で折る（anywhere は keep-all を打ち消す）。 */
+.stat .scroll table{table-layout:fixed}
+.stat .scroll table td:first-child{width:42%;word-break:keep-all;overflow-wrap:break-word}
 @media(max-width:640px){
 header.site .inner{padding:10px 16px 0}
 .brand{font-size:15px}.brand small{display:none}.brand .mark{width:34px;height:34px;font-size:16px}

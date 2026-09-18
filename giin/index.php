@@ -1130,6 +1130,8 @@ function g_page_tracker(string $key, int $page): void
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
+    echo g_tracker_explain($t);
+
     // ---- 政府の最新の答え ----
     if ($latestGov) {
         echo '<h2 data-en="Government">いま、政府は何と答えているか</h2>'

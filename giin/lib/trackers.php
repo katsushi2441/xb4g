@@ -168,3 +168,24 @@ function g_tracker_speech(array $s, array $words): void
           . 'この回の会議録</a>' : '')
        . '</div></div>';
 }
+
+/**
+ * ことがらの「読む前に知っておくこと」。trackers.json の explain。
+ *
+ * 論点（questions）は**会議録から整理した問い**なので、そこへ説明を混ぜない。
+ * 制度の作りそのものを説明したいときは、こちらへ書く。
+ */
+function g_tracker_explain(array $t): string
+{
+    $e = $t['explain'] ?? null;
+    if (!is_array($e) || empty($e['items'])) { return ''; }
+    $h = '<h2 data-en="Basics">' . g_e($e['title'] ?? '読む前に') . '</h2>';
+    if (!empty($e['lead'])) { $h .= '<p>' . g_e($e['lead']) . '</p>'; }
+    $h .= '<div class="panel"><dl class="explain">';
+    foreach ($e['items'] as $it) {
+        $h .= '<dt>' . g_e($it['label']) . '</dt><dd>' . g_e($it['body']) . '</dd>';
+    }
+    $h .= '</dl></div>';
+    if (!empty($e['note'])) { $h .= '<p class="note">' . g_e($e['note']) . '</p>'; }
+    return $h;
+}
