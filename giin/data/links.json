@@ -300,5 +300,56 @@
     ]
    }
   ]
+ },
+ "suda-eitaro": {
+  "site": "https://eitarosuda.com/",
+  "youtube": "https://www.youtube.com/channel/UCZaZKXTuR5rGca-XEqjL4Kg",
+  "youtube_channel_id": "UCZaZKXTuR5rGca-XEqjL4Kg",
+  "x": "https://x.com/Btaros",
+  "instagram": "https://www.instagram.com/eitaro.suda/",
+  "facebook": "https://www.facebook.com/eitaro.suda/",
+  "tiktok": "https://www.tiktok.com/@eitaro.suda",
+  "blog": "https://note.com/btaros",
+  "source": "https://eitarosuda.com/",
+  "checked_at": "2026-09-19",
+  "source_note": "本人の公式サイト(eitarosuda.com)とチームみらいの議員ページ(team-mir.ai/member/shugiin/eitaro-suda)の両方に同じリンクが載っていることを確認。YouTubeは党の公式チャンネル(UC72A_x2FKHkJ8Nc2eIzqj8Q)ではなく本人の「須田えいたろう | チームみらい 衆議院議員」(UCZaZKXTuR5rGca-XEqjL4Kg)。noteも党のログ(@team_mirai_log)ではなく本人(btaros)。LINEは本人サイトに載っていないので登録しない",
+  "highlights": [
+   {
+    "title": "公園のサンシェードと、自動運転のデータガバナンス（国土交通委員会）",
+    "date": "2026-05-15",
+    "meeting": "国土交通委員会",
+    "speeches": [
+     "122104319X00920260515_124",
+     "122104319X00920260515_130",
+     "122104319X00920260515_132"
+    ],
+    "video": "8Y2O76rXAkE",
+    "video_note": "本人の公式YouTubeに、この質疑で扱った公園の法的整理を解説した動画があります",
+    "source": "題名に日付は無いが、動画『【公園の秘密】遊び場なだけじゃない？！法律の裏話』の内容がこの質疑（都市公園法のサンシェード）を示す",
+    "checked_at": "2026-09-19",
+    "words": [
+     "公園におけるサンシェードの設置",
+     "都市公園法上の建蔽率の特例",
+     "共通の学習用データセットの開発及び公開"
+    ]
+   },
+   {
+    "title": "自動運転の事故時の責任と、研究開発への投資（国土交通委員会・初質疑）",
+    "date": "2026-03-10",
+    "meeting": "国土交通委員会",
+    "speeches": [
+     "122104319X00220260310_172",
+     "122104319X00220260310_174",
+     "122104319X00220260310_178"
+    ],
+    "source": "チームみらい公式noteに全文が掲載されている、本人の初質疑",
+    "checked_at": "2026-09-19",
+    "words": [
+     "昨年、党首とともにチームみらいを立ち上げ",
+     "自動運転の事故時",
+     "この自動運転領域への投資を強力に促して"
+    ]
+   }
+  ]
  }
 }
