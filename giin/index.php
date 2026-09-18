@@ -1231,7 +1231,7 @@ function g_page_tracker(string $key, int $page): void
         echo '</ul><p class="note">事業者の一覧や相談窓口は国が公表しているものが最新です。当サイトは会議録の側だけを扱います。</p></div>';
     }
     if ($theme) {
-        echo g_stats_html(g_stats($theme['slug']), 'このことがらに関わる、国や自治体が公表している数字です。当サイトが公表資料から書き写したもので、要約も推計もしていません。');
+        echo g_stats_html(g_stats($theme['slug'], $key), 'このことがらに関わる、国や自治体が公表している数字です。当サイトが公表資料から書き写したもので、要約も推計もしていません。');
     }
 
     // ---- 発言のあゆみ ----

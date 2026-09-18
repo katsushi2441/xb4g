@@ -394,14 +394,22 @@ function g_kaigi_excerpt(string $speech_id, array $words, int $max = 3): array
 
 /** ことがらに関連する公開統計。**数値はAIに書かせず、公表資料から人が書き写したもの。**
  *  議員ごとではなく、ことがらごとに持つ。45人全員に同じものが出るので中立が保てる。 */
-function g_stats(string $theme): array
+function g_stats(string $theme, ?string $tracker = null): array
 {
     static $all = null;
     if ($all === null) {
         $j = json_decode((string)@file_get_contents(__DIR__ . '/../data/stats.json'), true);
         $all = is_array($j['stats'] ?? null) ? $j['stats'] : [];
     }
-    return array_values(array_filter($all, fn($s) => ($s['theme'] ?? '') === $theme));
+    // ことがらは広いので、ひとつのことがらに複数のトラッカーがぶら下がる。
+    // **statに tracker が書いてあれば、そのトラッカーのページにだけ出す。**
+    // （例：自殺の統計が「こども誰でも通園制度」のページに並んでいた）
+    // ことがらのページと議員のページ（$tracker === null）では、そのまま全部出す。
+    return array_values(array_filter($all, function ($s) use ($theme, $tracker) {
+        if (($s['theme'] ?? '') !== $theme) { return false; }
+        $only = $s['tracker'] ?? '';
+        return $only === '' || $tracker === null || $tracker === $only;
+    }));
 }
 
 /** 統計の描画。**出典と時点を必ず一緒に出す。** 数字だけを切り離して見せない。 */
@@ -412,7 +420,18 @@ function g_stats_html(array $list, string $lead = ''): string
     if ($lead !== '') { $h .= '<p class="note">' . g_e($lead) . '</p>'; }
     foreach ($list as $s) {
         $h .= '<div class="panel stat"><h3 style="margin-top:0">' . g_e($s['title']) . '</h3>'
-            . '<p class="note">' . g_e($s['asof']) . '</p>'
+            . '<p class="note">' . g_e($s['asof']) . '</p>';
+        // **相談先は数字より先に。** ことがら経由でも議員ページ経由でも、この表が出る
+        // ところには必ず付いてくるよう、トラッカーの枠ではなく統計の側に持たせる。
+        if (!empty($s['notice'])) {
+            $h .= '<p style="margin:.2em 0 .9em;padding:.6em .8em;border-left:3px solid #0a9a8f;'
+                . 'background:#f2fbfa;border-radius:6px">' . g_e($s['notice'])
+                . (!empty($s['notice_url'])
+                    ? ' <a href="' . g_e($s['notice_url']) . '" rel="noopener" target="_blank">'
+                      . g_e($s['notice_label'] ?? '相談窓口') . '</a>' : '')
+                . '</p>';
+        }
+        $h .= ''
             . '<div class="scroll"><table>';
         foreach ($s['rows'] as $r) {
             $h .= '<tr><td>' . g_e($r['label']) . '</td><td class="n"><b>' . g_e($r['value']) . '</b>'

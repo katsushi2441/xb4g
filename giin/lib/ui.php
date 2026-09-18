@@ -304,6 +304,11 @@ footer.site .inner{padding:36px 16px 40px}
 footer.site p{font-size:12.5px;color:var(--gray);margin:0 0 8px}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .scroll table{min-width:520px}
+/* 統計は「ラベル｜値」の2列しかない。520pxを強いると、スマホで値が画面の外に出て
+   ラベルだけ見える状態になる（数字を見せる表なのに数字が見えない）。ここだけ外す。 */
+.stat .scroll table{min-width:0}
+.stat .scroll table td:first-child{width:auto}
+.stat .scroll table td.n{white-space:nowrap}
 @media(max-width:640px){
 header.site .inner{padding:10px 16px 0}
 .brand{font-size:15px}.brand small{display:none}.brand .mark{width:34px;height:34px;font-size:16px}
