@@ -1132,6 +1132,16 @@ function g_page_tracker(string $key, int $page): void
 
     echo g_tracker_explain($t);
 
+    // 合意点マップ（賛否を集めて、割れ方と一致点を出す）。いまは消費税減税だけ用意している
+    if ($key === 'shohizei-genzei') {
+        echo '<section class="box"><h2 data-en="Consensus">この論点は、どこで割れているか</h2>'
+           . '<p>この会議録の発言と、ニュースに寄せられた反応から論点を立て、賛否を集めて'
+           . '<b>意見グループ</b>と<b>どのグループから見ても賛成が高い点</b>を出しています。'
+           . '要約でも賛否の判定でもなく、押された票から計算したものです。</p>'
+           . '<p class="more"><a class="btn o" href="https://kurage.exbridge.jp/kconsensus.php/t/shohizei/?ref=giin-tracker" '
+           . 'target="_blank" rel="noopener">合意点マップで見る</a></p></section>';
+    }
+
     // ---- 政府の最新の答え ----
     if ($latestGov) {
         echo '<h2 data-en="Government">いま、政府は何と答えているか</h2>'
