@@ -17,6 +17,7 @@ require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
 require __DIR__ . '/lib/trackers.php';
 require __DIR__ . '/lib/ui.php';
+require __DIR__ . '/lib/senkyoku.php';
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 if (strpos($path, G_BASE) === 0) { $path = substr($path, strlen(G_BASE)); }
@@ -49,6 +50,7 @@ function g_route(string $path, int $page): void
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
     if (preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
+    if (preg_match('#^/senkyoku/([a-z]+-\d+)$#', $path, $m)) { g_page_senkyoku($m[1]); return; }
     switch ($path) {
         case '/':        g_page_top(); return;
         case '/search':  g_page_search($page); return;
@@ -60,6 +62,7 @@ function g_route(string $path, int $page): void
         case '/about':   g_page_about(); return;
         case '/ai':      g_page_ai(); return;
         case '/tracker': g_page_trackers(); return;
+        case '/senkyoku': g_page_senkyoku_list(); return;
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
     // 検索結果でも共有先でも「誰のページか」が伝わらない。
@@ -173,6 +176,7 @@ function g_page_top(): void
        . '<div class="f"><b>' . number_format($n) . '<i>件</i></b><span>議員としての質疑</span></div>'
        . '<div class="f"><b>' . $ntr . '<i>本</i></b><span>全国の会議録を追う国会トラッカー</span></div>'
        . '<div class="f"><b>' . g_e(substr($from, 0, 4)) . '<i>年〜</i></b><span>収録期間（' . g_e($from) . ' 以降）</span></div>'
+       . '<div class="f"><a href="' . g_url('senkyoku') . '"><b>289<i>区</i></b><span>選挙区ダッシュボード（全国の小選挙区の公開データ）</span></a></div>'
        . '</div></section>'
        . '<div class="panel note"><b>件数の読み方</b>：数えているのは'
        . '<b>議員として質問・討論した発言</b>だけです。委員長としての議事整理'
@@ -326,7 +330,9 @@ function g_page_giin(int $id, int $page): void
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('list') . '">議員一覧</a> › ' . g_e($g['plain']) . '</nav>';
-    echo '<section class="hero p"><p class="kick">' . g_e($g['house']) . ' &middot; ' . g_e($ku) . '</p>'
+    $skk = g_sk_key_for_district((string)$g['district']);
+    echo '<section class="hero p"><p class="kick">' . g_e($g['house']) . ' &middot; '
+       . ($skk ? '<a href="' . g_url('senkyoku/' . $skk) . '">' . g_e($ku) . '（選挙区の公開データ）</a>' : g_e($ku)) . '</p>'
        . '<h1>' . g_e($g['plain']) . '<small>' . g_e($g['kana']) . '</small></h1>'
        . '<p class="lead" style="margin-bottom:0"><span class="pill">' . g_e($g['party']) . '</span>'
        . '　<span class="note">会派: ' . g_e($g['kaiha']) . '</span>'

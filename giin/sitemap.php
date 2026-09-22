@@ -6,6 +6,7 @@ require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
 require __DIR__ . '/lib/trackers.php';
 require __DIR__ . '/lib/ui.php';
+require __DIR__ . '/lib/senkyoku.php';
 header('Content-Type: application/xml; charset=UTF-8');
 
 $last = substr(g_meta('updated_at'), 0, 10) ?: date('Y-m-d');
@@ -16,6 +17,7 @@ $urls = [
     // トラッカーの一覧ページ。個別28本は下で足していたのにハブだけ漏れていて、
     // 2026-09-19 時点で tracker/* は1本もクロールされていなかった。
     ['tracker', '0.9', 'weekly'],
+    ['senkyoku', '0.9', 'weekly'],
     ['party', '0.9', 'weekly'],
     ['news', '0.8', 'daily'],
     ['ai', '0.9', 'weekly'],
@@ -24,6 +26,7 @@ $urls = [
 ];
 foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly']; }
 foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'daily']; }
+foreach (g_all('SELECT key FROM senkyoku ORDER BY rowid') as $s) { $urls[] = ['senkyoku/' . $s['key'], '0.8', 'weekly']; }
 foreach (g_parties() as $p) { $urls[] = ['party/' . g_party_slug($p['party']), '0.8', 'weekly']; }
 foreach (g_all('SELECT slug FROM giin ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.8', 'weekly']; }
 

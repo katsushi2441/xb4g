@@ -17,7 +17,7 @@ if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php
  *  Undefined constant になる。2026-09-14 に踏んだ）。 */
 const G_RESERVED = ['list', 'theme', 'party', 'compare', 'about', 'search', 'sitemap.xml',
                     'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt',
-                    'news', 'ai', 'tracker'];
+                    'news', 'ai', 'tracker', 'senkyoku'];
 
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }
 function g_abs(string $p = ''): string { return G_HOST . g_url($p); }
@@ -81,7 +81,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">'
        . '<style>' . g_css() . '</style></head><body>';
     // 見た目は team-mir.ai を手本にしたライトテーマ（白＋ミントの帯＋大きな数字）。色は xb4g のティール。
-    $nav = [['list', '議員一覧'], ['theme', 'ことがら'], ['tracker', '国会トラッカー'], ['news', '最近の動き'],
+    $nav = [['list', '議員一覧'], ['theme', 'ことがら'], ['tracker', '国会トラッカー'], ['senkyoku', '選挙区'], ['news', '最近の動き'],
             ['ai', 'AI特集'], ['compare', 'ことがら×議員'], ['about', 'このサイトについて']];
     $cur = trim($path, '/');
     $navh = '';
