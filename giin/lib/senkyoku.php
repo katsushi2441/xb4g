@@ -89,7 +89,7 @@ function g_page_senkyoku_list(): void
          'name' => '選挙区ダッシュボード — 衆議院小選挙区289の公開データ',
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
     ]);
-    g_head('選挙区ダッシュボード（衆議院小選挙区289）', $desc, '/senkyoku', ['jsonld' => $ld]);
+    g_head('選挙区ダッシュボード（衆議院小選挙区289）', $desc, '/senkyoku', ['jsonld' => $ld, 'image' => g_abs('img/og/senkyoku.png')]);
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 選挙区ダッシュボード</nav>';
     echo '<section class="hero p"><p class="kick">Districts &times; Open Data</p>'
        . '<h1>選挙区ダッシュボード</h1>'
@@ -158,7 +158,8 @@ function g_page_senkyoku(string $key): void
          'creator' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ', 'url' => 'https://xb4g.com/'],
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
     ]);
-    g_head($d['name'] . 'の公開データ — 土砂災害・避難場所・訪問介護・放課後デイ', $desc, '/senkyoku/' . $key, ['jsonld' => $ld]);
+    $og = file_exists(__DIR__ . '/../img/og/senkyoku/' . $key . '.png') ? g_abs('img/og/senkyoku/' . $key . '.png') : g_abs('img/og/senkyoku.png');
+    g_head($d['name'] . 'の公開データ — 土砂災害・避難場所・訪問介護・放課後デイ', $desc, '/senkyoku/' . $key, ['jsonld' => $ld, 'image' => $og]);
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › <a href="' . g_url('senkyoku') . '">選挙区ダッシュボード</a> › '
        . '<a href="' . g_url('senkyoku#' . $d['pref_slug']) . '">' . g_e($d['pref']) . '</a> › ' . g_e($d['name']) . '</nav>';
 
@@ -179,10 +180,19 @@ function g_page_senkyoku(string $key): void
     if (preg_match('/^aichi-(\d+)$/', $key, $m)) {
         $gs = g_all("SELECT slug, plain, party, house FROM giin WHERE district=? ORDER BY plain", ['愛知' . $m[1]]);
     }
-    if ($gs) {
-        echo '<div class="panel"><h3>この選挙区の国会議員（発言ログ）</h3><ul class="plain">';
-        foreach ($gs as $g) { echo '<li><a href="' . g_url($g['slug']) . '">' . g_e($g['plain']) . '</a>（' . g_e($g['party']) . '）</li>'; }
-        echo '</ul></div>';
+    // 全国の名簿（衆議院の会派別名簿から。氏名・会派・当選回数・公式プロフィールだけ）。愛知は発言ログへ
+    $ms = g_all('SELECT display, kana, kaiha, wins, profile FROM senkyoku_member WHERE key=? ORDER BY display', [$key]);
+    if ($gs || $ms) {
+        echo '<div class="panel"><h3>この選挙区の衆議院議員</h3><ul class="plain">';
+        foreach ($gs as $g) { echo '<li><a href="' . g_url($g['slug']) . '">' . g_e($g['plain']) . '</a>（' . g_e($g['party']) . '）— 国会での質疑を日付と会議名で引けます</li>'; }
+        if (!$gs) {
+            foreach ($ms as $mm) {
+                $nm = preg_replace('/\s+/u', ' ', $mm['display']);
+                echo '<li>' . ($mm['profile'] ? '<a href="' . g_e($mm['profile']) . '" rel="noopener">' . g_e($nm) . '</a>' : g_e($nm))
+                   . '（' . g_e($mm['kaiha']) . '・当選' . g_e($mm['wins']) . '回）</li>';
+            }
+        }
+        echo '</ul><p class="src">衆議院の会派別議員名簿から。氏名・会派・当選回数・公式プロフィールへのリンクだけを出しています。</p></div>';
     }
 
     // 指標の表（分類ごと）
