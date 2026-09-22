@@ -100,6 +100,10 @@ function g_page_senkyoku_list(): void
     echo '<div class="panel"><p>区域は2022年（令和4年）の区割り改定後のものです。政令市の区や、町丁で分かれている市は、'
        . '区で数えられるデータ（事業所）は区で、市までしか無いデータ（避難場所・警戒区域など）は<b>市全体の数</b>で出し、そう書いています。'
        . ($built ? ' 集計 ' . g_e($built) . '。' : '') . '</p></div>';
+    // 都道府県へ飛ぶ索引（スマホでは289枚のカードが縦に並ぶので、先頭から探せるように）
+    echo '<div class="panel"><p>';
+    foreach ($by as $pref => $list) { echo '<a href="#' . g_e($list[0]['pref_slug']) . '">' . g_e($pref) . '</a>　'; }
+    echo '</p></div>';
     foreach ($by as $pref => $list) {
         $slug = $list[0]['pref_slug'];
         echo '<h2 id="' . g_e($slug) . '">' . g_e($pref) . '<small>（' . count($list) . '区）</small></h2><div class="grid">';
