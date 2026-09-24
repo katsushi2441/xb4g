@@ -52,7 +52,11 @@ function g_crumbs(array $items): array
 
 function g_head(string $title, string $desc = '', string $path = '/', array $x = []): void
 {
-    $full = $title === '' ? G_SITE : $title . '｜' . G_SITE;
+    // **サイト名を足して長くしすぎない。** 検索結果で表示されるのは全角30〜35字程度。
+    // 実測語を先頭に置いた題名が、サイト名に押されて切れると意味が無い。
+    // 30字を超えていたらサイト名を付けない（題名そのものがページを言い表している）。
+    $full = $title === '' ? G_SITE
+          : (mb_strlen($title, "UTF-8") >= 22 ? $title : $title . '｜' . G_SITE);
     $can = g_abs(ltrim($path, '/'));
     echo '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'

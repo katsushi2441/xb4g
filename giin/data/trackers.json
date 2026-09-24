@@ -22,7 +22,9 @@
    "job_id": "94605321781e51ac",
    "title": "名前のない朝（内密出産のうた）",
    "note": "内密出産をテーマに当社が作ったオリジナル曲の PV です（曲: HeartMuLa、映像: MiniMax H3）。会議録の内容とは別のもので、この歌が誰かの立場を代弁するものではありません。"
-  }
+  },
+  "seo_word": "内密出産",
+  "seo_volume": 2900
  },
  {
   "key": "tokubetsu-yoshi-engumi",
@@ -50,7 +52,9 @@
     "label": "特別養子縁組制度について（こども家庭庁）",
     "url": "https://www.cfa.go.jp/policies/shakaiteki-yougo/tokubetsu-youshi-engumi"
    }
-  ]
+  ],
+  "seo_word": "特別養子縁組",
+  "seo_volume": 9900
  },
  {
   "key": "otc-ruiji-yaku",
@@ -77,7 +81,9 @@
     "label": "OTC類似薬の保険給付の見直しの実施に向けた中間とりまとめ（厚生労働省）",
     "url": "https://www.mhlw.go.jp/stf/index_00157.html"
    }
-  ]
+  ],
+  "seo_word": "OTC類似薬",
+  "seo_volume": 22200
  },
  {
   "key": "kyukyusha-yuryoka",
@@ -103,7 +109,9 @@
     "label": "救急車の適時・適切な利用（適正利用）（総務省消防庁）",
     "url": "https://www.fdma.go.jp/mission/enrichment/appropriate/"
    }
-  ]
+  ],
+  "seo_word": "救急車の有料化",
+  "seo_volume": 4400
  },
  {
   "key": "jinsei-kaigi",
@@ -130,7 +138,9 @@
     "label": "「人生会議」してみませんか（厚生労働省）",
     "url": "https://www.mhlw.go.jp/stf/newpage_02783.html"
    }
-  ]
+  ],
+  "seo_word": "人生会議",
+  "seo_volume": 2400
  },
  {
   "key": "koki-koreisha-futan",
@@ -160,7 +170,9 @@
     "label": "令和4年10月からの窓口負担2割について（厚生労働省・PDF）",
     "url": "https://www.mhlw.go.jp/content/12400000/000977090.pdf"
    }
-  ]
+  ],
+  "seo_word": "後期高齢者医療制度の窓口負担",
+  "seo_volume": 5400
  },
  {
   "key": "kodomo-daredemo-tsuen",
@@ -183,7 +195,9 @@
     "label": "こども誰でも通園制度について（こども家庭庁）",
     "url": "https://www.cfa.go.jp/policies/hoiku/daredemo-tsuen"
    }
-  ]
+  ],
+  "seo_word": "こども誰でも通園制度",
+  "seo_volume": 22200
  },
  {
   "key": "kyutokuho",
@@ -207,7 +221,9 @@
     "label": "教師の処遇改善（文部科学省）",
     "url": "https://www.mext.go.jp/a_menu/shotou/kyoshi-kankyo/mext_03345.html"
    }
-  ]
+  ],
+  "seo_word": "給特法",
+  "seo_volume": 1900
  },
  {
   "key": "tokubetsu-jido-fuyo-teate",
@@ -232,7 +248,9 @@
     "label": "特別児童扶養手当・特別障害者手当等（厚生労働省）",
     "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/hukushi_kaigo/shougaishahukushi/jidou/index.html"
    }
-  ]
+  ],
+  "seo_word": "特別児童扶養手当",
+  "seo_volume": 0
  },
  {
   "key": "kaji-shien",
@@ -252,7 +270,9 @@
    "産後・多胎家庭など、利用料の補助をどこまで広げるか",
    "自治体の産後ケア・ヘルパー派遣との関係",
    "外国人材の受け入れ"
-  ]
+  ],
+  "seo_word": "家事支援サービス",
+  "seo_volume": 590
  },
  {
   "key": "torishikiho-kakaku-tenka",
@@ -278,7 +298,9 @@
     "label": "取適法（公正取引委員会）",
     "url": "https://www.jftc.go.jp/toriteki/"
    }
-  ]
+  ],
+  "seo_word": "取適法",
+  "seo_volume": 60500
  },
  {
   "key": "koeki-tsuho",
@@ -303,7 +325,9 @@
     "label": "公益通報者保護制度（消費者庁）",
     "url": "https://www.caa.go.jp/policies/policy/consumer_partnerships/whisleblower_protection_system/"
    }
-  ]
+  ],
+  "seo_word": "公益通報者保護法",
+  "seo_volume": 12100
  },
  {
   "key": "jidosha-kanren-zei",
@@ -329,7 +353,9 @@
     "label": "自動車局関係税制・財投（国土交通省）",
     "url": "https://www.mlit.go.jp/jidosha/jidosha_tk1_000010.html"
    }
-  ]
+  ],
+  "seo_word": "自動車税の暫定税率",
+  "seo_volume": 50
  },
  {
   "key": "kinyu-kyoiku",
@@ -354,7 +380,9 @@
     "label": "金融経済教育推進機構 J-FLEC",
     "url": "https://www.j-flec.go.jp/"
    }
-  ]
+  ],
+  "seo_word": "金融教育",
+  "seo_volume": 1600
  },
  {
   "key": "zaiseiho-4jo",
@@ -387,7 +415,9 @@
     "label": "地方債（総務省）",
     "url": "https://www.soumu.go.jp/main_sosiki/c-zaisei/chihosai/index.html"
    }
-  ]
+  ],
+  "seo_word": "財政法4条",
+  "seo_volume": 1300
  },
  {
   "key": "juminzei-genzei",
@@ -415,7 +445,9 @@
     "label": "地方債（総務省）",
     "url": "https://www.soumu.go.jp/main_sosiki/c-zaisei/chihosai/index.html"
    }
-  ]
+  ],
+  "seo_word": "住民税減税",
+  "seo_volume": 880
  },
  {
   "key": "shohizei-genzei",
@@ -445,7 +477,9 @@
     "label": "消費課税（国税）の概要（財務省）",
     "url": "https://www.mof.go.jp/tax_policy/summary/consumption/d01.htm"
    }
-  ]
+  ],
+  "seo_word": "消費税減税",
+  "seo_volume": 40500
  },
  {
   "key": "gaitameho-fdi",
@@ -470,7 +504,9 @@
     "label": "対内直接投資審査制度について（財務省）",
     "url": "https://www.mof.go.jp/policy/international_policy/gaitame_kawase/fdi/index.htm"
    }
-  ]
+  ],
+  "seo_word": "外為法",
+  "seo_volume": 8100
  },
  {
   "key": "jido-unten",
@@ -497,7 +533,9 @@
     "label": "自動運転の実現に向けた取組（国土交通省）",
     "url": "https://www.mlit.go.jp/jidosha/jidosha_tk7_000030.html"
    }
-  ]
+  ],
+  "seo_word": "自動運転",
+  "seo_volume": 18100
  },
  {
   "key": "digital-minshu",
@@ -524,7 +562,9 @@
     "label": "デジタル民主主義2030（オープンソースの広聴基盤）",
     "url": "https://dd2030.org/"
    }
-  ]
+  ],
+  "seo_word": "デジタル民主主義",
+  "seo_volume": 390
  },
  {
   "key": "futoko",
@@ -587,7 +627,9 @@
     }
    ],
    "note": "①は名古屋市の公表資料、②③は名古屋市フリースクール等利用料補助金のポータルサイトの記載によります（2026年9月確認）。制度の作りは自治体ごとに違うので、お住まいの自治体の担当課でご確認ください。"
-  }
+  },
+  "seo_word": "不登校",
+  "seo_volume": 74000
  },
  {
   "key": "jisatsu-taisaku",
@@ -627,7 +669,9 @@
     "label": "いのち支える自殺対策推進センター（JSCP）",
     "url": "https://jscp.or.jp/"
    }
-  ]
+  ],
+  "seo_word": "こどもの自殺",
+  "seo_volume": 0
  },
  {
   "key": "kisokojo-bukka-rendo",
@@ -665,7 +709,9 @@
     "label": "「年収の壁」への対応（厚生労働省）",
     "url": "https://www.mhlw.go.jp/stf/taiou_001_00002.html"
    }
-  ]
+  ],
+  "seo_word": "年収の壁",
+  "seo_volume": 110000
  },
  {
   "key": "seito-kofukin",
@@ -704,7 +750,9 @@
     "label": "政党の解散・合併・分割等（総務省）",
     "url": "https://www.soumu.go.jp/senkyo/seiji_s/seitoujoseihou/seitoujoseihou08.html"
    }
-  ]
+  ],
+  "seo_word": "政党交付金",
+  "seo_volume": 3600
  },
  {
   "key": "kasuhara-taisaku",
@@ -732,7 +780,9 @@
     "label": "あかるい職場応援団（厚生労働省）",
     "url": "https://www.no-harassment.mhlw.go.jp/"
    }
-  ]
+  ],
+  "seo_word": "カスハラ",
+  "seo_volume": 33100
  },
  {
   "key": "kokka-joho-kaigi",
@@ -762,7 +812,9 @@
     "label": "国家情報会議設置法の成立についての会見（首相官邸）",
     "url": "https://www.kantei.go.jp/jp/105/statement/2026/0527kaiken.html"
    }
-  ]
+  ],
+  "seo_word": "国家情報会議",
+  "seo_volume": 3600
  },
  {
   "key": "keizai-anpo-infra",
@@ -788,7 +840,9 @@
     "label": "経済安全保障（内閣府）",
     "url": "https://www.cao.go.jp/keizai_anzen_hosho/index.html"
    }
-  ]
+  ],
+  "seo_word": "経済安全保障推進法",
+  "seo_volume": 2900
  },
  {
   "key": "konenki-josei-kenko",
@@ -818,6 +872,8 @@
     "label": "はじめよう プレコンセプションケア（こども家庭庁）",
     "url": "https://precon.cfa.go.jp/"
    }
-  ]
+  ],
+  "seo_word": "更年期",
+  "seo_volume": 60500
  }
 ]

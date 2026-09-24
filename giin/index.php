@@ -624,7 +624,13 @@ function g_page_theme(string $slug, int $page): void
         $counts[$k] = g_theme_n($slug, $k, $only);
     }
 
-    $title = $t['name'] . 'について、愛知の国会議員は何と言ったか' . ($who ? '（' . $who['plain'] . '）' : '');
+    // ことがらページも、実測語があれば先頭に出す（trackers.json と同じ語を引く）
+    $tw = null;
+    foreach (g_trackers() as $tk) {
+        if (($tk['theme'] ?? '') === $slug && !empty($tk['seo_word'])) { $tw = $tk['seo_word']; break; }
+    }
+    $title = ($tw ?: $t['name']) . 'を国会でだれが取り上げたか｜愛知の国会議員'
+           . ($who ? '（' . $who['plain'] . '）' : '');
     $ld = g_jsonld([
         g_crumbs([['ホーム', '/'], ['ことがら一覧', '/theme'], [$t['name'], '/theme/' . $slug]]),
         ['@type' => 'CollectionPage', '@id' => g_abs('theme/' . $slug),
@@ -1057,7 +1063,8 @@ function g_page_trackers(): void
 {
     $desc = '議員立法で法整備が動いていることがらについて、愛知の45人に限らず全国の国会議員の質疑と政府の答弁を'
           . '会議録から機械的に集め、日付順に並べています。';
-    g_head('国会トラッカー', $desc, '/tracker', ['jsonld' => g_jsonld([
+    // 「国会トラッカー」は月間0。実際に検索されているのは「国会議事録 検索」590。
+    g_head('国会議事録から、法案のいまを追う｜28のことがらの質疑と政府答弁', $desc, '/tracker', ['jsonld' => g_jsonld([
         g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker']])])]);
     $rows = []; $sq = 0; $sg = 0;
     foreach (g_trackers() as $t) {
@@ -1102,7 +1109,13 @@ function g_page_tracker(string $key, int $page): void
     $latestGov = g_tracker_list($key, 'gov', 3);
     $latestQ = g_tracker_list($key, 'q', 3);
     $updated = g_meta('tracker_' . $key . '_at');
-    $title = $t['name'] . 'は国会でどこまで来たか';
+    // **題名の先頭は、実際に検索されている語にする。**
+    // 「国会トラッカー」は月間0、「◯◯は国会でどこまで来たか」も誰も検索しない。
+    // trackers.json の seo_word（キーワードプランナー実測・2026-09）を先に出す。
+    // 例: 不登校74,000／年収の壁110,000／取適法60,500。
+    // 90日で /tracker/ 個別ページは表示0だった（2026-09-25 GSC実測）。
+    $w = $t['seo_word'] ?? $t['short'] ?? $t['name'];
+    $title = $w . 'は国会でどう議論されたか｜質疑と政府答弁';
     $desc = $t['name'] . 'について、全国の国会議員の質疑' . number_format((int)$st['q']) . '件と政府の答弁'
           . number_format((int)$st['gov']) . '件を国会会議録から集めました（' . g_date($st['first']) . '〜'
           . g_date($st['last']) . '）。だれが質問し、政府が何と答えたかを日付と会議録リンクで並べています。';
@@ -1110,6 +1123,7 @@ function g_page_tracker(string $key, int $page): void
         g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker'], [$t['name'], '/tracker/' . $key]]),
         ['@type' => 'Article', '@id' => g_abs('tracker/' . $key), 'url' => g_abs('tracker/' . $key),
          'headline' => $title, 'description' => $desc, 'inLanguage' => 'ja',
+         'keywords' => implode(', ', array_slice((array)($t['words'] ?? []), 0, 6)),
          'dateModified' => substr($updated, 0, 10),
          'about' => ['@type' => 'Thing', 'name' => $t['name']],
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
@@ -1118,7 +1132,8 @@ function g_page_tracker(string $key, int $page): void
 
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
-    echo '<p class="kick">Diet Tracker</p><h1>' . g_e($title) . '</h1><p class="lead">' . g_e($t['lead']) . '</p>';
+    echo '<p class="kick">Diet Tracker</p><h1>' . g_e($w . 'は国会でどう議論されたか') . '</h1>'
+       . '<p class="lead">' . g_e($t['lead']) . '</p>';
     // 自殺など、読む人の安全に関わることがらは、数字より先に相談先を出す（trackers.json の notice）
     if (!empty($t['notice'])) {
         $nl = is_array($t['links'] ?? null) && $t['links'] ? $t['links'][0] : null;
