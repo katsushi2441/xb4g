@@ -195,6 +195,39 @@ function g_page_senkyoku(string $key): void
         echo '</ul><p class="src">衆議院の会派別議員名簿から。氏名・会派・当選回数・公式プロフィールへのリンクだけを出しています。</p></div>';
     }
 
+    // **全国での位置を出す。** 289枚が同じ型の数字の表だと、Google は
+    // 「クロール済み、しかし索引に登録されていない」と判定する（2026-09-24 実測）。
+    // 同じ数字から、その選挙区にしか書けない事実（全国順位・中央値との比）を作る。
+    $rk = [];
+    foreach (g_all('SELECT metric, rank, total, median, ratio, top_key, top_value FROM senkyoku_rank WHERE key=?', [$key]) as $r) {
+        $rk[$r['metric']] = $r;
+    }
+    // 上位・下位の指標を拾って、冒頭に1行で出す（ページごとに文が変わる）
+    $hi = []; $lo = [];
+    foreach (g_sk_metrics() as $mt) {
+        $k = $mt[0];
+        if (!isset($rk[$k]) || !isset($st[$k])) { continue; }
+        $r = $rk[$k];
+        if ((int)$r['total'] < 50) { continue; }
+        $pct = (int)$r['rank'] / (int)$r['total'];
+        if ($pct <= 0.10) { $hi[] = [$mt[2], (int)$r['rank'], (int)$r['total'], $st[$k]['value'], $mt[3]]; }
+        elseif ($pct >= 0.90) { $lo[] = [$mt[2], (int)$r['rank'], (int)$r['total'], $st[$k]['value'], $mt[3]]; }
+    }
+    if ($hi || $lo) {
+        echo '<div class="panel"><h3>全国の中でどこに位置するか</h3><ul class="plain">';
+        foreach (array_slice($hi, 0, 4) as $x) {
+            echo '<li><b>' . g_e($x[0]) . '</b> は ' . number_format($x[3]) . g_e($x[4])
+               . ' で、収録' . number_format($x[2]) . '区のうち<b>' . number_format($x[1]) . '位</b>（多いほう）</li>';
+        }
+        foreach (array_slice($lo, 0, 3) as $x) {
+            echo '<li><b>' . g_e($x[0]) . '</b> は ' . number_format($x[3]) . g_e($x[4])
+               . ' で、収録' . number_format($x[2]) . '区のうち<b>' . number_format($x[1]) . '位</b>（少ないほう）</li>';
+        }
+        echo '</ul><p class="src">同じ指標を全国の選挙区で並べ替えただけの順位です。'
+           . '数字は各表のとおりで、良い悪いの評価ではありません。'
+           . '「市全体の数」と書いてある指標は、選挙区が市の一部でも市の数で並べています。</p></div>';
+    }
+
     // 指標の表（分類ごと）
     $groups = [];
     foreach (g_sk_metrics() as $mt) { $groups[$mt[1]][] = $mt; }
@@ -212,6 +245,12 @@ function g_page_senkyoku(string $key): void
             }
             $val = number_format((int)$r['value']) . $unit;
             if ($link) { $val = '<a href="' . g_e($link . '?ref=senkyoku-' . $key) . '" target="_blank" rel="noopener">' . $val . '</a>'; }
+            if (isset($rk[$k]) && (int)$rk[$k]['total'] >= 50) {
+                $rr = $rk[$k];
+                $val .= '<br><small>全国' . number_format((int)$rr['total']) . '区中 ' . number_format((int)$rr['rank']) . '位'
+                     . ($rr['median'] !== null && (float)$rr['median'] > 0
+                        ? '／中央値 ' . number_format((float)$rr['median']) . $unit : '') . '</small>';
+            }
             echo '<tr><td>' . g_e($label) . ($r['partial'] ? '<br><small>市全体の数（選挙区は市の一部）</small>' : '') . '</td>'
                . '<td class="n">' . $val . '</td><td><small>' . implode('、', $parts) . '</small></td><td><small>' . g_e($src) . '</small></td></tr>';
         }

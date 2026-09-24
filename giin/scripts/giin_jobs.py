@@ -144,6 +144,7 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         # 選挙区ダッシュボード（289区）。各製品のDBを足し直す。他製品側の更新を拾うため毎日回す
         ("選挙区ダッシュボード", [PY, os.path.join(SCRIPTS, "build_senkyoku.py")]),
         ("選挙区の議員名簿", [PY, os.path.join(SCRIPTS, "build_senkyoku_members.py")]),
+        ("選挙区の全国順位", [PY, os.path.join(SCRIPTS, "build_senkyoku_rank.py")]),
         ("選挙区のOGP", [PY, os.path.join(SCRIPTS, "make_senkyoku_og.py")]),
         # **画面で LIKE を走らせないための対応表。** 発言やことがらを足したら作り直す
         ("ことがらの対応表", [PY, os.path.join(SCRIPTS, "build_theme_index.py")]),
