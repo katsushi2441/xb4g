@@ -50,8 +50,10 @@ def load_master():
     names = defaultdict(set)                       # pref -> {市区町村名(郡なし・区つき)}
     for pref, cities in ja.items():
         for c in cities:
-            m = re.match(r'^(.+?郡)(.+)$', c)
-            if m and not c.endswith('区'):
+            # 郡は「◯◯郡◯◯町/村」の形だけ。名前に「郡」を含む市（蒲郡市・小郡市・大和郡山市）を
+            # 郡と読むと「蒲郡」＋「市」に切れ、区域から市が消えていた（2026-09-27 に発見）
+            m = re.match(r'^(.+?郡)(.+[町村])$', c)
+            if m:
                 gun[pref][m.group(1)].append(m.group(2)); names[pref].add(m.group(2)); continue
             m = re.match(r'^(.+?市)(.+区)$', c)
             if m:
