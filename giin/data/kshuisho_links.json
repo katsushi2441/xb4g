@@ -1,0 +1,110 @@
+{
+ "naimitsu-shussan": {
+  "word": "赤ちゃんポスト",
+  "count": 1
+ },
+ "tokubetsu-yoshi-engumi": {
+  "word": "養子縁組あっせん",
+  "count": 2
+ },
+ "otc-ruiji-yaku": {
+  "word": "ＯＴＣ類似薬",
+  "count": 5
+ },
+ "jinsei-kaigi": {
+  "word": "ＡＣＰ 人生",
+  "count": 2
+ },
+ "koki-koreisha-futan": {
+  "word": "後期高齢者 窓口負担",
+  "count": 4
+ },
+ "kodomo-daredemo-tsuen": {
+  "word": "誰でも通園",
+  "count": 5
+ },
+ "kyutokuho": {
+  "word": "給特法",
+  "count": 1
+ },
+ "tokubetsu-jido-fuyo-teate": {
+  "word": "特別児童扶養手当 所得制限",
+  "count": 1
+ },
+ "torishikiho-kakaku-tenka": {
+  "word": "価格転嫁 下請",
+  "count": 3
+ },
+ "koeki-tsuho": {
+  "word": "公益通報者保護法",
+  "count": 14
+ },
+ "jidosha-kanren-zei": {
+  "word": "環境性能割",
+  "count": 2
+ },
+ "kinyu-kyoiku": {
+  "word": "金融経済教育",
+  "count": 6
+ },
+ "zaiseiho-4jo": {
+  "word": "財政法第四条",
+  "count": 2
+ },
+ "juminzei-genzei": {
+  "word": "住民税減税",
+  "count": 1
+ },
+ "shohizei-genzei": {
+  "word": "消費税 引き下げ",
+  "count": 20
+ },
+ "gaitameho-fdi": {
+  "word": "外為法 改正",
+  "count": 1
+ },
+ "jido-unten": {
+  "word": "自動運転",
+  "count": 5
+ },
+ "futoko": {
+  "word": "不登校",
+  "count": 11
+ },
+ "jisatsu-taisaku": {
+  "word": "自殺対策",
+  "count": 5
+ },
+ "kisokojo-bukka-rendo": {
+  "word": "基礎控除 引上げ",
+  "count": 9
+ },
+ "kasuhara-taisaku": {
+  "word": "カスタマーハラスメント",
+  "count": 2
+ },
+ "kokka-joho-kaigi": {
+  "word": "インテリジェンス 国会",
+  "count": 9
+ },
+ "keizai-anpo-infra": {
+  "word": "特定重要物資",
+  "count": 6
+ },
+ "konenki-josei-kenko": {
+  "word": "プレコンセプションケア",
+  "count": 1
+ },
+ "tokubetsu-shi": {
+  "word": "特別市",
+  "count": 1
+ },
+ "kyu-tekikoku-joko": {
+  "word": "敵国条項",
+  "count": 5
+ },
+ "koritsu-byoin-keiei": {
+  "word": "公立病院 経営",
+  "count": 7
+ }
+}

@@ -510,7 +510,7 @@
  },
  {
   "key": "jido-unten",
-  "theme": "naimitsu-shussan",
+  "theme": "kotsu",
   "name": "自動運転の社会実装",
   "short": "自動運転",
   "words": [
@@ -539,7 +539,7 @@
  },
  {
   "key": "digital-minshu",
-  "theme": "naimitsu-shussan",
+  "theme": "digital",
   "name": "デジタル民主主義とブロードリスニング",
   "short": "デジタル民主主義",
   "words": [
@@ -564,7 +564,13 @@
    }
   ],
   "seo_word": "デジタル民主主義",
-  "seo_volume": 390
+  "seo_volume": 390,
+  "next": [
+   {
+    "label": "賛否を集めて、意見の割れ方と一致点を出す（Kurage 合意点マップ）",
+    "url": "https://kurage.exbridge.jp/kconsensus.php/?ref=giin-tracker"
+   }
+  ]
  },
  {
   "key": "futoko",
@@ -782,7 +788,13 @@
    }
   ],
   "seo_word": "カスハラ",
-  "seo_volume": 33100
+  "seo_volume": 33100,
+  "next": [
+   {
+    "label": "事業主向け：カスハラ義務化の5つの措置と、マニュアルでは足りない部分",
+    "url": "https://exbridge.jp/kasuhara.html?ref=giin-tracker"
+   }
+  ]
  },
  {
   "key": "kokka-joho-kaigi",

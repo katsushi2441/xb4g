@@ -1151,6 +1151,7 @@ function g_page_tracker(string $key, int $page): void
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
+    echo g_tracker_next($t);
     echo g_tracker_explain($t);
 
     // 合意点マップ（賛否を集めて、割れ方と一致点を出す）。いまは消費税減税だけ用意している

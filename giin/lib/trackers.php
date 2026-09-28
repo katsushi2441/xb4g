@@ -189,3 +189,51 @@ function g_tracker_explain(array $t): string
     if (!empty($e['note'])) { $h .= '<p class="note">' . g_e($e['note']) . '</p>'; }
     return $h;
 }
+
+/**
+ * トラッカーの「次に見る」。X などから来た人の96%が1ページで帰っていた（2026-09-28 実測：69人中2ページ目は3人）ので、
+ * ページの上のほうに、同じことがらの続きを3種類だけ置く。
+ *  1) 同じ語で質問主意書と政府答弁書を探す（kshuisho。件数があるものだけ。scripts/build_kshuisho_links.py）
+ *  2) 同じテーマの別のトラッカー（最大3）
+ *  3) テーマに合う自社のシステム、または trackers.json の next
+ */
+function g_tracker_next(array $t): string
+{
+    static $kl = null;
+    if ($kl === null) {
+        $f = __DIR__ . '/../data/kshuisho_links.json';
+        $kl = is_file($f) ? (json_decode((string)file_get_contents($f), true) ?: []) : [];
+    }
+    $ref = 'giin-tracker-' . $t['key'];
+    $items = [];
+    foreach ((array)($t['next'] ?? []) as $n) {
+        if (!empty($n['url']) && !empty($n['label'])) { $items[] = [$n['label'], $n['url'], true]; }
+    }
+    // テーマ全体に自社システムを当てると外れる（公立病院の経営に制度ナビ、など）。テーマで決めるのは防災だけにし、
+    // それ以外は trackers.json の next で1本ずつ当てる
+    $sys = [
+        'nankai-bosai' => ['住所で「いま逃げた方がいい？」を聞く（Kurage 防災AIチャット）', 'https://kurage.exbridge.jp/kbousai.php/'],
+    ];
+    if (isset($sys[$t['theme'] ?? '']) && !$items) {
+        [$l, $u] = $sys[$t['theme']];
+        $items[] = [$l, $u . '?ref=' . rawurlencode($ref), true];
+    }
+    if (isset($kl[$t['key']])) {
+        $k = $kl[$t['key']];
+        $items[] = ['「' . $k['word'] . '」の質問主意書と政府答弁書（' . (int)$k['count'] . '件）',
+                    'https://kurage.exbridge.jp/kshuisho.php/search?q=' . rawurlencode($k['word']) . '&ref=' . rawurlencode($ref), true];
+    }
+    $n = 0;
+    // 相談先を先に出すことがら（notice あり）には、関係の薄い同テーマのトラッカーを並べない
+    foreach (empty($t['notice']) ? g_trackers_for_theme((string)($t['theme'] ?? '')) : [] as $o) {
+        if ($o['key'] === $t['key'] || $n >= 3) { continue; }
+        $items[] = [($o['seo_word'] ?? $o['short'] ?? $o['name']) . 'は国会でどう議論されたか', g_url('tracker/' . $o['key']), false];
+        $n++;
+    }
+    if (!$items) { return ''; }
+    $h = '<div class="panel"><p style="margin:0 0 6px"><b>次に見る</b></p><ul style="margin:0">';
+    foreach ($items as [$label, $url, $ext]) {
+        $h .= '<li><a href="' . g_e($url) . '"' . ($ext ? ' target="_blank" rel="noopener"' : '') . '>' . g_e($label) . '</a></li>';
+    }
+    return $h . '</ul></div>';
+}
