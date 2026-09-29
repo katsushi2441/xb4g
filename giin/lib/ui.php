@@ -148,6 +148,8 @@ function g_foot(): void
        . '<script>(function(){var s=document.createElement("script");'
        . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
        . '+"&ref="+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>'
+       // 再販パートナー募集の枠（中身は kurage_web/partner-bar.js）。当社の公開先でだけ読む（配布版を置いたサイトからは当社へ通信しない）
+       . ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com') ? '<script src="https://kurage.exbridge.jp/partner-bar.js" defer></script>' : '')
        . '</body></html>';
 }
 
