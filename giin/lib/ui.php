@@ -181,6 +181,18 @@ header.site .inner{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;
 .gnav a{flex:none;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;padding:5px 13px;border-radius:999px;white-space:nowrap}
 .gnav a:hover,.gnav a.on{background:var(--mint-xl);color:var(--teal-d)}
 .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 56px;overflow-wrap:anywhere}
+.g-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:0}.g-main{min-width:0}
+.g-side{min-width:0}.g-side .kpv-cm-box{margin:0 0 14px}
+.g-side-box{background:#fff;border:1px solid #e5ebf1;border-radius:14px;padding:12px 14px;margin:0 0 18px}
+.g-side-h{font-size:15px;margin:0 0 8px;padding:0;border:0}.g-side-h::before{display:none}.g-side-h small{font-size:11.5px;font-weight:700;color:#0a726b;margin-left:4px}
+.g-side-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.g-side-list a{display:block;text-decoration:none;color:#12202f;border:1px solid #eef2f5;border-radius:10px;padding:7px 10px}
+.g-side-list a:hover{border-color:#0a9a8f;background:#f3faf9}
+.g-side-list b{display:block;font-size:13.5px;color:#0a726b}.g-side-list span{display:block;font-size:12px;color:#5d6b7a;line-height:1.5}
+.g-side-by{font-size:11.5px;color:#8a97a5;margin:8px 0 0}
+@media(max-width:1099px){.g-side{order:2}.g-side .kpv-cm{display:none}.g-side-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}}
+@media(min-width:1100px){.g-cm-sp{display:none}}
+@media(min-width:1100px){main.wrap:has(.g-cols),body:has(.g-cols) header.site .inner,body:has(.g-cols) footer.site .inner{max-width:1360px}.g-cols{grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start}.g-side{order:2}}
 h1{font-size:30px;font-weight:900;line-height:1.35;margin:0 0 10px}
 h1 small{display:block;font-size:13px;font-weight:400;color:var(--gray);margin-top:4px}
 h2{font-size:22px;font-weight:900;line-height:1.4;margin:52px 0 16px;padding:0;border:0}
@@ -456,11 +468,45 @@ function g_xpost(array $p): string
 
 
 /**
- * 当社システムのPV（/kpv/ の全動画）をランダムに流すCM枠の置き場所。中身は kurage_web/kpv_cm.js が描く。
+ * 右の列（Yahoo の右上の動画枠のイメージ）。上に当社システムのPVを流すCM枠（kurage_web/kpv_cm.js）、
+ * その下に災害系のデモへのリンク。広い画面では本文の右に、スマホでは本文の前（見出しのすぐ下）に出る。
  * 当社の公開先（xb4g.com）でだけ出す。配布版を置いたサイトからは当社へ通信しない。
+ * 使い方: echo g_side_open('giin-top'); … 本文 … echo g_side_close();
  */
-function g_cm(string $ref): string
+function g_side_open(string $ref): string
+{
+    if (($_SERVER['HTTP_HOST'] ?? '') !== 'xb4g.com') { return '<div class="g-main">'; }
+    $demos = [
+        ['kbousai', '防災AIチャット', '住所か現在地で、警報・避難・川と台風をまとめて'],
+        ['kflood', '洪水・内水ハザードマップ', '住所で何メートル何日浸かるか'],
+        ['khazard', '土砂災害ハザードマップ', '住所が警戒区域の中か'],
+        ['ktsunami', '津波浸水想定マップ', '住所で津波の浸水の深さ'],
+        ['krefuge', '避難所マップ', '住所から避難所まで徒歩何分'],
+        ['kriskarea', '災害危険区域マップ', '建築基準法39条の区域か'],
+        ['kmorido', '盛土規制区域マップ', '住所が盛土の規制区域か'],
+        ['kjishin', '地震ハザードマップ（名古屋）', '揺れやすさと被害の想定'],
+        ['khisai', '被災者支援ナビ', '被災後に使える支援制度を状況から'],
+    ];
+    $li = '';
+    foreach ($demos as $d) {
+        $li .= '<li><a href="https://kurage.exbridge.jp/' . $d[0] . '.php/?ref=' . g_e($ref) . '-side-' . $d[0] . '">'
+             . '<b>' . g_e($d[1]) . '</b><span>' . g_e($d[2]) . '</span></a></li>';
+    }
+    return '<div class="g-cols"><aside class="g-side" aria-label="当社のシステム">'
+         . '<div class="kpv-cm" data-ref="' . g_e($ref) . '"></div>'
+         . '<section class="g-side-box"><h2 class="g-side-h">災害に備えるシステム <small>無料で使えます</small></h2><ul class="g-side-list">' . $li . '</ul>'
+         . '<p class="g-side-by">株式会社エクスブリッジ（名古屋）</p></section>'
+         . '</aside><div class="g-main">';
+}
+
+/** スマホ用のCM枠（広い画面では出さない。右の列のCM枠と二重にしない）。 */
+function g_cm_sp(string $ref): string
 {
     if (($_SERVER['HTTP_HOST'] ?? '') !== 'xb4g.com') { return ''; }
-    return '<div class="kpv-cm" data-ref="' . g_e($ref) . '"></div>';
+    return '<div class="kpv-cm g-cm-sp" data-ref="' . g_e($ref) . '-sp"></div>';
+}
+
+function g_side_close(): string
+{
+    return (($_SERVER['HTTP_HOST'] ?? '') !== 'xb4g.com') ? '</div>' : '</div></div>';
 }

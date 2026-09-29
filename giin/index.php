@@ -163,6 +163,7 @@ function g_page_top(): void
     // ヒーロー。数字は表から出す（人数・質疑・トラッカー本数・収録開始年）
     $ntr = count(g_trackers());
     $from = (string)g_meta('range_from');
+    echo g_side_open('giin-top');   // 右の列（CM枠と災害系デモ）。閉じるのは g_foot() の直前
     echo '<section class="hero"><p class="kick">Aichi &times; Diet &middot; Speech Log</p>'
        . '<h1>愛知の国会議員が、<br>国会で何を話したか</h1>'
        . '<p class="lead">衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
@@ -183,7 +184,7 @@ function g_page_top(): void
        . '（「次に、○○君。」）や、大臣としての答弁は別に数えています。'
        . '混ぜると、委員長を務めた議員の件数が跳ね上がって「よく質問している人」に'
        . '見えてしまうためです。各ページで切り替えられます。</div>';
-    echo g_cm('giin-top');   // 当社システムのPVを流すCM枠
+    echo g_cm_sp('giin-top');   // スマホだけ: 見出しのすぐ下にCM枠（広い画面では右の列の上に出る）
 
     $hot = g_hot_themes(150, 4);
     if ($hot) {
@@ -276,6 +277,7 @@ function g_page_top(): void
     g_giin_grid();
     echo '<p class="note">' . g_e(g_meta('range_from')) . ' 以降の発言を収録しています。'
        . '発言が0件の議員は、この期間に会議録へ発言が載っていない方です。</p>';
+    echo g_side_close();
     g_foot();
 }
 
@@ -1131,6 +1133,9 @@ function g_page_tracker(string $key, int $page): void
     ]);
     g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png')]);
 
+    // 右の列（CM枠と災害系デモ）。相談先を出す notice 付きのページ（自殺対策など）には出さない
+    $side = empty($t['notice']);
+    if ($side) { echo g_side_open('giin-tracker'); }
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
     echo '<p class="kick">Diet Tracker</p><h1>' . g_e($w . 'は国会でどう議論されたか') . '</h1>'
@@ -1153,8 +1158,7 @@ function g_page_tracker(string $key, int $page): void
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
     echo g_tracker_next($t);
-    // 当社システムのPVを流すCM枠（kurage_web/kpv_cm.js）。相談先を出す notice 付きのページ（自殺対策など）には出さない
-    if (empty($t['notice'])) { echo g_cm('giin-tracker'); }
+    if ($side) { echo g_cm_sp('giin-tracker'); }   // スマホだけ: ここにCM枠（広い画面では右の列の上に出る）
     echo g_tracker_explain($t);
 
     // 合意点マップ（賛否を集めて、割れ方と一致点を出す）。いまは消費税減税だけ用意している
@@ -1302,6 +1306,7 @@ function g_page_tracker(string $key, int $page): void
            . 'style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>'
            . '<p class="note">' . g_e($v['note'] ?? '') . '　<a href="' . g_e($kv) . '" target="_blank" rel="noopener">歌詞つきの動画ページで見る</a></p></div>';
     }
+    if ($side) { echo g_side_close(); }
     g_foot();
 }
 
