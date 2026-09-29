@@ -126,5 +126,9 @@
  "nihonban-dbs": {
   "word": "日本版ＤＢＳ",
   "count": 3
+ },
+ "kyodo-bokin": {
+  "word": "共同募金",
+  "count": 5
  }
 }
