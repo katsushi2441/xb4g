@@ -149,7 +149,7 @@ function g_foot(): void
        . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
        . '+"&ref="+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>'
        // 再販パートナー募集の枠（中身は kurage_web/partner-bar.js）。当社の公開先でだけ読む（配布版を置いたサイトからは当社へ通信しない）
-       . ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com') ? '<script src="https://kurage.exbridge.jp/partner-bar.js" defer></script>' : '')
+       . ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com') ? '<script src="https://kurage.exbridge.jp/partner-bar.js" defer></script><script src="https://kurage.exbridge.jp/kpv_cm.js" defer></script>' : '')
        . '</body></html>';
 }
 
@@ -452,4 +452,15 @@ function g_xpost(array $p): string
         . '<p class="t">' . g_e($t) . '</p>'
         . '<div class="lk"><a href="' . g_e($u) . '" rel="nofollow noopener" target="_blank">'
         . 'Xで読む</a></div></div>';
+}
+
+
+/**
+ * 当社システムのPV（/kpv/ の全動画）をランダムに流すCM枠の置き場所。中身は kurage_web/kpv_cm.js が描く。
+ * 当社の公開先（xb4g.com）でだけ出す。配布版を置いたサイトからは当社へ通信しない。
+ */
+function g_cm(string $ref): string
+{
+    if (($_SERVER['HTTP_HOST'] ?? '') !== 'xb4g.com') { return ''; }
+    return '<div class="kpv-cm" data-ref="' . g_e($ref) . '"></div>';
 }

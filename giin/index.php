@@ -183,6 +183,7 @@ function g_page_top(): void
        . '（「次に、○○君。」）や、大臣としての答弁は別に数えています。'
        . '混ぜると、委員長を務めた議員の件数が跳ね上がって「よく質問している人」に'
        . '見えてしまうためです。各ページで切り替えられます。</div>';
+    echo g_cm('giin-top');   // 当社システムのPVを流すCM枠
 
     $hot = g_hot_themes(150, 4);
     if ($hot) {
@@ -1152,6 +1153,8 @@ function g_page_tracker(string $key, int $page): void
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
     echo g_tracker_next($t);
+    // 当社システムのPVを流すCM枠（kurage_web/kpv_cm.js）。相談先を出す notice 付きのページ（自殺対策など）には出さない
+    if (empty($t['notice'])) { echo g_cm('giin-tracker'); }
     echo g_tracker_explain($t);
 
     // 合意点マップ（賛否を集めて、割れ方と一致点を出す）。いまは消費税減税だけ用意している
