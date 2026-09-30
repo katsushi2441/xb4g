@@ -56,7 +56,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     // 実測語を先頭に置いた題名が、サイト名に押されて切れると意味が無い。
     // 30字を超えていたらサイト名を付けない（題名そのものがページを言い表している）。
     $full = $title === '' ? G_SITE
-          : (mb_strlen($title, "UTF-8") >= 22 ? $title : $title . '｜' . G_SITE);
+          : ((mb_strlen($title, "UTF-8") >= 22 || !empty($x['nosuffix'])) ? $title : $title . '｜' . G_SITE);   // 全国の論点のページ（トラッカー）に「愛知の」を付けない
     $can = g_abs(ltrim($path, '/'));
     echo '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'

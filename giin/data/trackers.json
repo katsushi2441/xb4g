@@ -24,7 +24,8 @@
    "note": "内密出産をテーマに当社が作ったオリジナル曲の PV です（曲: HeartMuLa、映像: MiniMax H3）。会議録の内容とは別のもので、この歌が誰かの立場を代弁するものではありません。"
   },
   "seo_word": "内密出産",
-  "seo_volume": 2900
+  "seo_volume": 2900,
+  "seo_title": "内密出産とは｜法制化の動きと国会の質疑・答弁"
  },
  {
   "key": "tokubetsu-yoshi-engumi",
@@ -54,7 +55,8 @@
    }
   ],
   "seo_word": "特別養子縁組",
-  "seo_volume": 9900
+  "seo_volume": 9900,
+  "seo_title": "特別養子縁組とは｜要件と国会の質疑・答弁"
  },
  {
   "key": "otc-ruiji-yaku",
@@ -83,7 +85,8 @@
    }
   ],
   "seo_word": "OTC類似薬",
-  "seo_volume": 22200
+  "seo_volume": 22200,
+  "seo_title": "OTC類似薬の保険給付見直し｜負担と国会答弁"
  },
  {
   "key": "kyukyusha-yuryoka",
@@ -111,7 +114,8 @@
    }
   ],
   "seo_word": "救急車の有料化",
-  "seo_volume": 4400
+  "seo_volume": 4400,
+  "seo_title": "救急車の有料化は？国会の質疑と政府答弁"
  },
  {
   "key": "jinsei-kaigi",
@@ -140,7 +144,8 @@
    }
   ],
   "seo_word": "人生会議",
-  "seo_volume": 2400
+  "seo_volume": 2400,
+  "seo_title": "人生会議（ACP）とは｜法制化と国会の議論"
  },
  {
   "key": "koki-koreisha-futan",
@@ -172,7 +177,8 @@
    }
   ],
   "seo_word": "後期高齢者医療制度の窓口負担",
-  "seo_volume": 5400
+  "seo_volume": 5400,
+  "seo_title": "後期高齢者の窓口負担2割｜国会の質疑と答弁"
  },
  {
   "key": "kodomo-daredemo-tsuen",
@@ -197,7 +203,8 @@
    }
   ],
   "seo_word": "こども誰でも通園制度",
-  "seo_volume": 22200
+  "seo_volume": 22200,
+  "seo_title": "こども誰でも通園制度とは｜いつから・国会答弁"
  },
  {
   "key": "kyutokuho",
@@ -223,7 +230,8 @@
    }
   ],
   "seo_word": "給特法",
-  "seo_volume": 1900
+  "seo_volume": 1900,
+  "seo_title": "給特法とは｜教員の残業代と国会の質疑・答弁"
  },
  {
   "key": "tokubetsu-jido-fuyo-teate",
@@ -250,7 +258,8 @@
    }
   ],
   "seo_word": "特別児童扶養手当",
-  "seo_volume": 0
+  "seo_volume": 0,
+  "seo_title": "特別児童扶養手当の所得制限｜国会の議論"
  },
  {
   "key": "kaji-shien",
@@ -272,7 +281,8 @@
    "外国人材の受け入れ"
   ],
   "seo_word": "家事支援サービス",
-  "seo_volume": 590
+  "seo_volume": 590,
+  "seo_title": "家事支援サービスと国家資格化｜国会の議論"
  },
  {
   "key": "torishikiho-kakaku-tenka",
@@ -300,7 +310,8 @@
    }
   ],
   "seo_word": "取適法",
-  "seo_volume": 60500
+  "seo_volume": 60500,
+  "seo_title": "取適法とは｜価格転嫁と国会の質疑・答弁"
  },
  {
   "key": "koeki-tsuho",
@@ -327,7 +338,8 @@
    }
   ],
   "seo_word": "公益通報者保護法",
-  "seo_volume": 12100
+  "seo_volume": 12100,
+  "seo_title": "公益通報者保護法の改正｜国会の質疑と答弁"
  },
  {
   "key": "jidosha-kanren-zei",
@@ -355,7 +367,8 @@
    }
   ],
   "seo_word": "自動車税の暫定税率",
-  "seo_volume": 50
+  "seo_volume": 50,
+  "seo_title": "環境性能割の廃止と自動車税｜国会の議論"
  },
  {
   "key": "kinyu-kyoiku",
@@ -382,7 +395,8 @@
    }
   ],
   "seo_word": "金融教育",
-  "seo_volume": 1600
+  "seo_volume": 1600,
+  "seo_title": "金融教育の義務化｜国会の質疑と政府答弁"
  },
  {
   "key": "zaiseiho-4jo",
@@ -417,7 +431,8 @@
    }
   ],
   "seo_word": "財政法4条",
-  "seo_volume": 1300
+  "seo_volume": 1300,
+  "seo_title": "財政法4条とは｜国債の原則と国会の議論"
  },
  {
   "key": "juminzei-genzei",
@@ -447,7 +462,8 @@
    }
   ],
   "seo_word": "住民税減税",
-  "seo_volume": 880
+  "seo_volume": 880,
+  "seo_title": "住民税減税｜国会の質疑と政府答弁"
  },
  {
   "key": "shohizei-genzei",
@@ -479,7 +495,8 @@
    }
   ],
   "seo_word": "消費税減税",
-  "seo_volume": 40500
+  "seo_volume": 40500,
+  "seo_title": "消費税減税はいつ？国会の質疑と政府答弁"
  },
  {
   "key": "gaitameho-fdi",
@@ -506,7 +523,8 @@
    }
   ],
   "seo_word": "外為法",
-  "seo_volume": 8100
+  "seo_volume": 8100,
+  "seo_title": "外為法改正と対内直接投資｜国会の議論"
  },
  {
   "key": "jido-unten",
@@ -535,7 +553,8 @@
    }
   ],
   "seo_word": "自動運転",
-  "seo_volume": 18100
+  "seo_volume": 18100,
+  "seo_title": "自動運転レベル4｜国会の質疑と政府答弁"
  },
  {
   "key": "digital-minshu",
@@ -570,7 +589,8 @@
     "label": "賛否を集めて、意見の割れ方と一致点を出す（Kurage 合意点マップ）",
     "url": "https://kurage.exbridge.jp/kconsensus.php/?ref=giin-tracker"
    }
-  ]
+  ],
+  "seo_title": "デジタル民主主義とは｜国会の質疑と答弁"
  },
  {
   "key": "futoko",
@@ -635,7 +655,8 @@
    "note": "①は名古屋市の公表資料、②③は名古屋市フリースクール等利用料補助金のポータルサイトの記載によります（2026年9月確認）。制度の作りは自治体ごとに違うので、お住まいの自治体の担当課でご確認ください。"
   },
   "seo_word": "不登校",
-  "seo_volume": 74000
+  "seo_volume": 74000,
+  "seo_title": "不登校の支援｜国会の質疑と政府答弁"
  },
  {
   "key": "jisatsu-taisaku",
@@ -677,7 +698,8 @@
    }
   ],
   "seo_word": "こどもの自殺",
-  "seo_volume": 0
+  "seo_volume": 0,
+  "seo_title": "こどもの自殺対策｜国会の質疑と政府答弁"
  },
  {
   "key": "kisokojo-bukka-rendo",
@@ -717,7 +739,8 @@
    }
   ],
   "seo_word": "年収の壁",
-  "seo_volume": 110000
+  "seo_volume": 110000,
+  "seo_title": "年収の壁とは｜基礎控除の引き上げと国会答弁"
  },
  {
   "key": "seito-kofukin",
@@ -758,7 +781,8 @@
    }
   ],
   "seo_word": "政党交付金",
-  "seo_volume": 3600
+  "seo_volume": 3600,
+  "seo_title": "政党交付金とは｜返還・使途と国会の議論"
  },
  {
   "key": "kasuhara-taisaku",
@@ -794,7 +818,8 @@
     "label": "事業主向け：カスハラ義務化の5つの措置と、マニュアルでは足りない部分",
     "url": "https://exbridge.jp/kasuhara.html?ref=giin-tracker"
    }
-  ]
+  ],
+  "seo_title": "カスハラ対策の義務化｜国会の質疑と答弁"
  },
  {
   "key": "kokka-joho-kaigi",
@@ -826,7 +851,8 @@
    }
   ],
   "seo_word": "国家情報会議",
-  "seo_volume": 3600
+  "seo_volume": 3600,
+  "seo_title": "国家情報会議とは｜国会の質疑と政府答弁"
  },
  {
   "key": "keizai-anpo-infra",
@@ -854,7 +880,8 @@
    }
   ],
   "seo_word": "経済安全保障推進法",
-  "seo_volume": 2900
+  "seo_volume": 2900,
+  "seo_title": "経済安全保障推進法とは｜国会の議論"
  },
  {
   "key": "konenki-josei-kenko",
@@ -886,7 +913,8 @@
    }
   ],
   "seo_word": "更年期",
-  "seo_volume": 60500
+  "seo_volume": 60500,
+  "seo_title": "更年期と女性の健康｜国会の質疑と政府答弁"
  },
  {
   "key": "tokubetsu-shi",
@@ -927,7 +955,8 @@
     "url": "https://www.siteitosi.jp/opinion/background.html"
    }
   ],
-  "seo_word": "特別市"
+  "seo_word": "特別市",
+  "seo_title": "特別市とは｜国会の質疑と政府答弁"
  },
  {
   "key": "kyu-tekikoku-joko",
@@ -959,7 +988,8 @@
     "url": "https://legal.un.org/repertory/art108_109/english/rep_supp10_vol6_art108_109.pdf"
    }
   ],
-  "seo_word": "旧敵国条項"
+  "seo_word": "旧敵国条項",
+  "seo_title": "旧敵国条項とは｜国会の質疑と政府答弁"
  },
  {
   "key": "koritsu-byoin-keiei",
@@ -993,7 +1023,8 @@
     "url": "https://www.city.sapporo.jp/hospital/overview/activity/finance/index.html"
    }
   ],
-  "seo_word": "公立病院 赤字"
+  "seo_word": "公立病院 赤字",
+  "seo_title": "公立病院の赤字｜国会の質疑と政府答弁"
  },
  {
   "key": "tomahawk-hangeki",
@@ -1029,7 +1060,8 @@
     "url": "https://www.foreignaffairs.com/japan/japan-giving-united-states-chance-asia"
    }
   ],
-  "seo_word": "トマホーク"
+  "seo_word": "トマホーク",
+  "seo_title": "トマホークと反撃能力｜国会の質疑と答弁"
  },
  {
   "key": "ai-agent",
@@ -1071,7 +1103,8 @@
     "url": "https://proto.exbridge.jp/kdbagent/"
    }
   ],
-  "seo_word": "AIエージェント"
+  "seo_word": "AIエージェント",
+  "seo_title": "AIエージェント｜国会の質疑と政府答弁"
  },
  {
   "key": "gakucho-senko",
@@ -1108,7 +1141,8 @@
     "url": "https://www.tokyo-np.co.jp/article/439757"
    }
   ],
-  "seo_word": "学長選考"
+  "seo_word": "学長選考",
+  "seo_title": "国立大学の学長選考｜国会の質疑と答弁"
  },
  {
   "key": "narita-kinoukyouka",
@@ -1141,7 +1175,8 @@
     "url": "https://www.aviationwire.jp/archives/321595"
    }
   ],
-  "seo_word": "成田空港 機能強化"
+  "seo_word": "成田空港 機能強化",
+  "seo_title": "成田空港の機能強化｜国会の質疑と答弁"
  },
  {
   "key": "ikukyu-gyomu-daitai",
@@ -1172,7 +1207,8 @@
     "url": "https://www.mhlw.go.jp/content/001688450.pdf"
    }
   ],
-  "seo_word": "育休 業務代替"
+  "seo_word": "育休 業務代替",
+  "seo_title": "育休の業務代替とは｜手当の助成と国会答弁"
  },
  {
   "key": "daiko-yuso",
@@ -1201,7 +1237,8 @@
     "url": "https://www.mlit.go.jp/tetudo/"
    }
   ],
-  "seo_word": "代行輸送"
+  "seo_word": "代行輸送",
+  "seo_title": "代行バス・代行輸送｜鉄道災害と国会の議論"
  },
  {
   "key": "kyufu-tsuki-zeigaku-kojo",
@@ -1226,7 +1263,8 @@
     "url": "https://newsdig.tbs.co.jp/articles/-/2973583"
    }
   ],
-  "seo_word": "給付付き税額控除"
+  "seo_word": "給付付き税額控除",
+  "seo_title": "給付付き税額控除とは｜いつから・国会答弁"
  },
  {
   "key": "rissai-shomei",
@@ -1261,7 +1299,8 @@
     "url": "https://kurage.exbridge.jp/khisai.php/rissai?ref=giin-rissai"
    }
   ],
-  "seo_word": "罹災証明書"
+  "seo_word": "罹災証明書",
+  "seo_title": "罹災証明書とは｜応急修理と国会の議論"
  },
  {
   "key": "nihonban-dbs",
@@ -1288,7 +1327,8 @@
     "url": "https://news.livedoor.com/article/detail/32443055/"
    }
   ],
-  "seo_word": "日本版DBS"
+  "seo_word": "日本版DBS",
+  "seo_title": "日本版DBSとは｜いつから・対象・国会答弁"
  },
  {
   "key": "kyodo-bokin",
@@ -1313,7 +1353,8 @@
     "url": "https://laws.e-gov.go.jp/law/326AC0000000045"
    }
   ],
-  "seo_word": "赤い羽根共同募金"
+  "seo_word": "赤い羽根共同募金",
+  "seo_title": "赤い羽根共同募金｜使途と監督の国会議論"
  },
  {
   "key": "shushi-hokokusho-db",
@@ -1334,7 +1375,8 @@
    "公開までの期間（年1回・翌年秋）をどう縮めるか"
   ],
   "links": [],
-  "seo_word": "政治資金収支報告書 データベース"
+  "seo_word": "政治資金収支報告書 データベース",
+  "seo_title": "政治資金収支報告書のデータベース化はいつ？"
  },
  {
   "key": "kodomo-shienkin",
@@ -1355,7 +1397,8 @@
    "支援金の使い道（児童手当の拡充など）と効果をどう示すか"
   ],
   "links": [],
-  "seo_word": "子ども・子育て支援金"
+  "seo_word": "子ども・子育て支援金",
+  "seo_title": "子ども・子育て支援金はいくら？国会答弁"
  },
  {
   "key": "jieikan-shogu",
@@ -1377,6 +1420,7 @@
    "採用の対象（年齢・学歴）や募集の方法をどう広げるか"
   ],
   "links": [],
-  "seo_word": "自衛官 処遇改善"
+  "seo_word": "自衛官 処遇改善",
+  "seo_title": "自衛官の充足率と処遇改善｜国会の議論"
  }
 ]

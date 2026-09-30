@@ -1118,7 +1118,8 @@ function g_page_tracker(string $key, int $page): void
     // 例: 不登校74,000／年収の壁110,000／取適法60,500。
     // 90日で /tracker/ 個別ページは表示0だった（2026-09-25 GSC実測）。
     $w = $t['seo_word'] ?? $t['short'] ?? $t['name'];
-    $title = $w . 'は国会でどう議論されたか｜質疑と政府答弁';
+    // 題名は trackers.json の seo_title を優先（検索される言い方「〜とは」「いつから」「いくら」を先頭に。2026-09-30）
+    $title = $t['seo_title'] ?? ($w . 'は国会でどう議論されたか｜質疑と政府答弁');
     $desc = $t['name'] . 'について、全国の国会議員の質疑' . number_format((int)$st['q']) . '件と政府の答弁'
           . number_format((int)$st['gov']) . '件を国会会議録から集めました（' . g_date($st['first']) . '〜'
           . g_date($st['last']) . '）。だれが質問し、政府が何と答えたかを日付と会議録リンクで並べています。';
@@ -1131,7 +1132,7 @@ function g_page_tracker(string $key, int $page): void
          'about' => ['@type' => 'Thing', 'name' => $t['name']],
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
     ]);
-    g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png')]);
+    g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png'), 'nosuffix' => !empty($t['seo_title'])]);
 
     // 右の列（CM枠と災害系デモ）。相談先を出す notice 付きのページ（自殺対策など）には出さない
     $side = empty($t['notice']);
