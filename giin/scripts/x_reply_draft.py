@@ -501,7 +501,12 @@ def deploy(path):
         f.mkd(d)
     except ftplib.error_perm:
         pass
-    f.storbinary(f"STOR {d}/.htaccess", io.BytesIO(b"Header set X-Robots-Tag \"noindex, nofollow\"\nOptions -Indexes\n"))
+    f.storbinary(f"STOR {d}/.htaccess", io.BytesIO(b"AddHandler php-script .php\nHeader set X-Robots-Tag \"noindex, nofollow\"\nOptions -Indexes\n"))
+    # 「URL を入れて1件作る」の取り次ぎ。合言葉は kaima/.env から埋める（表示しない・リポジトリに入れない）
+    tok = next((ln.split("=", 1)[1].strip() for ln in open("/home/kojima/work/kaima/.env", encoding="utf-8")
+                if ln.startswith("RELAY_XREPLY_TOKEN=")), "")
+    php = open(ASK_PHP, encoding="utf-8").read().replace("__TOKEN__", tok)
+    f.storbinary(f"STOR {d}/ask.php", io.BytesIO(php.encode()))
     f.storbinary(f"STOR {d}/index.html", io.BytesIO(data))
     f.storbinary(f"STOR {d}/{day}-{stamp}.html", io.BytesIO(data))
     f.quit()
