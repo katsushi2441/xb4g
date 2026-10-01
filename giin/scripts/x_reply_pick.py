@@ -11,7 +11,7 @@ X は api.fxtwitter.com/2/search で読む（twitter-cli やログインは使�
 
 使い方:
   /usr/bin/python3 scripts/x_reply_pick.py collect [--within 60] [--min-faves 5]   # 直近60分の投稿
-  /usr/bin/python3 scripts/x_reply_pick.py pick [--backend jevlocal|laya|ollama] [--date 2026-10-01]
+  /usr/bin/python3 scripts/x_reply_pick.py pick [--min-views 5000] [--backend jevlocal|laya|ollama]
 出力: outputs/x_reply_pick/<日付>/posts-<時分>.json・candidates-<判断>-<時分>.md
 """
 import argparse, datetime, json, os, re, subprocess, sys, time, urllib.parse
@@ -164,9 +164,9 @@ def pick(args):
     day = args.date
     import glob
     pp = args.posts or sorted(glob.glob(os.path.join(OUT, day, "posts-*.json")))[-1]
-    posts = json.load(open(pp, encoding="utf-8"))
+    posts = [x for x in json.load(open(pp, encoding="utf-8")) if (x.get("views") or 0) >= args.min_views]
     stamp = os.path.basename(pp)[6:-5]
-    jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}.json")
+    jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
         res = {r["id"]: r for r in json.load(open(jp, encoding="utf-8"))}
     else:
@@ -179,18 +179,18 @@ def pick(args):
         tr = match_tracker(r["field"], p["text"])
         sy = match_system(r["field"], p["text"])
         rows.append((p, r, tr, sy))
-    rows.sort(key=lambda x: -(x[0]["likes"]))
+    rows.sort(key=lambda x: -(x[0]["views"]))
     hit = [x for x in rows if x[2] or x[3]][:args.top]
     rest = [x for x in rows if not (x[2] or x[3])][:20]
     L = [f"# X の返信候補 {day}（判断: {args.backend}）\n",
          f"集めた投稿 {len(posts)}件 → 政策・制度・災害の話題 {len(rows)}件"
          f"（うち当社のトラッカーかシステムが当たる {sum(1 for x in rows if x[2] or x[3])}件）。"
-         f"いいねの多い順に、当たるもの上位{len(hit)}件と、分野だけ当たるもの上位{len(rest)}件。返信の文と投稿は人が決める。\n",
+         f"表示の多い順に、当たるもの上位{len(hit)}件と、分野だけ当たるもの上位{len(rest)}件。返信の文と投稿は人が決める。\n",
          "# 当社のトラッカー・システムが当たる\n"]
 
     def block(p, r, tr, sy):
         ago = int((time.time() - p["created"]) / 60)
-        L.append(f"## {p['name']}（@{p['screen_name']}・フォロワー{p['followers']:,}）♥{p['likes']:,}・{ago}分前")
+        L.append(f"## {p['name']}（@{p['screen_name']}・フォロワー{p['followers']:,}）表示{p['views']:,}・♥{p['likes']:,}・{ago}分前")
         L.append(f"- {p['url']}")
         L.append(f"- 分野: {r['field']}（{r['field_conf']:.2f}）")
         if tr:
@@ -217,6 +217,7 @@ if __name__ == "__main__":
     ap.add_argument("--date", default=today.isoformat())
     ap.add_argument("--within", type=int, default=60, help="何分以内の投稿を対象にするか")
     ap.add_argument("--min-faves", type=int, default=5)
+    ap.add_argument("--min-views", type=int, default=5000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する。X の検索に条件が無いので集めたあとで絞る")
     ap.add_argument("--posts", help="pick で使う posts-*.json（省略時はその日の最新）")
     ap.add_argument("--backend", default="jevlocal")
     ap.add_argument("--top", type=int, default=30)

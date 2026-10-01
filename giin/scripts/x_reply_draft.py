@@ -129,7 +129,8 @@ def build(posts_path):
     day = os.path.basename(os.path.dirname(posts_path))
     stamp = os.path.basename(posts_path)[6:-5]
     posts = {p["id"]: p for p in json.load(open(posts_path, encoding="utf-8"))}
-    judge = json.load(open(os.path.join(os.path.dirname(posts_path), f"judge-jevlocal-{stamp}.json"), encoding="utf-8"))
+    judge = json.load(open(sorted(glob.glob(os.path.join(os.path.dirname(posts_path), f"judge-jevlocal-{stamp}*.json")),
+                                  key=os.path.getmtime)[-1], encoding="utf-8"))
     mmdd = day[5:7] + day[8:10]
     cards = []
     for r in judge:
@@ -163,7 +164,7 @@ def build(posts_path):
         cards.append({"p": p, "r": r, "label": label, "text": text, "how": how})
         print(f"\r文案 {len(cards)}件", end="", flush=True)
     print()
-    cards.sort(key=lambda c: -c["p"]["likes"])
+    cards.sort(key=lambda c: -c["p"]["views"])
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
     return out, len(cards)
@@ -177,7 +178,7 @@ def page(day, stamp, cards):
         ago = int((time.time() - p["created"]) / 60)
         body = html.escape(re.sub(r"\s+", " ", p["text"])[:280])
         rows.append(f"""<article>
-<div class="who"><b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・♥{p['likes']:,}・{ago}分前</div>
+<div class="who"><b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}{'（定型文）' if c['how'] == 'fallback' else ''}</div>
@@ -195,7 +196,7 @@ textarea{{box-sizing:border-box;width:100%;font:inherit;border:1px solid #c5d3d8
 .btns{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}} button,.go{{font:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:7px 16px;cursor:pointer;text-decoration:none}}
 button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background:#0a9a8f;color:#fff;border:1px solid #0a9a8f}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
-<p class="lead">直近の投稿から、当社のトラッカーかシステムで答えられるもの {len(cards)}件。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
+<p class="lead">直近60分・表示5,000以上の投稿から、当社のトラッカーかシステムで答えられるもの {len(cards)}件（表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
 {''.join(rows)}
 <script>
 function cur(i){{return document.getElementById('t'+i).value}}
