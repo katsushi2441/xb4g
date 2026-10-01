@@ -45,7 +45,8 @@ _CATALOG = None
 
 def link_catalog():
     """トラッカーが当たらない投稿に付けるリンクの候補。当社が公開しているページの題名と説明だけを持つ
-    （VWork ブログ・note・デモサイト（media mesh の lps）・politech・国会トラッカー）"""
+    （デモサイト（media mesh の lps）・VWork ブログ・note。politech とトラッカー一覧は付けない（2026-10-01 ユーザー指定）。
+    規則で当たらなかった個別のトラッカーも、語が近ければ候補に入れる）"""
     global _CATALOG
     if _CATALOG is not None:
         return _CATALOG
@@ -70,13 +71,6 @@ def link_catalog():
         if m.get("url", "").startswith("https://"):
             cat.append({"種類": "当社のシステムのデモ・紹介ページ", "題名": m["name"],
                         "説明": re.sub(r"実測[:：].*", "", m.get("keyword") or "")[:200], "url": m["url"]})
-    try:
-        copy = json.load(open(os.path.join(WORK, "kpayload", "data", "politech-copy.json"), encoding="utf-8"))
-    except (OSError, ValueError):
-        copy = {}
-    for slug, c in copy.items():
-        cat.append({"種類": "政策の解説ページ（制度と申請・住民向け）", "題名": c.get("title", ""), "説明": (c.get("lead") or "")[:200],
-                    "url": f"https://exbridge.jp/politech/{slug}.html"})
     for t in X.trackers():
         cat.append({"種類": "国会トラッカー（国会の質疑と政府答弁を会議録から集めたページ）", "題名": t["name"],
                     "説明": (t.get("lead") or "")[:200] + " 語: " + "・".join(t.get("words") or []),
@@ -292,7 +286,7 @@ def codex_batch(items, workdir):
 - 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
 - 主語は「当社」（弊社は使わない）。「網羅」「お役に立てます」のような売り込みの言葉は使わない
 - 返信しないほうがよい投稿（街頭演説やあいさつだけの投稿、他人への攻撃・罵倒、個人的な被害の吐露など、国会の事実を添えると失礼になるもの）は、drafts を空にする
-- 「リンク候補」がある候補は、投稿の中身にいちばん近いものを1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0（会議録の事実も無い候補なら drafts も空にする）。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
+- 「リンク候補」がある候補は、投稿の中身にいちばん近いものを1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）
 
 {STYLE}
@@ -332,19 +326,19 @@ def build(posts_path):
         if not (tr or sy):
             # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
             # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
+            links = related_links(p["text"])
+            if not links:
+                continue   # リンク先が無い返信は出さない（トラッカーの一覧には付けない）
             kf, kw = kokkai_facts(p["text"])
             if kf and not kf["発言"]:
                 kf = None
-            links = related_links(p["text"])
-            if not kf and not links:
-                continue
         ref = f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"
         if not (tr or sy):
             what = ("国会会議録（全国の国会議員の質疑と政府の答弁）と、下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）"
                     if kf else "下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）")
             facts = kf or {}
-            url = f"https://xb4g.com/giin/tracker?ref={ref}" if kf else ""
-            label = f"会議録をその場で検索: {kf['検索した語']}（トラッカー未作成）" if kf else "関連ページ（トラッカー未作成）"
+            url = ""   # codex が選んだリンク候補だけを付ける（選ばれなければ出さない）
+            label = "関連ページ（トラッカー未作成）"
             fb = ""
         elif tr:
             what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
@@ -372,7 +366,7 @@ def build(posts_path):
             it["label"] = f"関連: {ln['種類'].split('（')[0]}「{ln['題名'][:40]}」（トラッカー未作成）"
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
         if not it["url"]:
-            continue   # 会議録の事実も無く、関連ページも選ばれなかった
+            continue   # 関連ページ（デモ・ブログ・note・個別のトラッカー）が選ばれなかった
         drafts = []
         for d in texts.get(it["id"], []):
             t = re.sub(r"https?://\S+", "", d.get("text", "")).strip()

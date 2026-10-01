@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """X の返信候補（自社用）を kdeck から1時間ごとに作り直す入口。
 
-  collect（直近60分の投稿）→ pick（jevlocal で分野）→ draft（codex gpt-6-sol で返信文・proto.exbridge.jp へ配置）
+  collect（直近40分の投稿）→ pick（jevlocal で分野）→ draft（codex gpt-6-sol で返信文・proto.exbridge.jp へ配置）
 公開ページ（proto.exbridge.jp/xreply-<token>/）が今回の時刻に置き換わったのを確かめたときだけ items=1。
 これは社内の作業用で、giin の配布物（giin_jobs.py）には入れない。
 """
@@ -25,7 +25,7 @@ def _run(args, timeout):
     return r.returncode, (r.stdout or "")[-2000:], (r.stderr or "")[-1500:]
 
 
-def run_x_reply_job(within: int = 60, **_) -> dict:
+def run_x_reply_job(within: int = 40, **_) -> dict:
     steps = []
     for name, args, to in [
         ("収集", [PY, os.path.join(SCRIPTS, "x_reply_pick.py"), "collect", "--within", str(within)], 1200),
