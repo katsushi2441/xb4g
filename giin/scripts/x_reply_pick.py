@@ -10,9 +10,9 @@
 X は api.fxtwitter.com/2/search で読む（twitter-cli やログインは使わない）。
 
 使い方:
-  /usr/bin/python3 scripts/x_reply_pick.py collect [--since 2026-09-30] [--min-faves 30]
+  /usr/bin/python3 scripts/x_reply_pick.py collect [--within 60] [--min-faves 5]   # 直近60分の投稿
   /usr/bin/python3 scripts/x_reply_pick.py pick [--backend jevlocal|laya|ollama] [--date 2026-10-01]
-出力: outputs/x_reply_pick/<日付>/posts.json・candidates.md
+出力: outputs/x_reply_pick/<日付>/posts-<時分>.json・candidates-<判断>-<時分>.md
 """
 import argparse, datetime, json, os, re, subprocess, sys, time, urllib.parse
 
@@ -93,28 +93,34 @@ def trackers():
     return json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))
 
 
-def queries(since, min_faves):
+def queries(since_ts, min_faves):
     qs = set()
     for t in trackers():
         w = t.get("seo_word") or (t.get("words") or [t["short"]])[0]
         qs.add(w.split()[0])
     qs |= {"国会", "法案", "政府", "大臣", "災害", "被災", "補助金", "制度"}
-    return [f"{w} since:{since} min_faves:{min_faves} lang:ja -filter:replies" for w in sorted(qs)]
+    # since_time: は Unix 時刻（X の検索演算子。fxtwitter の検索でも効く）。返信は投稿から早いほど読まれるので、
+    # 既定は直近60分。60分では「いいね」がまだ少ないので min_faves も小さく（既定5）
+    return [f"{w} since_time:{since_ts} min_faves:{min_faves} lang:ja -filter:replies" for w in sorted(qs)]
 
 
 def collect(args):
     day = args.date
     os.makedirs(os.path.join(OUT, day), exist_ok=True)
     seen = {}
-    qs = queries(args.since, args.min_faves)
+    since_ts = int(time.time()) - args.within * 60
+    qs = queries(since_ts, args.min_faves)
     for i, q in enumerate(qs, 1):
         for x in fx_search(q):
             if x.get("type") == "status" and x["id"] not in seen:
-                s = slim(x); s["query"] = q.split(" since:")[0]; seen[x["id"]] = s
+                if (x.get("created_timestamp") or 0) < since_ts:   # 念のため手元でも時刻で切る
+                    continue
+                s = slim(x); s["query"] = q.split(" since_time:")[0]; seen[x["id"]] = s
         print(f"\r{i}/{len(qs)} {len(seen)}件", end="", flush=True)
         time.sleep(2)
     print()
-    p = os.path.join(OUT, day, "posts.json")
+    stamp = datetime.datetime.now().strftime("%H%M")
+    p = os.path.join(OUT, day, f"posts-{stamp}.json")
     json.dump(sorted(seen.values(), key=lambda s: -s["likes"]), open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(p)
 
@@ -156,8 +162,11 @@ def judge(backend, posts):
 
 def pick(args):
     day = args.date
-    posts = json.load(open(os.path.join(OUT, day, "posts.json"), encoding="utf-8"))
-    jp = os.path.join(OUT, day, f"judge-{args.backend}.json")
+    import glob
+    pp = args.posts or sorted(glob.glob(os.path.join(OUT, day, "posts-*.json")))[-1]
+    posts = json.load(open(pp, encoding="utf-8"))
+    stamp = os.path.basename(pp)[6:-5]
+    jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
         res = {r["id"]: r for r in json.load(open(jp, encoding="utf-8"))}
     else:
@@ -180,7 +189,8 @@ def pick(args):
          "# 当社のトラッカー・システムが当たる\n"]
 
     def block(p, r, tr, sy):
-        L.append(f"## {p['name']}（@{p['screen_name']}・フォロワー{p['followers']:,}）♥{p['likes']:,}")
+        ago = int((time.time() - p["created"]) / 60)
+        L.append(f"## {p['name']}（@{p['screen_name']}・フォロワー{p['followers']:,}）♥{p['likes']:,}・{ago}分前")
         L.append(f"- {p['url']}")
         L.append(f"- 分野: {r['field']}（{r['field_conf']:.2f}）")
         if tr:
@@ -194,9 +204,9 @@ def pick(args):
     L.append("# 分野だけ当たる（新しいトラッカーの種）\n")
     for x in rest:
         block(*x)
-    path = os.path.join(OUT, day, f"candidates-{args.backend}.md")
+    path = os.path.join(OUT, day, f"candidates-{args.backend}-{stamp}.md")
     open(path, "w", encoding="utf-8").write("\n".join(L))
-    json.dump(list(res.values()), open(os.path.join(OUT, day, f"judge-{args.backend}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(list(res.values()), open(jp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(path, len(rows))
 
 
@@ -205,8 +215,9 @@ if __name__ == "__main__":
     ap.add_argument("cmd", choices=["collect", "pick"])
     today = datetime.date.today()
     ap.add_argument("--date", default=today.isoformat())
-    ap.add_argument("--since", default=(today - datetime.timedelta(days=2)).isoformat())
-    ap.add_argument("--min-faves", type=int, default=30)
+    ap.add_argument("--within", type=int, default=60, help="何分以内の投稿を対象にするか")
+    ap.add_argument("--min-faves", type=int, default=5)
+    ap.add_argument("--posts", help="pick で使う posts-*.json（省略時はその日の最新）")
     ap.add_argument("--backend", default="jevlocal")
     ap.add_argument("--top", type=int, default=30)
     ap.add_argument("--rejudge", action="store_true")
