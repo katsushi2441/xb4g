@@ -10,8 +10,10 @@
   - URL は文案に書かせず、こちらで最後に付ける（ref=x-<相手>-<月日>。どの返信から何人来たかを media mesh で数える）
   - 返信の投稿は人がやる。ページのボタンは X の返信画面（intent）を文入りで開くだけ
 
-使い方: /usr/bin/python3 scripts/x_reply_draft.py [--posts outputs/.../posts-1021.json]
+使い方: /usr/bin/python3 scripts/x_reply_draft.py [--posts outputs/.../posts-1021.json] [--deploy]
 出力:   outputs/x_reply_pick/<日付>/reply-<時分>.html
+--deploy: リモートからスマホ・PCで開けるよう、proto.exbridge.jp/xreply-<token>/ に置く（index.html＝最新、
+          <日付>-<時分>.html＝その回）。token は outputs/x_reply_pick/.token（git に入れない）。検索には載せない（noindex）
 """
 import argparse, datetime, glob, html, json, os, re, sqlite3, sys, time, urllib.parse, urllib.request
 
@@ -203,10 +205,37 @@ document.querySelectorAll('.go').forEach(function(a,i){{a.addEventListener('clic
 </script></main></body></html>"""
 
 
+def deploy(path):
+    """heteml へ1接続（FTPS）で送る。認証は aixec/.env の FTP_*（表示しない）"""
+    import ftplib, io
+    env = {}
+    for ln in open("/home/kojima/work/aixec/.env", encoding="utf-8"):
+        m = re.match(r"(FTP_[A-Z]+)=(.*)", ln.strip())
+        if m:
+            env[m.group(1)] = m.group(2).strip("\"'")
+    token = open(os.path.join(X.OUT, ".token")).read().strip()
+    d = f"/web/proto_exbridge_jp/xreply-{token}"
+    day = os.path.basename(os.path.dirname(path)); stamp = os.path.basename(path)[6:-5]
+    data = open(path, "rb").read()
+    f = ftplib.FTP_TLS(env["FTP_HOST"], timeout=60); f.login(env["FTP_USER"], env["FTP_PASS"]); f.prot_p()
+    try:
+        f.mkd(d)
+    except ftplib.error_perm:
+        pass
+    f.storbinary(f"STOR {d}/.htaccess", io.BytesIO(b"Header set X-Robots-Tag \"noindex, nofollow\"\nOptions -Indexes\n"))
+    f.storbinary(f"STOR {d}/index.html", io.BytesIO(data))
+    f.storbinary(f"STOR {d}/{day}-{stamp}.html", io.BytesIO(data))
+    f.quit()
+    return f"https://proto.exbridge.jp/xreply-{token}/"
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--posts")
+    ap.add_argument("--deploy", action="store_true")
     a = ap.parse_args()
     pp = a.posts or sorted(glob.glob(os.path.join(X.OUT, datetime.date.today().isoformat(), "posts-*.json")))[-1]
     out, n = build(pp)
     print(out, n)
+    if a.deploy:
+        print(deploy(out))
