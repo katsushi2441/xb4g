@@ -60,13 +60,26 @@ FIT_Q = ("この投稿は、国の制度・法律・政策・災害について�
 FIELD_Q = "この投稿は、どの分野の話題か"
 
 
-def fx_search(q):
-    u = "https://api.fxtwitter.com/2/search?" + urllib.parse.urlencode({"q": q})
-    r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0", u], capture_output=True, text=True).stdout
-    try:
-        return json.loads(r).get("results", [])
-    except ValueError:
-        return []
+def fx_search(q, pages=1, since_ts=0):
+    """X の検索（fxtwitter）。1ページ20件。pages>1 なら cursor で次のページへ。since_ts より古い投稿が出たら止める"""
+    out, cursor = [], None
+    for _ in range(pages):
+        params = {"q": q}
+        if cursor:
+            params["cursor"] = cursor
+        u = "https://api.fxtwitter.com/2/search?" + urllib.parse.urlencode(params)
+        r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0", u], capture_output=True, text=True).stdout
+        try:
+            d = json.loads(r)
+        except ValueError:
+            break
+        res = d.get("results", [])
+        out += res
+        cursor = (d.get("cursor") or {}).get("bottom")
+        if not res or not cursor or min((x.get("created_timestamp") or 0) for x in res) < since_ts:
+            break
+        time.sleep(1.5)
+    return out
 
 
 def fx_status(url):
@@ -137,11 +150,26 @@ def collect(args):
         print(f"\r{i}/{len(qs)} {len(seen)}件", end="", flush=True)
         time.sleep(2)
     print()
-    # 議員・首長はいいねが少なくても対象。いいねの条件なしで同じ語と議員がよく使う語を引き、作者が議員のものだけ残す
-    pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
+    # 議員・首長はいいねが少なくても対象。
+    # ① これまでに見つけた議員のアカウントを from: でまとめて引く（語に関係なく、その時間の投稿を全部拾う）
+    reg_path = os.path.join(ROOT, "data", "x_politicians.json")
+    reg = json.load(open(reg_path, encoding="utf-8")) if os.path.exists(reg_path) else {}
+    handles = sorted(reg)
     npol = 0
+    for i in range(0, len(handles), 20):
+        q = "(" + " OR ".join(f"from:{h}" for h in handles[i:i + 20]) + f") since_time:{since_ts} -filter:replies"
+        for x in fx_search(q, pages=3, since_ts=since_ts):
+            if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= since_ts:
+                s = slim(x)
+                if is_politician(s):
+                    s["query"] = "from:議員一覧"; seen[x["id"]] = s; npol += 1
+        print(f"\r議員一覧 {min(i + 20, len(handles))}/{len(handles)} {npol}件", end="", flush=True)
+        time.sleep(2)
+    print()
+    # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す
+    pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
     for i, w in enumerate(pol_qs, 1):
-        for x in fx_search(f"{w} since_time:{since_ts} lang:ja -filter:replies"):
+        for x in fx_search(f"{w} since_time:{since_ts} lang:ja -filter:replies", pages=3, since_ts=since_ts):
             if x.get("type") != "status" or x["id"] in seen or (x.get("created_timestamp") or 0) < since_ts:
                 continue
             s = slim(x)
@@ -150,6 +178,12 @@ def collect(args):
         print(f"\r議員 {i}/{len(pol_qs)} {npol}件", end="", flush=True)
         time.sleep(2)
     print()
+    # 見つけた議員を一覧に足す（次の回から from: で漏れなく拾う）
+    for v in seen.values():
+        if is_politician(v) and v.get("screen_name"):
+            reg[v["screen_name"]] = v.get("name") or ""
+    json.dump(dict(sorted(reg.items())), open(reg_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"議員一覧 {len(reg)}人")
     stamp = datetime.datetime.now().strftime("%H%M")
     p = os.path.join(OUT, day, f"posts-{stamp}.json")
     json.dump(sorted(seen.values(), key=lambda s: -s["likes"]), open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
