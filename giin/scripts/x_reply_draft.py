@@ -285,8 +285,8 @@ def build(posts_path):
             label = f"システム: {sy[0]}"
             fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
         items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb})
-    # 文案を作る対象: 議員の投稿は表示が少なくても落とさない（先に枠を取る）、残りは表示の多い順
-    items = sorted(items, key=lambda it: (not X.is_politician(it["post"]), -it["post"]["views"]))[:MAX_ITEMS]
+    # 文案を作る対象は表示の多い順（議員を先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちる）
+    items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
     texts = codex_batch(items, os.path.dirname(posts_path)) if items else {}
     for it in items:
         drafts = []
