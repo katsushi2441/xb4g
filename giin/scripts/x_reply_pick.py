@@ -91,7 +91,7 @@ def slim(x):
 
 
 # 国会議員・地方議員・首長は表示が少なくても候補にする（名前か自己紹介で判定する規則）
-POLITICIAN = r"(衆議院|参議院|衆院|参院|国会|都議会|道議会|府議会|県議会|市議会|区議会|町議会|村議会)議員|[都道府県市区町村]議|議員(?!秘書)|知事|市長|区長|町長|村長"
+POLITICIAN = r"(衆議院|参議院|衆院|参院|国会|都議会|道議会|府議会|県議会|市議会|区議会|町議会|村議会|[都道府県市区町村])議員(?!の|に|を|が|へ|と|たち|さん|秘書|事務所|連盟|会館|選)|[都道府県市区町村]議(?!論|会|事|題|決)|(?<![社学部課係])長(?=です|$)|(知事|市長|区長|町長|村長)(?!選|候補)"
 
 
 POLITICIAN_WORDS = {"一般質問", "委員会", "視察", "議会", "国会", "予算", "陳情", "要望", "政策", "法案", "質問", "答弁", "街頭"}
@@ -197,7 +197,8 @@ def pick(args):
     day = args.date
     import glob
     pp = args.posts or sorted(glob.glob(os.path.join(OUT, day, "posts-*.json")))[-1]
-    posts = [x for x in json.load(open(pp, encoding="utf-8")) if (x.get("views") or 0) >= args.min_views or is_politician(x)]
+    posts = [x for x in json.load(open(pp, encoding="utf-8"))
+             if (x.get("views") or 0) >= args.min_views or (is_politician(x) and (x.get("views") or 0) >= args.min_views_politician)]
     stamp = os.path.basename(pp)[6:-5]
     jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
@@ -251,6 +252,7 @@ if __name__ == "__main__":
     ap.add_argument("--within", type=int, default=60, help="何分以内の投稿を対象にするか")
     ap.add_argument("--min-faves", type=int, default=5)
     ap.add_argument("--min-views", type=int, default=2000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する（議員・首長は除く）。X の検索に条件が無いので集めたあとで絞る")
+    ap.add_argument("--min-views-politician", type=int, default=100, help="議員・首長の投稿の表示の下限")
     ap.add_argument("--posts", help="pick で使う posts-*.json（省略時はその日の最新）")
     ap.add_argument("--backend", default="jevlocal")
     ap.add_argument("--top", type=int, default=30)
