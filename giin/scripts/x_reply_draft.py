@@ -25,6 +25,8 @@ sys.path.insert(0, HERE)
 import x_reply_pick as X  # noqa: E402
 
 MAX_ITEMS = 15   # 1回に文案を作る上限（codex の枠を守る）
+# kdeck の worker（systemd）の PATH には nvm の bin が無いので、見つからなければ既定の場所を使う
+CODEX_BIN = os.environ.get("CODEX_BIN") or __import__("shutil").which("codex") or "/home/kojima/.nvm/versions/node/v20.20.2/bin/codex"
 CODEX_MODEL = "gpt-6-sol"   # astra ではなく sol（2026-10-01 ユーザー指定。codex CLI 0.159.3 以上が要る）
 # 当社が販売しているシステムのデモ。「無料で使える」とは書かない（デモサイトであって無料提供ではない）
 SYSTEM_FACTS = {
@@ -230,9 +232,10 @@ def codex_batch(items, workdir):
 {json.dumps(cases, ensure_ascii=False, indent=1)}
 
 replies に、候補の id ごとに drafts（type と text を2つ）を入れて返してください。"""
-    r = subprocess.run(["codex", "exec", "--skip-git-repo-check", "--ephemeral", "-s", "read-only", "-m", CODEX_MODEL,
+    env = dict(os.environ, PATH=os.path.dirname(CODEX_BIN) + ":" + os.environ.get("PATH", ""))   # codex は node で動く
+    r = subprocess.run([CODEX_BIN, "exec", "--skip-git-repo-check", "--ephemeral", "-s", "read-only", "-m", CODEX_MODEL,
                         "--output-schema", sp, "-o", op, "-"], input=prompt, capture_output=True, text=True,
-                       timeout=900, cwd=workdir)
+                       timeout=900, cwd=workdir, env=env)
     if r.returncode != 0 or not os.path.exists(op):
         raise RuntimeError(f"codex が失敗: {r.stderr[-500:]}")
     return {x["id"]: x["drafts"] for x in json.loads(open(op, encoding="utf-8").read())["replies"]}
