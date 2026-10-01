@@ -400,7 +400,19 @@ def build(posts_path):
     cards = finish(items, texts, picks)
     cards.sort(key=lambda c: -c["p"]["views"])   # ページは表示の多い順（ニュース・議員を区別しない）
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
-    open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
+    empty = None
+    if not cards:
+        # 0件の回でも公開ページは置き換わる。深夜は直近40分の投稿が十数件しかなく0件になる（2026-10-02 04:11 実測:
+        # 投稿18件・表示1,000以上3件）。理由と、候補が出ていた直前の回（deploy が <日付>-<時分>.html で残している）を出す
+        prev = []
+        for rp in sorted(glob.glob(os.path.join(X.OUT, "*", "reply-*.html")), reverse=True):
+            m = re.search(r"から (\d+)件", open(rp, encoding="utf-8").read())
+            if m and int(m.group(1)) > 0:
+                prev.append((os.path.basename(os.path.dirname(rp)), os.path.basename(rp)[6:-5], int(m.group(1))))
+            if len(prev) >= 3:
+                break
+        empty = {"posts": len(posts), "v1000": sum(1 for p in posts.values() if (p.get("views") or 0) >= 1000), "prev": prev}
+    open(out, "w", encoding="utf-8").write(page(day, stamp, cards, empty))
     return out, len(cards)
 
 
@@ -430,8 +442,12 @@ def card_html(c, pre="t"):
 ASK_PHP = os.path.join(HERE, "xreply_ask.php")
 
 
-def page(day, stamp, cards):
+def page(day, stamp, cards, empty=None):
     rows = [card_html(c, f"c{i}-") for i, c in enumerate(cards)]
+    if empty is not None:
+        links = "".join(f'<li><a href="{d}-{t}.html">{d[5:7]}/{d[8:10]} {t[:2]}:{t[2:]} の回（{n}件）</a></li>' for d, t, n in empty["prev"])
+        rows = [f"""<article><p><b>この回（{stamp[:2]}:{stamp[2:]}）は候補が0件でした。</b>直近40分に集まった投稿は{empty['posts']}件、表示1,000以上は{empty['v1000']}件で、返信に向く投稿がありませんでした。深夜〜早朝は投稿が少なく、0件になりやすい時間です。</p>
+{f'<p>候補が出ていた直前の回:</p><ul>{links}</ul>' if links else ''}<p class="lead">返信したい投稿があれば、上の欄に URL を入れると、その場で返信候補を作れます。</p></article>"""]
     form = "" if os.path.exists(ASK_PHP) else " hidden"
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>X 返信候補 {day} {stamp}</title><style>
