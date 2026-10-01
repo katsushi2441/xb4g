@@ -166,6 +166,17 @@ def collect(args):
         print(f"\r議員一覧 {min(i + 20, len(handles))}/{len(handles)} {npol}件", end="", flush=True)
         time.sleep(2)
     print()
+    # ①' 報道機関。いいねが付きにくく（朝日は表示1,000超でもいいね0〜10）、見出しにトラッカーの語も出ないので、
+    #     語の検索（min_faves つき）では拾えない。from: でその時間の投稿を全部引き、表示の下限は pick で掛ける
+    news = json.load(open(os.path.join(ROOT, "data", "x_news_accounts.json"), encoding="utf-8"))["handles"]
+    nnews = 0
+    for i in range(0, len(news), 20):
+        q = "(" + " OR ".join(f"from:{h}" for h in news[i:i + 20]) + f") since_time:{since_ts} -filter:replies"
+        for x in fx_search(q, pages=5, since_ts=since_ts):
+            if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= since_ts:
+                s = slim(x); s["query"] = "from:報道一覧"; seen[x["id"]] = s; nnews += 1
+        time.sleep(2)
+    print(f"報道一覧 {len(news)}アカウント {nnews}件")
     # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す
     pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
     for i, w in enumerate(pol_qs, 1):

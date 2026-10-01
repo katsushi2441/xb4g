@@ -1,0 +1,25 @@
+{
+ "_comment": "報道機関のアカウント。いいねが少なく（朝日は表示1,000超でもいいね0〜10）トラッカーの語も含まないので、語の検索では拾えない。from: でまとめて引く。2026-10-01 fxtwitter でフォロワー数を確かめた",
+ "handles": [
+  "asahi",
+  "nhk_news",
+  "YahooNewsTopics",
+  "livedoornews",
+  "nikkei",
+  "mainichi",
+  "mainichijpnews",
+  "Sankei_news",
+  "Yomiuri_Online",
+  "kyodo_official",
+  "jijicom",
+  "FNN_News",
+  "tbsnewsdig",
+  "ReutersJapan",
+  "Toyokeizai",
+  "bunshun_online",
+  "HuffPostJapan",
+  "NewsDigestWeb",
+  "tokyo_shimbun",
+  "kahoku_shimpo"
+ ]
+}

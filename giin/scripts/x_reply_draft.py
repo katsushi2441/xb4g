@@ -305,59 +305,50 @@ replies に、候補の id ごとに link（選んだリンク候補の番号。
     return {x["id"]: x["drafts"] for x in rep}, {x["id"]: x.get("link", 0) for x in rep}
 
 
-def build(posts_path):
-    day = os.path.basename(os.path.dirname(posts_path))
-    stamp = os.path.basename(posts_path)[6:-5]
-    posts = {p["id"]: p for p in json.load(open(posts_path, encoding="utf-8"))}
-    judge = json.load(open(sorted(glob.glob(os.path.join(os.path.dirname(posts_path), f"judge-jevlocal-{stamp}*.json")),
-                                  key=os.path.getmtime)[-1], encoding="utf-8"))
-    mmdd = day[5:7] + day[8:10]
-    cards, items = [], []
-    for r in judge:
-        if r["field"] == "none":
-            continue
-        p = posts[r["id"]]
-        if re.search(SKIP, p["text"]):   # 皇室・弔事・事故の死傷には売り込みをしない
-            continue
-        tr = X.match_tracker(r["field"], p["text"])
-        sy = X.match_system(r["field"], p["text"])
-        pol = X.is_politician(p)
-        kf, links = None, []
-        if not (tr or sy):
-            # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
-            # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
-            links = related_links(p["text"])
-            if not links:
-                continue   # リンク先が無い返信は出さない（トラッカーの一覧には付けない）
-            kf, kw = kokkai_facts(p["text"])
-            if kf and not kf["発言"]:
-                kf = None
-        ref = f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"
-        if not (tr or sy):
-            what = ("国会会議録（全国の国会議員の質疑と政府の答弁）と、下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）"
-                    if kf else "下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）")
-            facts = kf or {}
-            url = ""   # codex が選んだリンク候補だけを付ける（選ばれなければ出さない）
-            label = "関連ページ（トラッカー未作成）"
-            fb = ""
-        elif tr:
-            what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
-            facts = tracker_facts(tr["key"])
-            facts["発言"] = closest_answers(tr["key"], p["text"], tr.get("words") or [tr["short"]])
-            url = f"https://xb4g.com/giin/tracker/{tr['key']}?ref={ref}"
-            label = f"トラッカー: {tr['short']}"
-            fb = f"この論点が国会でどう議論されてきたか、質疑{facts['質疑の件数']}件と政府答弁{facts['政府答弁の件数']}件を会議録から並べています。"
-        else:
-            what = f"{sy[0]}: {SYSTEM_FACTS.get(sy[0], '')}"
-            facts = {"説明": SYSTEM_FACTS.get(sy[0], "")}
-            url = f"{sy[1]}?ref={ref}"
-            label = f"システム: {sy[0]}"
-            fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
-        items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb,
-                      "links": links, "ref": ref})
-    # 文案を作る対象は表示の多い順（議員を先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちる）
-    items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
-    texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
+def make_item(p, field, mmdd, r=None):
+    """投稿1件に、付けるリンク・codex に渡す事実を用意する。付けられるものが無ければ None"""
+    tr = X.match_tracker(field, p["text"])
+    sy = X.match_system(field, p["text"]) if field else next(
+        (m for f in X.SYSTEMS for m in [X.match_system(f, p["text"])] if m), None)
+    pol = X.is_politician(p)
+    kf, links = None, []
+    if not (tr or sy):
+        # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
+        # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
+        links = related_links(p["text"])
+        if not links:
+            return None   # リンク先が無い返信は出さない（トラッカーの一覧には付けない）
+        kf, kw = kokkai_facts(p["text"])
+        if kf and not kf["発言"]:
+            kf = None
+    ref = f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"
+    if not (tr or sy):
+        what = ("国会会議録（全国の国会議員の質疑と政府の答弁）と、下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）"
+                if kf else "下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）")
+        facts = kf or {}
+        url = ""   # codex が選んだリンク候補だけを付ける（選ばれなければ出さない）
+        label = "関連ページ（トラッカー未作成）"
+        fb = ""
+    elif tr:
+        what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
+        facts = tracker_facts(tr["key"])
+        facts["発言"] = closest_answers(tr["key"], p["text"], tr.get("words") or [tr["short"]])
+        url = f"https://xb4g.com/giin/tracker/{tr['key']}?ref={ref}"
+        label = f"トラッカー: {tr['short']}"
+        fb = f"この論点が国会でどう議論されてきたか、質疑{facts['質疑の件数']}件と政府答弁{facts['政府答弁の件数']}件を会議録から並べています。"
+    else:
+        what = f"{sy[0]}: {SYSTEM_FACTS.get(sy[0], '')}"
+        facts = {"説明": SYSTEM_FACTS.get(sy[0], "")}
+        url = f"{sy[1]}?ref={ref}"
+        label = f"システム: {sy[0]}"
+        fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
+    return {"id": p["id"], "post": p, "r": r or {}, "what": what, "facts": facts, "url": url, "label": label, "fb": fb,
+            "links": links, "ref": ref}
+
+
+def finish(items, texts, picks):
+    """codex の答え（文案・選んだリンク）を検査して、ページに出すカードにする"""
+    cards = []
     for it in items:
         n = picks.get(it["id"], 0)
         if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
@@ -383,34 +374,65 @@ def build(posts_path):
                 continue
             drafts = [{"type": "定型文（codex の案はすべて検査で落ちた）", "text": it["fb"] + "\n" + it["url"]}]
         cards.append({"p": it["post"], "r": it["r"], "label": it["label"], "drafts": drafts})
+    return cards
+
+
+def build(posts_path):
+    day = os.path.basename(os.path.dirname(posts_path))
+    stamp = os.path.basename(posts_path)[6:-5]
+    posts = {p["id"]: p for p in json.load(open(posts_path, encoding="utf-8"))}
+    judge = json.load(open(sorted(glob.glob(os.path.join(os.path.dirname(posts_path), f"judge-jevlocal-{stamp}*.json")),
+                                  key=os.path.getmtime)[-1], encoding="utf-8"))
+    mmdd = day[5:7] + day[8:10]
+    cards, items = [], []
+    for r in judge:
+        if r["field"] == "none":
+            continue
+        p = posts[r["id"]]
+        if re.search(SKIP, p["text"]):   # 皇室・弔事・事故の死傷には売り込みをしない
+            continue
+        it = make_item(p, r["field"], mmdd, r)
+        if it:
+            items.append(it)
+    # 文案を作る対象は表示の多い順（議員を先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちる）
+    items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
+    texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
+    cards = finish(items, texts, picks)
     cards.sort(key=lambda c: -c["p"]["views"])   # ページは表示の多い順（ニュース・議員を区別しない）
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
     return out, len(cards)
 
 
-def page(day, stamp, cards):
-    rows = []
-    n = 0
-    for c in cards:
-        p = c["p"]
-        ago = int((time.time() - p["created"]) / 60)
-        body = html.escape(re.sub(r"\s+", " ", p["text"])[:400])
-        ds = []
-        for d in c["drafts"]:
-            intent = "https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": p["id"], "text": d["text"]})
-            ds.append(f"""<div class="draft"><div class="dtype">{html.escape(d['type'])}</div>
-<textarea id="t{n}" rows="5">{html.escape(d['text'])}</textarea>
-<div class="btns"><button type="button" onclick="cp({n},this)">返信文をコピー</button>
-<a class="go" data-i="{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
-            n += 1
-        rows.append(f"""<article>
+def card_html(c, pre="t"):
+    """カード1枚の HTML（定時のページと、URL を入れて作った1件で同じものを使う）。pre は textarea の id の頭"""
+    p = c["p"]
+    ago = int((time.time() - p["created"]) / 60)
+    body = html.escape(re.sub(r"\s+", " ", p["text"])[:400])
+    ds, n = [], 0
+    for d in c["drafts"]:
+        intent = "https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": p["id"], "text": d["text"]})
+        ds.append(f"""<div class="draft"><div class="dtype">{html.escape(d['type'])}</div>
+<textarea id="{pre}{n}" rows="5">{html.escape(d['text'])}</textarea>
+<div class="btns"><button type="button" class="cp" data-i="{pre}{n}">返信文をコピー</button>
+<a class="go" data-i="{pre}{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
+        n += 1
+    return f"""<article>
 <div class="who">{'<span class="pol">議員</span>' if X.is_politician(p) else ''}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}</div>
 {''.join(ds)}
-</article>""")
+</article>"""
+
+
+# 「URL を入れて1件作る」の取り次ぎ（ask.php）を置いたときだけ、ページに入力欄を出す（無いと押しても失敗するだけなので）
+ASK_PHP = os.path.join(HERE, "xreply_ask.php")
+
+
+def page(day, stamp, cards):
+    rows = [card_html(c, f"c{i}-") for i, c in enumerate(cards)]
+    form = "" if os.path.exists(ASK_PHP) else " hidden"
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>X 返信候補 {day} {stamp}</title><style>
 body{{margin:0;background:#f4f7f8;color:#13232c;font:15px/1.7 system-ui,"Noto Sans JP",sans-serif}}
@@ -422,14 +444,43 @@ textarea{{box-sizing:border-box;width:100%;font:inherit;border:1px solid #c5d3d8
 .draft{{border-top:1px dashed #d8e3e7;margin-top:10px;padding-top:8px}} .dtype{{font-size:12px;color:#4d5f68;margin-bottom:4px}}
 .btns{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}} button,.go{{font:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:7px 16px;cursor:pointer;text-decoration:none}}
 button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background:#0a9a8f;color:#fff;border:1px solid #0a9a8f}}
+.one{{background:#fff;border:2px solid #0a9a8f;border-radius:10px;padding:12px 14px;margin:0 0 16px}} .one label{{display:block;font-size:13px;font-weight:700;margin-bottom:6px}}
+.one .row{{display:flex;gap:8px;flex-wrap:wrap}} .one input{{flex:1 1 220px;min-width:0;font:inherit;border:1px solid #c5d3d8;border-radius:8px;padding:8px}}
+.one button{{background:#0a9a8f;color:#fff}} .one button:disabled{{opacity:.5;cursor:wait}} .ostate{{font-size:13px;color:#4d5f68;margin-top:6px;min-height:1.2em}} .ostate.err{{color:#b42318}}
+#mine article{{border:2px solid #0a9a8f}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
-<p class="lead">直近60分の、表示2,000以上の投稿と議員・首長の投稿から {len(cards)}件（議員を先に、表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
+<form id="one" class="one"{form}><label for="ourl">返信したい X の投稿の URL を入れると、その投稿の返信候補を作ります（1〜3分）</label>
+<div class="row"><input id="ourl" type="url" required placeholder="https://x.com/アカウント/status/数字"><button type="submit" id="obtn">返信候補を作る</button></div>
+<div id="ostate" class="ostate"></div></form>
+<div id="mine"></div>
+<p class="lead">定時の候補: 直近40分の、表示1,000以上の投稿と議員・首長（表示100以上）の投稿から {len(cards)}件（表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
 {''.join(rows)}
 <script>
-function cur(i){{return document.getElementById('t'+i).value}}
-function cp(i,b){{navigator.clipboard.writeText(cur(i)).then(function(){{b.textContent='コピーしました';setTimeout(function(){{b.textContent='返信文をコピー'}},1500)}})}}
-document.querySelectorAll('.go').forEach(function(a){{a.addEventListener('click',function(){{
-  var u=new URL(a.href);u.searchParams.set('text',cur(a.dataset.i));a.href=u.toString();}});}});
+function cur(i){{return document.getElementById(i).value}}
+document.addEventListener('click',function(e){{
+  var b=e.target.closest('.cp');
+  if(b){{navigator.clipboard.writeText(cur(b.dataset.i)).then(function(){{b.textContent='コピーしました';setTimeout(function(){{b.textContent='返信文をコピー'}},1500)}});return}}
+  var a=e.target.closest('.go');
+  if(a){{var u=new URL(a.href);u.searchParams.set('text',cur(a.dataset.i));a.href=u.toString();}}
+}});
+var st=document.getElementById('ostate'),btn=document.getElementById('obtn');
+function say(t,err){{st.textContent=t;st.className='ostate'+(err?' err':'')}}
+document.getElementById('one').addEventListener('submit',function(e){{
+  e.preventDefault();var url=document.getElementById('ourl').value.trim();
+  btn.disabled=true;say('受け付けています…');
+  var fd=new FormData();fd.append('url',url);
+  fetch('ask.php',{{method:'POST',body:fd}}).then(function(r){{return r.json()}}).then(function(d){{
+    if(!d.id){{btn.disabled=false;say(d.error||'受け付けられませんでした',1);return}}
+    var t0=Date.now();
+    (function poll(){{fetch('ask.php?id='+encodeURIComponent(d.id)).then(function(r){{return r.json()}}).then(function(s){{
+      if(s.state==='done'){{btn.disabled=false;
+        if(s.html){{say('できました（'+Math.round((Date.now()-t0)/1000)+'秒）');var w=document.createElement('div');w.innerHTML=s.html;document.getElementById('mine').prepend(w.firstElementChild)}}
+        else say(s.message||'返信候補を作れませんでした',1);return}}
+      if(s.state==='error'){{btn.disabled=false;say(s.message||'失敗しました',1);return}}
+      say((s.message||'作っています')+'…（'+Math.round((Date.now()-t0)/1000)+'秒）');setTimeout(poll,4000);
+    }}).catch(function(){{setTimeout(poll,6000)}})}})();
+  }}).catch(function(){{btn.disabled=false;say('送れませんでした。時間をおいてもう一度',1)}});
+}});
 </script></main></body></html>"""
 
 
@@ -457,11 +508,42 @@ def deploy(path):
     return f"https://proto.exbridge.jp/xreply-{token}/"
 
 
+def one(url):
+    """URL を入れた1件の返信候補（ページの「返信候補を作る」から呼ぶ）。{"html": カード} か {"message": 作れなかった理由}"""
+    m = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]+)/status/(\d+)", url or "")
+    if not m:
+        return {"message": "X の投稿の URL（https://x.com/…/status/数字）を入れてください"}
+    r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0", f"https://api.fxtwitter.com/2/status/{m.group(2)}"],
+                       capture_output=True, text=True).stdout
+    try:
+        t = json.loads(r).get("status") or json.loads(r).get("tweet")
+    except ValueError:
+        t = None
+    if not t:
+        return {"message": "投稿を読めませんでした（消された・鍵つき・URL違いのどれか）"}
+    p = X.slim(t)
+    p["url"] = p.get("url") or f"https://x.com/{m.group(1)}/status/{m.group(2)}"
+    it = make_item(p, None, datetime.date.today().strftime("%m%d"))
+    if not it:
+        return {"message": "この投稿に付けられる当社のページ（トラッカー・デモ・ブログ・note）が見つかりませんでした"}
+    wd = os.path.join(X.OUT, "one", datetime.date.today().isoformat(), p["id"])
+    os.makedirs(wd, exist_ok=True)
+    texts, picks = codex_batch([it], wd)
+    cards = finish([it], texts, picks)
+    if not cards:
+        return {"message": "返信しないほうがよい投稿か、付けられるページが無いと判断しました（codex）"}
+    return {"html": card_html(cards[0], f"m{p['id']}-"), "label": cards[0]["label"]}
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--posts")
     ap.add_argument("--deploy", action="store_true")
+    ap.add_argument("--url", help="この1件だけ返信候補を作り、結果を JSON で標準出力に出す")
     a = ap.parse_args()
+    if a.url:
+        print(json.dumps(one(a.url), ensure_ascii=False))
+        sys.exit(0)
     pp = a.posts or sorted(glob.glob(os.path.join(X.OUT, datetime.date.today().isoformat(), "posts-*.json")))[-1]
     out, n = build(pp)
     print(out, n)
