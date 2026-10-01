@@ -363,7 +363,10 @@ def build(posts_path):
         if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
             ln = it["links"][n - 1]
             it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"]
-            it["label"] = f"関連: {ln['種類'].split('（')[0]}「{ln['題名'][:40]}」（トラッカー未作成）"
+            if ln["url"].startswith("https://xb4g.com/giin/tracker/"):   # 既存のトラッカー（分野の規則では当たらず、語の近さで選んだ）
+                it["label"] = f"トラッカー: {ln['題名'][:40]}（語の近さで選択）"
+            else:
+                it["label"] = f"関連: {ln['種類'].split('（')[0]}「{ln['題名'][:40]}」"
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
         if not it["url"]:
             continue   # 関連ページ（デモ・ブログ・note・個別のトラッカー）が選ばれなかった
