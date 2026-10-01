@@ -8,7 +8,8 @@
   - 書くのは codex（gpt-6-sol）。gemma4 では文が売り込み調・的外れになった（2026-10-01）。
     **全候補を1回の呼び出しでまとめて書かせる**（1回2万トークン近く使うので1件ずつ呼ばない）。上限 MAX_ITEMS 件
   - 渡すのは投稿の本文と、当社が持っている事実（件数・期間・投稿に近い政府答弁3つ・システムの説明）だけ
-  - **検査**: 数字は事実か投稿にあるものだけ・「」の引用は会議録の文と一致・115字以内・売り込みの言葉なし。通らなければ定型文にして理由を出す
+  - 1件に2案（型は投稿に合わせて選ばせる）。お手本は当社が手で出してきた返信案（相手の投稿の中身を受け止め→国会の事実→当社の見方）
+  - **検査**: 数字は事実か投稿にあるものだけ・「」の引用は会議録の文と一致・220字以内・「無料」や売り込みの言葉なし。通らない案は出さない
   - URL は文案に書かせず、こちらで最後に付ける（ref=x-<相手>-<月日>。どの返信から何人来たかを media mesh で数える）
   - 返信の投稿は人がやる。ページのボタンは X の返信画面（intent）を文入りで開くだけ
 
@@ -42,7 +43,13 @@ SKIP = r"両陛下|天皇|皇后|皇族|宮内庁|ご逝去|訃報|亡くな|死
 def tracker_facts(key):
     c = sqlite3.connect(os.path.join(X.ROOT, "data", "giin.sqlite"))
     q, g, d0, d1 = c.execute("select sum(kind='q'), sum(kind='gov'), min(date), max(date) from tracker_speech where tracker=?", (key,)).fetchone()
-    return {"質疑の件数": q or 0, "政府答弁の件数": g or 0, "最初の発言": d0, "最新の発言": d1}
+    years = c.execute("select substr(date,1,4) y, sum(kind='q'), sum(kind='gov') from tracker_speech where tracker=? group by y order by y desc limit 4", (key,)).fetchall()
+    askers = c.execute("select speaker, kaiha_at, count(*) n from tracker_speech where tracker=? and kind='q' group by speaker order by n desc limit 5", (key,)).fetchall()
+    parties = c.execute("select kaiha_at, count(*) n from tracker_speech where tracker=? and kind='q' and kaiha_at is not null group by kaiha_at order by n desc limit 5", (key,)).fetchall()
+    return {"質疑の件数": q or 0, "政府答弁の件数": g or 0, "最初の発言": d0, "最新の発言": d1,
+            "年ごとの件数（質疑・答弁）": {y: f"質疑{a}件・答弁{b}件" for y, a, b in years},
+            "質問の多い議員": [f"{n}（{k or '会派不明'}）{m}件" for n, k, m in askers],
+            "会派ごとの質疑": [f"{k}{m}件" for k, m in parties]}
 
 
 def bigrams(t):
@@ -50,7 +57,7 @@ def bigrams(t):
     return {t[i:i + 2] for i in range(len(t) - 1)}
 
 
-def closest_answers(key, post_text, words, k=5):
+def closest_answers(key, post_text, words, k=8):
     """投稿に近い発言（政府の答弁と議員の質問）を、文字の2つ組の重なり＋新しさで上位k件選ぶ（規則）。
     抜粋は語を含む1文。どれを使うか・使わないかは文案の側で決める"""
     c = sqlite3.connect(os.path.join(X.ROOT, "data", "giin.sqlite"))
@@ -82,23 +89,43 @@ def closest_answers(key, post_text, words, k=5):
 
 # 答弁の前置き・受け答えの決まり文句。中身が無いので抜粋に使わない
 FILLER = r"お尋ね|お答え|御質問|ご質問|御指摘|ご指摘|でございます。$|について(で)?ございます|申し上げます。$|承知しております|御答弁|委員長"
-BANNED = r"無料|網羅|お役に立|役立つ|役立ち|素晴らし|感動|敬服|敬意|興味深|注目が集|弊社|当事務所|！|!|ですね"
+BANNED = r"無料|網羅|お役に立|弊社|当事務所|！|!"
 
 
-STYLE = """（当社が実際に送った返信。この型で書く）
-- 現場から国の法律を変えた例です。今年の改正では衆参の環境委員会がそれぞれ附帯決議で、この施設設置の特例を「規制緩和措置」として、運用時に生活環境の保全へ配慮するよう求めています。
-- 東京都の確認は自己申告ですが、国の日本版DBSでは対象の事業者が国のシステムで犯罪事実を確認します。下着の窃盗やつきまといが対象外になった理由も、2024年の審議で政府が答弁しています。"""
+STYLE = """# お手本（当社が実際に出した返信案。この型・この温度で書く）
+
+## 例1 投稿: 浜田聡（前参院議員）「岸田総理は実質増税した。手法: 税控除縮減・非課税措置見直し・新たな賦課金創設・保険料率引き上げ…」
+- 答弁を示す型: 「新たな賦課金」の一つが子ども・子育て支援金ですね。岸田総理（当時）は国会で、歳出改革と賃上げの効果の範囲内で作るので「全体として実質的な負担が生じない」と答弁しました。政府の説明でも、令和10年度に加入者1人あたり月500円弱の拠出です。「実質的な負担なし」の検証こそ必要だと思います。
+- 論点を示す型: 子ども・子育て支援金は、税ではなく医療保険料に上乗せして集める仕組みです。岸田総理（当時）は「全体として実質的な負担が生じない」と答弁しましたが、その根拠は歳出改革と賃上げの効果。国会でこの支援金に触れた質疑は183件あります。
+- 短い型: 子ども・子育て支援金について、岸田総理（当時）は国会で「全体として実質的な負担が生じない」と答弁していました。政府の見込みでも令和10年度に加入者1人あたり月500円弱の拠出です。
+
+## 例2 投稿: 鹿嶋祐介（衆院・元陸上自衛官）「防衛省関係法案の説明を受けた。隊員が安心して働き続けられる環境、責任と負担に見合う処遇が欠かせない」
+- 数字を添える型: 現場を知る方の視点、心強いです。政府答弁では、令和7年度末の自衛官の充足率は88.1％。若手の士は令和7年3月時点で60.7％、令和6年度の中途退職約5,620人のうち半数超が士でした。採用だけでなく、辞めずに続けられる処遇と制度が要だと思います。
+- 本人の発言に寄せる型: 7月の安全保障委員会での「宣誓の重みに応えることができる制度を整える」というご質疑、拝見しました。応募者は10年で約4割減り、中途退職は令和6年度で約5,620人。今回の法案がこの数字をどう変えるか、審議に注目しています。
+
+## 例3 投稿: おときた駿（元参院議員）「誹謗中傷の慰謝料引き上げに賛成。慰謝料が低すぎ『やったもん勝ち』。懲罰的損害賠償まで視野に議論を」
+- 経緯を示す型: 懲罰的損害賠償は、2022年1月の予算委員会で維新の岩谷議員が導入を求めています。そのときの法相答弁は「現実の損害を…補填をするということを目的とした制度」。今回の研究会で、慰謝料の水準からどこまで踏み込むかが焦点ですね。
+
+## 例4 投稿: くさま剛（国交政務官）「TEC-FORCEが横須賀市・三浦市で土砂災害の被災状況を調査。台風26号も迫る中、二次被害防止へ」
+- 現場に寄り添う型: TEC-FORCEの皆さんの調査、ありがとうございます。台風26号の前に、横須賀市と三浦市の土砂災害警戒区域を住所で確かめられるシステムを開発しています。PDFの地図を開かなくても確かめられるので、二次被害を防ぐ一助になればと思います。"""
 
 
 def numbers(s):
-    return set(re.findall(r"\d[\d,]*", s.replace(",", "")))
+    """文中の数（先頭の0は無視。「2025-05」の05と「5月」の5を同じに数える）。西暦には令和の年も足す"""
+    out = set()
+    for x in re.findall(r"\d+(?:\.\d+)?", s.replace(",", "").replace("，", "")):
+        x = x.lstrip("0") or "0"
+        out.add(x)
+        if x.isdigit() and 2019 <= int(x) <= 2100:
+            out.add(str(int(x) - 2018))
+    return out
 
 
 def check(item, t):
     """文案の検査。通らなければ理由を返す"""
     if not t:
         return "空"
-    if len(t) > 115:
+    if len(t) > 220:
         return f"長い（{len(t)}字）"
     if re.search(BANNED, t):
         return "売り込み・感想の言葉"
@@ -118,40 +145,43 @@ def codex_batch(items, workdir):
     """全候補の文案を codex に1回で書かせる（codex は1回で2万トークン近く使うので、1件ずつ呼ばない）"""
     schema = {"type": "object", "additionalProperties": False, "required": ["replies"],
               "properties": {"replies": {"type": "array", "items": {
-                  "type": "object", "additionalProperties": False, "required": ["id", "text"],
-                  "properties": {"id": {"type": "string"}, "text": {"type": "string"}}}}}}
+                  "type": "object", "additionalProperties": False, "required": ["id", "drafts"],
+                  "properties": {"id": {"type": "string"}, "drafts": {"type": "array", "items": {
+                      "type": "object", "additionalProperties": False, "required": ["type", "text"],
+                      "properties": {"type": {"type": "string"}, "text": {"type": "string"}}}}}}}}}
     sp = os.path.join(workdir, "codex-schema.json"); op = os.path.join(workdir, "codex-out.json")
     json.dump(schema, open(sp, "w", encoding="utf-8"))
     cases = []
     for it in items:
         cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "投稿": it["post"]["text"][:700],
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
-    prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに1つずつ書いてください。ファイルの読み書きやコマンドの実行はしないでください。
+    prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに2つ書いてください（その投稿に合う型を2つ選び、どちらもそのまま投稿できる出来にする）。ファイルの読み書きやコマンドの実行はしないでください。
 
-# 書き方
-- 日本語で、1件115字以内（X は全角140字までで、URL の分を空ける）。2文まで
-- 相手の投稿の具体的な論点（地名・制度名・数字・出来事）に、国会でのやりとりという事実で応える。「発言」の中から、その論点に本当に関係するものを1つだけ選び、「〇年に〈who〉が国会で「…」と答弁しています（議員の質問なら「質問しています」）」の形で書く
-- 引用する発言は、投稿の出来事そのものについての発言ではない（年も災害も違うことが多い）。「〇〇に関連して、〇年に…」のように、投稿の出来事について答えたと読める書き方はしない。違う出来事なら「〇年の〈meeting〉では」「過去の災害でも」のように区別して書く
-- 関係の薄い発言しか無ければ引用しない。そのときは質疑・答弁の件数や最新の発言の時期など、使ってよい事実で短く書く
-- かぎかっこの中は quote の文字をそのまま使う。長ければ要の部分だけ残して前後を「…」で切る。言い換え・要約はしない
-- 使ってよい事実に無い数字・日付・人名は書かない
-- 当社のものは、下にURLが付くので「国会の質疑と答弁はこちらで見られます」程度に短く添える。システムは「〜できるシステムを開発しています」と書き、無料とは書かない（販売しているシステムのデモ）
-- 相手をほめる言葉や感想（素晴らしい・感動・興味深い・敬意）、売り込みの言葉（網羅・役立つ・お役に立てます）、感嘆符、「ですね」は使わない。主語は「当社」（弊社は使わない）
-- 政治的な賛否・人への批判は書かない。URL・ハッシュタグ・絵文字は書かない
-- AIが書いたような言い換えの多い文にしない。人が口で言う長さで
+# いちばん大事なこと
+- **ただの宣伝にしない。** 1文目で、相手の投稿の具体的な中身（相手の言葉・数字・出来事・問題意識）を拾って受け止める。決まり文句のほめ言葉ではなく、中身に触れた受け止めにする
+- そのうえで、相手の論点を深める国会のやりとり（答弁・質問）や件数・年ごとの推移などの事実を、具体的に添える
+- 最後に、当社の見方を一言（「〜が要だと思います」「〜に注目しています」「〜の検証が必要だと思います」）
+- 当社のシステムを紹介する場合も、まず相手の投稿への受け止め。システムは「〜を確かめられるシステムを開発しています」と書き、無料とは書かない（販売しているシステムのデモ）
+
+# 守ること
+- 1案 80〜200字。型（答弁を示す・数字や論点を示す・本人の発言に寄せる・現場に寄り添う など）は、お手本から投稿に合うものを2つ選ぶ（2案は違う型・違う事実にする）
+- 使ってよい事実に無い数字・日付・人名・会議名は書かない。かぎかっこで引用するときは quote の文字をそのまま使い、長ければ前後を「…」で切る（言い換えない）
+- 引用する発言は、投稿の出来事そのものについての発言ではないことが多い。投稿の出来事について答えたと読める書き方はしない（年や会議名で区別する）
+- 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
+- 主語は「当社」（弊社は使わない）。「網羅」「お役に立てます」のような売り込みの言葉は使わない
 
 {STYLE}
 
 # 候補
 {json.dumps(cases, ensure_ascii=False, indent=1)}
 
-replies に、候補の id ごとに text を入れて返してください。"""
+replies に、候補の id ごとに drafts（type と text を2つ）を入れて返してください。"""
     r = subprocess.run(["codex", "exec", "--skip-git-repo-check", "--ephemeral", "-s", "read-only", "-m", CODEX_MODEL,
                         "--output-schema", sp, "-o", op, "-"], input=prompt, capture_output=True, text=True,
                        timeout=900, cwd=workdir)
     if r.returncode != 0 or not os.path.exists(op):
         raise RuntimeError(f"codex が失敗: {r.stderr[-500:]}")
-    return {x["id"]: x["text"].strip() for x in json.loads(open(op, encoding="utf-8").read())["replies"]}
+    return {x["id"]: x["drafts"] for x in json.loads(open(op, encoding="utf-8").read())["replies"]}
 
 
 def build(posts_path):
@@ -190,10 +220,15 @@ def build(posts_path):
     items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
     texts = codex_batch(items, os.path.dirname(posts_path)) if items else {}
     for it in items:
-        t = re.sub(r"https?://\S+", "", texts.get(it["id"], "")).strip()
-        why = check(it, t)
-        cards.append({"p": it["post"], "r": it["r"], "label": it["label"],
-                      "text": (it["fb"] if why else t) + "\n" + it["url"], "how": "codex" if not why else f"定型文（codex の文は{why}）"})
+        drafts = []
+        for d in texts.get(it["id"], []):
+            t = re.sub(r"https?://\S+", "", d.get("text", "")).strip()
+            why = check(it, t)
+            if not why:   # 検査に通らない案（引用の不一致・事実に無い数字など）は出さない
+                drafts.append({"type": d.get("type", ""), "text": t + "\n" + it["url"]})
+        if not drafts:
+            drafts = [{"type": "定型文（codex の案はすべて検査で落ちた）", "text": it["fb"] + "\n" + it["url"]}]
+        cards.append({"p": it["post"], "r": it["r"], "label": it["label"], "drafts": drafts})
     cards.sort(key=lambda c: -c["p"]["views"])
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
@@ -202,19 +237,25 @@ def build(posts_path):
 
 def page(day, stamp, cards):
     rows = []
-    for i, c in enumerate(cards):
+    n = 0
+    for c in cards:
         p = c["p"]
-        intent = "https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": p["id"], "text": c["text"]})
         ago = int((time.time() - p["created"]) / 60)
-        body = html.escape(re.sub(r"\s+", " ", p["text"])[:280])
+        body = html.escape(re.sub(r"\s+", " ", p["text"])[:400])
+        ds = []
+        for d in c["drafts"]:
+            intent = "https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": p["id"], "text": d["text"]})
+            ds.append(f"""<div class="draft"><div class="dtype">{html.escape(d['type'])}</div>
+<textarea id="t{n}" rows="5">{html.escape(d['text'])}</textarea>
+<div class="btns"><button type="button" onclick="cp({n},this)">返信文をコピー</button>
+<a class="go" data-i="{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
+            n += 1
         rows.append(f"""<article>
 <div class="who"><b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
-<div class="tag">{html.escape(c['label'])}{'' if c['how'] == 'codex' else '・' + html.escape(c['how'])}</div>
-<textarea id="t{i}" rows="4">{html.escape(c['text'])}</textarea>
-<div class="btns"><button type="button" onclick="cp({i},this)">返信文をコピー</button>
-<a class="go" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div>
+<div class="tag">{html.escape(c['label'])}</div>
+{''.join(ds)}
 </article>""")
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>X 返信候補 {day} {stamp}</title><style>
@@ -223,6 +264,7 @@ main{{max-width:760px;margin:0 auto;padding:16px}} h1{{font-size:20px;margin:8px
 article{{background:#fff;border:1px solid #d8e3e7;border-radius:10px;padding:14px;margin:0 0 14px;overflow-wrap:anywhere}}
 .who{{font-size:13px;color:#4d5f68}} .post{{margin:6px 0}} .src{{font-size:13px}} .tag{{margin:8px 0 4px;font-size:12px;font-weight:700;color:#0a726b}}
 textarea{{box-sizing:border-box;width:100%;font:inherit;border:1px solid #c5d3d8;border-radius:8px;padding:8px}}
+.draft{{border-top:1px dashed #d8e3e7;margin-top:10px;padding-top:8px}} .dtype{{font-size:12px;color:#4d5f68;margin-bottom:4px}}
 .btns{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}} button,.go{{font:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:7px 16px;cursor:pointer;text-decoration:none}}
 button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background:#0a9a8f;color:#fff;border:1px solid #0a9a8f}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
@@ -231,8 +273,8 @@ button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background
 <script>
 function cur(i){{return document.getElementById('t'+i).value}}
 function cp(i,b){{navigator.clipboard.writeText(cur(i)).then(function(){{b.textContent='コピーしました';setTimeout(function(){{b.textContent='返信文をコピー'}},1500)}})}}
-document.querySelectorAll('.go').forEach(function(a,i){{a.addEventListener('click',function(){{
-  var u=new URL(a.href);u.searchParams.set('text',cur(i));a.href=u.toString();}});}});
+document.querySelectorAll('.go').forEach(function(a){{a.addEventListener('click',function(){{
+  var u=new URL(a.href);u.searchParams.set('text',cur(a.dataset.i));a.href=u.toString();}});}});
 </script></main></body></html>"""
 
 
