@@ -285,7 +285,7 @@ def build(posts_path):
             label = f"システム: {sy[0]}"
             fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
         items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb})
-    # 議員の投稿を先に、その次に表示の多い順
+    # 文案を作る対象: 議員の投稿は表示が少なくても落とさない（先に枠を取る）、残りは表示の多い順
     items = sorted(items, key=lambda it: (not X.is_politician(it["post"]), -it["post"]["views"]))[:MAX_ITEMS]
     texts = codex_batch(items, os.path.dirname(posts_path)) if items else {}
     for it in items:
@@ -302,7 +302,7 @@ def build(posts_path):
                 continue
             drafts = [{"type": "定型文（codex の案はすべて検査で落ちた）", "text": it["fb"] + "\n" + it["url"]}]
         cards.append({"p": it["post"], "r": it["r"], "label": it["label"], "drafts": drafts})
-    cards.sort(key=lambda c: (not X.is_politician(c["p"]), -c["p"]["views"]))
+    cards.sort(key=lambda c: -c["p"]["views"])   # ページは表示の多い順（ニュース・議員を区別しない）
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
     return out, len(cards)
