@@ -35,10 +35,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo relay('POST', $BASE, json_encode(['url' => $url]), $TOKEN);
     exit;
 }
+// URL を入れて作った候補は、ここ（同じ階層の mine.json）に残す。定時の更新で index.html が置き換わっても消えない。
+// 新しい順に最大 MINE_MAX 件・MINE_DAYS 日まで
+const MINE = __DIR__ . '/mine.json';
+const MINE_MAX = 30;
+const MINE_DAYS = 7;
+function mine_load() {
+    $a = @json_decode((string)@file_get_contents(MINE), true);
+    return is_array($a) ? $a : [];
+}
+function mine_save($items) {
+    $items = array_values(array_filter($items, function ($x) { return $x['t'] > time() - MINE_DAYS * 86400; }));
+    $ok = @file_put_contents(MINE, json_encode(array_slice($items, 0, MINE_MAX), JSON_UNESCAPED_UNICODE), LOCK_EX);
+    header('X-Mine-Save: ' . ($ok === false ? 'failed ' . (error_get_last()['message'] ?? '') : 'ok'));
+}
+if (isset($_GET['list'])) {
+    echo json_encode(['items' => mine_load()], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if (isset($_GET['del'])) {
+    $d = (string)$_GET['del'];
+    mine_save(array_filter(mine_load(), function ($x) use ($d) { return $x['id'] !== $d; }));
+    echo json_encode(['ok' => 1]);
+    exit;
+}
 $id = (string)($_GET['id'] ?? '');
 if (!preg_match('/^[0-9a-f]{16}$/', $id)) {
     http_response_code(400);
     echo json_encode(['state' => 'error', 'message' => '受付番号がありません']);
     exit;
 }
-echo relay('GET', $BASE . '/' . $id, null, $TOKEN);
+$res = relay('GET', $BASE . '/' . $id, null, $TOKEN);
+$d = json_decode($res, true);
+if (is_array($d) && ($d['state'] ?? '') === 'done' && !empty($d['html'])) {
+    $items = mine_load();
+    if (!in_array($id, array_column($items, 'id'), true)) {
+        array_unshift($items, ['id' => $id, 't' => time(), 'html' => $d['html']]);
+        mine_save($items);
+    }
+}
+echo $res;

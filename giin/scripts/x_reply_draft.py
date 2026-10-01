@@ -447,12 +447,14 @@ button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background
 .one{{background:#fff;border:2px solid #0a9a8f;border-radius:10px;padding:12px 14px;margin:0 0 16px}} .one label{{display:block;font-size:13px;font-weight:700;margin-bottom:6px}}
 .one .row{{display:flex;gap:8px;flex-wrap:wrap}} .one input{{flex:1 1 220px;min-width:0;font:inherit;border:1px solid #c5d3d8;border-radius:8px;padding:8px}}
 .one button{{background:#0a9a8f;color:#fff}} .one button:disabled{{opacity:.5;cursor:wait}} .ostate{{font-size:13px;color:#4d5f68;margin-top:6px;min-height:1.2em}} .ostate.err{{color:#b42318}}
-#mine article{{border:2px solid #0a9a8f}}
+#mine article{{border:2px solid #0a9a8f;margin-top:4px}} .h2{{font-size:16px;margin:18px 0 8px}} [hidden]{{display:none!important}}
+.minehead{{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#4d5f68}} .del{{font-size:12px;padding:2px 10px;border-color:#c5d3d8;color:#4d5f68}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
 <form id="one" class="one"{form}><label for="ourl">返信したい X の投稿の URL を入れると、その投稿の返信候補を作ります（1〜3分）</label>
 <div class="row"><input id="ourl" type="url" required placeholder="https://x.com/アカウント/status/数字"><button type="submit" id="obtn">返信候補を作る</button></div>
 <div id="ostate" class="ostate"></div></form>
-<div id="mine"></div>
+<section id="minewrap" hidden><h2 class="h2">URL から作った候補（7日・30件まで残ります）</h2><div id="mine"></div></section>
+<h2 class="h2">定時の候補</h2>
 <p class="lead">定時の候補: 直近40分の、表示1,000以上の投稿と議員・首長（表示100以上）の投稿から {len(cards)}件（表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
 {''.join(rows)}
 <script>
@@ -463,7 +465,19 @@ document.addEventListener('click',function(e){{
   var a=e.target.closest('.go');
   if(a){{var u=new URL(a.href);u.searchParams.set('text',cur(a.dataset.i));a.href=u.toString();}}
 }});
-var st=document.getElementById('ostate'),btn=document.getElementById('obtn');
+var st=document.getElementById('ostate'),btn=document.getElementById('obtn'),mine=document.getElementById('mine');
+function add(it,top){{
+  if(document.getElementById('j'+it.id))return;
+  var w=document.createElement('div');w.id='j'+it.id;w.className='mineitem';
+  var t=new Date(it.t*1000),hm=(t.getMonth()+1)+'/'+t.getDate()+' '+t.getHours()+':'+('0'+t.getMinutes()).slice(-2);
+  w.innerHTML='<div class="minehead"><span>'+hm+' に作成（「分前」は作成時点）</span><button type="button" class="del" data-id="'+it.id+'">消す</button></div>'+it.html;
+  if(top)mine.prepend(w);else mine.appendChild(w);
+  document.getElementById('minewrap').hidden=false;
+}}
+fetch('ask.php?list=1').then(function(r){{return r.json()}}).then(function(d){{(d.items||[]).forEach(function(it){{add(it,false)}})}}).catch(function(){{}});
+mine.addEventListener('click',function(e){{var b=e.target.closest('.del');if(!b)return;
+  fetch('ask.php?del='+encodeURIComponent(b.dataset.id)).then(function(){{var x=document.getElementById('j'+b.dataset.id);if(x)x.remove();
+  if(!mine.children.length)document.getElementById('minewrap').hidden=true}})}});
 function say(t,err){{st.textContent=t;st.className='ostate'+(err?' err':'')}}
 document.getElementById('one').addEventListener('submit',function(e){{
   e.preventDefault();var url=document.getElementById('ourl').value.trim();
@@ -474,7 +488,7 @@ document.getElementById('one').addEventListener('submit',function(e){{
     var t0=Date.now();
     (function poll(){{fetch('ask.php?id='+encodeURIComponent(d.id)).then(function(r){{return r.json()}}).then(function(s){{
       if(s.state==='done'){{btn.disabled=false;
-        if(s.html){{say('できました（'+Math.round((Date.now()-t0)/1000)+'秒）');var w=document.createElement('div');w.innerHTML=s.html;document.getElementById('mine').prepend(w.firstElementChild)}}
+        if(s.html){{say('できました（'+Math.round((Date.now()-t0)/1000)+'秒）。下の「URL から作った候補」に残ります');add({{id:d.id,t:Date.now()/1000,html:s.html}},true)}}
         else say(s.message||'返信候補を作れませんでした',1);return}}
       if(s.state==='error'){{btn.disabled=false;say(s.message||'失敗しました',1);return}}
       say((s.message||'作っています')+'…（'+Math.round((Date.now()-t0)/1000)+'秒）');setTimeout(poll,4000);
@@ -507,6 +521,11 @@ def deploy(path):
                 if ln.startswith("RELAY_XREPLY_TOKEN=")), "")
     php = open(ASK_PHP, encoding="utf-8").read().replace("__TOKEN__", tok)
     f.storbinary(f"STOR {d}/ask.php", io.BytesIO(php.encode()))
+    # URL から作った候補の保存先。PHP はフォルダに新しいファイルを作れない（heteml・Permission denied）ので、
+    # 無いときだけ空で作って書き込み可にする（あれば中身を残す）
+    if "mine.json" not in [os.path.basename(x) for x in f.nlst(d)]:
+        f.storbinary(f"STOR {d}/mine.json", io.BytesIO(b"[]"))
+    f.sendcmd(f"SITE CHMOD 666 {d}/mine.json")
     f.storbinary(f"STOR {d}/index.html", io.BytesIO(data))
     f.storbinary(f"STOR {d}/{day}-{stamp}.html", io.BytesIO(data))
     f.quit()
