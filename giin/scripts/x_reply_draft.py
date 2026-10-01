@@ -39,6 +39,72 @@ SYSTEM_FACTS = {
 }
 
 
+WORK = "/home/kojima/work"
+_CATALOG = None
+
+
+def link_catalog():
+    """トラッカーが当たらない投稿に付けるリンクの候補。当社が公開しているページの題名と説明だけを持つ
+    （VWork ブログ・note・デモサイト（media mesh の lps）・politech・国会トラッカー）"""
+    global _CATALOG
+    if _CATALOG is not None:
+        return _CATALOG
+    cat = []
+    for p in sorted(glob.glob(os.path.join(WORK, "vwork", "blog", "*.md"))):
+        head = open(p, encoding="utf-8").read().split("\n---", 1)[0]
+        if re.search(r"^status:\s*draft", head, re.M):
+            continue
+        fm = {m.group(1): m.group(2).strip().strip('"') for m in re.finditer(r"^(title|description|tags):\s*(.+)$", head, re.M)}
+        if fm.get("title"):
+            stem = os.path.basename(p)[:-3]
+            cat.append({"種類": "VWork ブログの記事", "題名": fm["title"], "説明": fm.get("description", "")[:200],
+                        "url": f"https://exbridge.jp/vibeblog/{stem}.html"})
+    try:
+        mesh = json.load(open(os.path.join(WORK, "kurage_web", "scripts", "mesh_data.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        mesh = {}
+    for m in mesh.get("media", []):
+        if m.get("platform") == "note" and m.get("url", "").startswith("https://note.com/"):
+            cat.append({"種類": "note の記事", "題名": m["name"], "説明": (m.get("to") or "")[:200], "url": m["url"]})
+    for m in mesh.get("lps", []):
+        if m.get("url", "").startswith("https://"):
+            cat.append({"種類": "当社のシステムのデモ・紹介ページ", "題名": m["name"],
+                        "説明": re.sub(r"実測[:：].*", "", m.get("keyword") or "")[:200], "url": m["url"]})
+    try:
+        copy = json.load(open(os.path.join(WORK, "kpayload", "data", "politech-copy.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        copy = {}
+    for slug, c in copy.items():
+        cat.append({"種類": "政策の解説ページ（制度と申請・住民向け）", "題名": c.get("title", ""), "説明": (c.get("lead") or "")[:200],
+                    "url": f"https://exbridge.jp/politech/{slug}.html"})
+    for t in X.trackers():
+        cat.append({"種類": "国会トラッカー（国会の質疑と政府答弁を会議録から集めたページ）", "題名": t["name"],
+                    "説明": (t.get("lead") or "")[:200] + " 語: " + "・".join(t.get("words") or []),
+                    "url": f"https://xb4g.com/giin/tracker/{t['key']}"})
+    # 2文字の組の珍しさ（どの候補にも出る組は手がかりにならない）
+    df = {}
+    for c in cat:
+        c["_bg"] = bigrams(c["題名"] + c["説明"])
+        for b in c["_bg"]:
+            df[b] = df.get(b, 0) + 1
+    _CATALOG = (cat, df)
+    return _CATALOG
+
+
+def related_links(text, k=8):
+    """投稿の本文に近いページを、2文字の組の重なり（珍しい組ほど重い）で k 件まで選ぶ。最後に選ぶのは codex"""
+    cat, df = link_catalog()
+    tb = bigrams(re.sub(r"https?://\S+|[#＃@]\S+", "", text))
+    scored = []
+    for c in cat:
+        hit = tb & c["_bg"]
+        sc = sum(1.0 / df[b] for b in hit if re.fullmatch(r"[一-龥々ァ-ヶーA-Za-z]{2}", b))
+        if sc > 0:
+            scored.append((sc / (len(c["_bg"]) ** 0.3), c))
+    scored.sort(key=lambda x: -x[0])
+    return [{"種類": c["種類"], "題名": c["題名"], "説明": c["説明"], "url": c["url"]} for sc, c in scored[:k] if sc >= 0.05]
+
+
 SKIP = r"両陛下|天皇|皇后|皇族|宮内庁|ご逝去|訃報|亡くな|死亡|ご冥福|お悔やみ"
 
 
@@ -198,8 +264,8 @@ def codex_batch(items, workdir):
     """全候補の文案を codex に1回で書かせる（codex は1回で2万トークン近く使うので、1件ずつ呼ばない）"""
     schema = {"type": "object", "additionalProperties": False, "required": ["replies"],
               "properties": {"replies": {"type": "array", "items": {
-                  "type": "object", "additionalProperties": False, "required": ["id", "drafts"],
-                  "properties": {"id": {"type": "string"}, "drafts": {"type": "array", "items": {
+                  "type": "object", "additionalProperties": False, "required": ["id", "link", "drafts"],
+                  "properties": {"id": {"type": "string"}, "link": {"type": "integer"}, "drafts": {"type": "array", "items": {
                       "type": "object", "additionalProperties": False, "required": ["type", "text"],
                       "properties": {"type": {"type": "string"}, "text": {"type": "string"}}}}}}}}}
     sp = os.path.join(workdir, "codex-schema.json"); op = os.path.join(workdir, "codex-out.json")
@@ -209,6 +275,8 @@ def codex_batch(items, workdir):
         cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "自己紹介": (it["post"].get("description") or "")[:120],
                       "投稿": it["post"]["text"][:700],
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
+        if it["links"]:
+            cases[-1]["リンク候補"] = [dict(番号=i + 1, 種類=l["種類"], 題名=l["題名"], 説明=l["説明"]) for i, l in enumerate(it["links"])]
     prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに2つ書いてください（その投稿に合う型を2つ選び、どちらもそのまま投稿できる出来にする）。ファイルの読み書きやコマンドの実行はしないでください。
 
 # いちばん大事なこと
@@ -224,6 +292,7 @@ def codex_batch(items, workdir):
 - 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
 - 主語は「当社」（弊社は使わない）。「網羅」「お役に立てます」のような売り込みの言葉は使わない
 - 返信しないほうがよい投稿（街頭演説やあいさつだけの投稿、他人への攻撃・罵倒、個人的な被害の吐露など、国会の事実を添えると失礼になるもの）は、drafts を空にする
+- 「リンク候補」がある候補は、投稿の中身にいちばん近いものを1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0（会議録の事実も無い候補なら drafts も空にする）。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）
 
 {STYLE}
@@ -231,14 +300,15 @@ def codex_batch(items, workdir):
 # 候補
 {json.dumps(cases, ensure_ascii=False, indent=1)}
 
-replies に、候補の id ごとに drafts（type と text を2つ）を入れて返してください。"""
+replies に、候補の id ごとに link（選んだリンク候補の番号。無ければ 0）と drafts（type と text を2つ）を入れて返してください。"""
     env = dict(os.environ, PATH=os.path.dirname(CODEX_BIN) + ":" + os.environ.get("PATH", ""))   # codex は node で動く
     r = subprocess.run([CODEX_BIN, "exec", "--skip-git-repo-check", "--ephemeral", "-s", "read-only", "-m", CODEX_MODEL,
                         "--output-schema", sp, "-o", op, "-"], input=prompt, capture_output=True, text=True,
                        timeout=900, cwd=workdir, env=env)
     if r.returncode != 0 or not os.path.exists(op):
         raise RuntimeError(f"codex が失敗: {r.stderr[-500:]}")
-    return {x["id"]: x["drafts"] for x in json.loads(open(op, encoding="utf-8").read())["replies"]}
+    rep = json.loads(open(op, encoding="utf-8").read())["replies"]
+    return {x["id"]: x["drafts"] for x in rep}, {x["id"]: x.get("link", 0) for x in rep}
 
 
 def build(posts_path):
@@ -258,18 +328,23 @@ def build(posts_path):
         tr = X.match_tracker(r["field"], p["text"])
         sy = X.match_system(r["field"], p["text"])
         pol = X.is_politician(p)
-        kf = None
+        kf, links = None, []
         if not (tr or sy):
-            # トラッカーもシステムも当たらない投稿は、議員の投稿か表示の多い投稿だけ、会議録をその場で検索する
+            # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
+            # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
             kf, kw = kokkai_facts(p["text"])
-            if not kf or not kf["発言"]:
+            if kf and not kf["発言"]:
+                kf = None
+            links = related_links(p["text"])
+            if not kf and not links:
                 continue
         ref = f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"
-        if kf:
-            what = "国会会議録（全国の国会議員の質疑と政府の答弁）。当社は国会議員の発言を論点ごとに集めるシステムを開発している"
-            facts = kf
-            url = f"https://xb4g.com/giin/tracker?ref={ref}"
-            label = f"会議録をその場で検索: {kf['検索した語']}（トラッカー未作成）"
+        if not (tr or sy):
+            what = ("国会会議録（全国の国会議員の質疑と政府の答弁）と、下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）"
+                    if kf else "下のリンク候補（当社が公開している記事・システムのデモ・解説ページ）")
+            facts = kf or {}
+            url = f"https://xb4g.com/giin/tracker?ref={ref}" if kf else ""
+            label = f"会議録をその場で検索: {kf['検索した語']}（トラッカー未作成）" if kf else "関連ページ（トラッカー未作成）"
             fb = ""
         elif tr:
             what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
@@ -284,11 +359,20 @@ def build(posts_path):
             url = f"{sy[1]}?ref={ref}"
             label = f"システム: {sy[0]}"
             fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
-        items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb})
+        items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb,
+                      "links": links, "ref": ref})
     # 文案を作る対象は表示の多い順（議員を先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちる）
     items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
-    texts = codex_batch(items, os.path.dirname(posts_path)) if items else {}
+    texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
     for it in items:
+        n = picks.get(it["id"], 0)
+        if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
+            ln = it["links"][n - 1]
+            it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"]
+            it["label"] = f"関連: {ln['種類'].split('（')[0]}「{ln['題名'][:40]}」（トラッカー未作成）"
+            it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
+        if not it["url"]:
+            continue   # 会議録の事実も無く、関連ページも選ばれなかった
         drafts = []
         for d in texts.get(it["id"], []):
             t = re.sub(r"https?://\S+", "", d.get("text", "")).strip()
