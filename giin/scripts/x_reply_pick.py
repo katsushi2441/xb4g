@@ -11,7 +11,7 @@ X は api.fxtwitter.com/2/search で読む（twitter-cli やログインは使�
 
 使い方:
   /usr/bin/python3 scripts/x_reply_pick.py collect [--within 60] [--min-faves 5]   # 直近60分の投稿
-  /usr/bin/python3 scripts/x_reply_pick.py pick [--min-views 5000] [--backend jevlocal|laya|ollama]
+  /usr/bin/python3 scripts/x_reply_pick.py pick [--min-views 2000] [--backend jevlocal|laya|ollama]
 出力: outputs/x_reply_pick/<日付>/posts-<時分>.json・candidates-<判断>-<時分>.md
 """
 import argparse, datetime, json, os, re, subprocess, sys, time, urllib.parse
@@ -86,7 +86,16 @@ def slim(x):
     return {"id": x["id"], "url": x.get("url"), "text": x.get("text") or "",
             "likes": x.get("likes") or 0, "views": x.get("views") or 0,
             "created": x.get("created_timestamp") or 0,
-            "screen_name": a.get("screen_name"), "name": a.get("name"), "followers": a.get("followers") or 0}
+            "screen_name": a.get("screen_name"), "name": a.get("name"), "followers": a.get("followers") or 0,
+            "description": a.get("description") or ""}
+
+
+# 国会議員・地方議員・首長は表示が少なくても候補にする（名前か自己紹介で判定する規則）
+POLITICIAN = r"(衆議院|参議院|衆院|参院|国会|都議会|道議会|府議会|県議会|市議会|区議会|町議会|村議会)議員|[都道府県市区町村]議|議員(?!秘書)|知事|市長|区長|町長|村長"
+
+
+def is_politician(p):
+    return bool(re.search(POLITICIAN, (p.get("name") or "") + " " + (p.get("description") or "")))
 
 
 def trackers():
@@ -164,7 +173,7 @@ def pick(args):
     day = args.date
     import glob
     pp = args.posts or sorted(glob.glob(os.path.join(OUT, day, "posts-*.json")))[-1]
-    posts = [x for x in json.load(open(pp, encoding="utf-8")) if (x.get("views") or 0) >= args.min_views]
+    posts = [x for x in json.load(open(pp, encoding="utf-8")) if (x.get("views") or 0) >= args.min_views or is_politician(x)]
     stamp = os.path.basename(pp)[6:-5]
     jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
@@ -217,7 +226,7 @@ if __name__ == "__main__":
     ap.add_argument("--date", default=today.isoformat())
     ap.add_argument("--within", type=int, default=60, help="何分以内の投稿を対象にするか")
     ap.add_argument("--min-faves", type=int, default=5)
-    ap.add_argument("--min-views", type=int, default=5000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する。X の検索に条件が無いので集めたあとで絞る")
+    ap.add_argument("--min-views", type=int, default=2000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する（議員・首長は除く）。X の検索に条件が無いので集めたあとで絞る")
     ap.add_argument("--posts", help="pick で使う posts-*.json（省略時はその日の最新）")
     ap.add_argument("--backend", default="jevlocal")
     ap.add_argument("--top", type=int, default=30)
