@@ -94,7 +94,16 @@ def slim(x):
 POLITICIAN = r"(衆議院|参議院|衆院|参院|国会|都議会|道議会|府議会|県議会|市議会|区議会|町議会|村議会)議員|[都道府県市区町村]議|議員(?!秘書)|知事|市長|区長|町長|村長"
 
 
+POLITICIAN_WORDS = {"一般質問", "委員会", "視察", "議会", "国会", "予算", "陳情", "要望", "政策", "法案", "質問", "答弁", "街頭"}
+
+
+# 役所・公式アカウントは議員ではない（自己紹介に「区長」などが出るので先に外す）
+NOT_POLITICIAN = r"広報|公式|役所|危機管理|事務局|県庁|都庁|市役所|区役所|町役場|村役場|消防|警察|ニュース|新聞|放送"
+
+
 def is_politician(p):
+    if re.search(NOT_POLITICIAN, p.get("name") or ""):
+        return False
     return bool(re.search(POLITICIAN, (p.get("name") or "") + " " + (p.get("description") or "")))
 
 
@@ -128,6 +137,19 @@ def collect(args):
         print(f"\r{i}/{len(qs)} {len(seen)}件", end="", flush=True)
         time.sleep(2)
     print()
+    # 議員・首長はいいねが少なくても対象。いいねの条件なしで同じ語と議員がよく使う語を引き、作者が議員のものだけ残す
+    pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
+    npol = 0
+    for i, w in enumerate(pol_qs, 1):
+        for x in fx_search(f"{w} since_time:{since_ts} lang:ja -filter:replies"):
+            if x.get("type") != "status" or x["id"] in seen or (x.get("created_timestamp") or 0) < since_ts:
+                continue
+            s = slim(x)
+            if is_politician(s):
+                s["query"] = w; seen[x["id"]] = s; npol += 1
+        print(f"\r議員 {i}/{len(pol_qs)} {npol}件", end="", flush=True)
+        time.sleep(2)
+    print()
     stamp = datetime.datetime.now().strftime("%H%M")
     p = os.path.join(OUT, day, f"posts-{stamp}.json")
     json.dump(sorted(seen.values(), key=lambda s: -s["likes"]), open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -138,12 +160,14 @@ def match_tracker(field, text):
     """分野が決まったら、その分野のトラッカーのうち語が本文に出るものを規則で選ぶ（判断モデルには選ばせない）"""
     best = []
     for t in trackers():
-        if THEME_TO_FIELD.get(t["theme"]) != field:
+        if field and THEME_TO_FIELD.get(t["theme"]) != field:
             continue
         words = set(t.get("words") or []) | {t["short"], t.get("seo_word") or ""}
         hit = [w for w in words if w and all(p in text for p in w.split())]
         if hit:
             best.append((len(max(hit, key=len)), t))
+    if not best and field:   # 分野の判定がずれても、語が本文に出るトラッカーは当てる
+        return match_tracker(None, text)
     best.sort(key=lambda b: -b[0])
     return best[0][1] if best else None
 

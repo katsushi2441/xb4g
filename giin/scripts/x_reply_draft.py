@@ -87,6 +87,57 @@ def closest_answers(key, post_text, words, k=8):
     return out
 
 
+KOKKAI = "https://kokkai.ndl.go.jp/api/speech"
+
+
+def keywords(text):
+    """投稿から会議録を検索する語を2つまで（gemma4 に語を抜き出させるだけ。文は書かせない）"""
+    body = json.dumps({"model": "gemma4:12b-it-qat", "stream": False, "think": False, "options": {"num_predict": 60, "temperature": 0},
+                       "prompt": "次の投稿の論点を、国会会議録で検索するための短い語（制度名・法律名・政策名。2〜10字）で2つまで、読点で区切って出力してください。人名・党名・地名は入れない。語だけを出力。\n\n" + text[:600]}).encode()
+    req = urllib.request.Request("http://192.168.0.3:11434/api/generate", data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        out = json.loads(r.read()).get("response", "")
+    return [w.strip(" 「」・\n") for w in re.split(r"[、,，\n]", out) if 2 <= len(w.strip(" 「」・\n")) <= 12][:2]
+
+
+def kokkai_facts(text):
+    """トラッカーが無い論点は、国会会議録APIをその場で検索して、直近3年の発言から投稿に近い文を選ぶ"""
+    words = keywords(text)
+    if not words:
+        return None, []
+    since = f"{datetime.date.today().year - 3}-01-01"
+    pb = bigrams(text)
+    found, total = [], 0
+    for w in words:
+        u = KOKKAI + "?" + urllib.parse.urlencode({"any": w, "from": since, "recordPacking": "json", "maximumRecords": 30})
+        try:
+            d = json.loads(subprocess.run(["curl", "-s", "-m", "30", u], capture_output=True, text=True).stdout)
+        except ValueError:
+            continue
+        total += int(d.get("numberOfRecords") or 0)
+        for r in d.get("speechRecord") or []:
+            pos = r.get("speakerPosition") or ""
+            if r.get("speakerRole") in ("会議録情報",) or "委員長" in pos or "議長" in pos:
+                continue
+            for sent in re.split(r"(?<=。)", r.get("speech") or ""):
+                sent = re.sub(r"^○[^　]+　", "", sent.strip())
+                if w not in sent or not 25 <= len(sent) <= 160 or re.search(FILLER, sent):
+                    continue
+                who = f"{pos}の{r['speaker']}氏" if pos else f"{r['speaker']}議員"
+                kind = "政府の答弁" if pos else "議員の質問"
+                found.append((len(pb & bigrams(sent)) / (len(bigrams(sent)) or 1),
+                              {"date": r["date"], "meeting": f"{r['nameOfHouse']}{r['nameOfMeeting']}", "who": who, "kind": kind, "quote": sent}))
+        time.sleep(1)
+    found.sort(key=lambda x: -x[0])
+    seen, out = set(), []
+    for _, f in found:
+        if f["quote"] not in seen:
+            seen.add(f["quote"]); out.append(f)
+        if len(out) == 8:
+            break
+    return {"検索した語": "・".join(words), f"{since[:4]}年以降にこの語を含む発言の件数（両院）": total, "発言": out}, words
+
+
 # 答弁の前置き・受け答えの決まり文句。中身が無いので抜粋に使わない
 FILLER = r"お尋ね|お答え|御質問|ご質問|御指摘|ご指摘|でございます。$|について(で)?ございます|申し上げます。$|承知しております|御答弁|委員長"
 BANNED = r"無料|網羅|お役に立|弊社|当事務所|！|!"
@@ -153,14 +204,15 @@ def codex_batch(items, workdir):
     json.dump(schema, open(sp, "w", encoding="utf-8"))
     cases = []
     for it in items:
-        cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "投稿": it["post"]["text"][:700],
+        cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "自己紹介": (it["post"].get("description") or "")[:120],
+                      "投稿": it["post"]["text"][:700],
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
     prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに2つ書いてください（その投稿に合う型を2つ選び、どちらもそのまま投稿できる出来にする）。ファイルの読み書きやコマンドの実行はしないでください。
 
 # いちばん大事なこと
 - **ただの宣伝にしない。** 1文目で、相手の投稿の具体的な中身（相手の言葉・数字・出来事・問題意識）を拾って受け止める。決まり文句のほめ言葉ではなく、中身に触れた受け止めにする
 - そのうえで、相手の論点を深める国会のやりとり（答弁・質問）や件数・年ごとの推移などの事実を、具体的に添える
-- 最後に、当社の見方を一言（「〜が要だと思います」「〜に注目しています」「〜の検証が必要だと思います」）
+- 最後に、見方を一言（「〜が要だと思います」「〜に注目しています」「〜の検証が必要だと思います」）。この文に「当社は」は付けない（人が話す言い方にする）
 - 当社のシステムを紹介する場合も、まず相手の投稿への受け止め。システムは「〜を確かめられるシステムを開発しています」と書き、無料とは書かない（販売しているシステムのデモ）
 
 # 守ること
@@ -169,6 +221,8 @@ def codex_batch(items, workdir):
 - 引用する発言は、投稿の出来事そのものについての発言ではないことが多い。投稿の出来事について答えたと読める書き方はしない（年や会議名で区別する）
 - 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
 - 主語は「当社」（弊社は使わない）。「網羅」「お役に立てます」のような売り込みの言葉は使わない
+- 返信しないほうがよい投稿（街頭演説やあいさつだけの投稿、他人への攻撃・罵倒、個人的な被害の吐露など、国会の事実を添えると失礼になるもの）は、drafts を空にする
+- 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）
 
 {STYLE}
 
@@ -200,10 +254,21 @@ def build(posts_path):
             continue
         tr = X.match_tracker(r["field"], p["text"])
         sy = X.match_system(r["field"], p["text"])
+        pol = X.is_politician(p)
+        kf = None
         if not (tr or sy):
-            continue
+            # トラッカーもシステムも当たらない投稿は、議員の投稿か表示の多い投稿だけ、会議録をその場で検索する
+            kf, kw = kokkai_facts(p["text"])
+            if not kf or not kf["発言"]:
+                continue
         ref = f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"
-        if tr:
+        if kf:
+            what = "国会会議録（全国の国会議員の質疑と政府の答弁）。当社は国会議員の発言を論点ごとに集めるシステムを開発している"
+            facts = kf
+            url = f"https://xb4g.com/giin/tracker?ref={ref}"
+            label = f"会議録をその場で検索: {kf['検索した語']}（トラッカー未作成）"
+            fb = ""
+        elif tr:
             what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
             facts = tracker_facts(tr["key"])
             facts["発言"] = closest_answers(tr["key"], p["text"], tr.get("words") or [tr["short"]])
@@ -217,7 +282,8 @@ def build(posts_path):
             label = f"システム: {sy[0]}"
             fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
         items.append({"id": p["id"], "post": p, "r": r, "what": what, "facts": facts, "url": url, "label": label, "fb": fb})
-    items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
+    # 議員の投稿を先に、その次に表示の多い順
+    items = sorted(items, key=lambda it: (not X.is_politician(it["post"]), -it["post"]["views"]))[:MAX_ITEMS]
     texts = codex_batch(items, os.path.dirname(posts_path)) if items else {}
     for it in items:
         drafts = []
@@ -226,10 +292,14 @@ def build(posts_path):
             why = check(it, t)
             if not why:   # 検査に通らない案（引用の不一致・事実に無い数字など）は出さない
                 drafts.append({"type": d.get("type", ""), "text": t + "\n" + it["url"]})
+        if not texts.get(it["id"]):
+            continue   # codex が「返信しないほうがよい」と判断した投稿
         if not drafts:
+            if not it["fb"]:
+                continue
             drafts = [{"type": "定型文（codex の案はすべて検査で落ちた）", "text": it["fb"] + "\n" + it["url"]}]
         cards.append({"p": it["post"], "r": it["r"], "label": it["label"], "drafts": drafts})
-    cards.sort(key=lambda c: -c["p"]["views"])
+    cards.sort(key=lambda c: (not X.is_politician(c["p"]), -c["p"]["views"]))
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards))
     return out, len(cards)
@@ -251,7 +321,7 @@ def page(day, stamp, cards):
 <a class="go" data-i="{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
             n += 1
         rows.append(f"""<article>
-<div class="who"><b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
+<div class="who">{'<span class="pol">議員</span>' if X.is_politician(p) else ''}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}</div>
@@ -264,11 +334,12 @@ main{{max-width:760px;margin:0 auto;padding:16px}} h1{{font-size:20px;margin:8px
 article{{background:#fff;border:1px solid #d8e3e7;border-radius:10px;padding:14px;margin:0 0 14px;overflow-wrap:anywhere}}
 .who{{font-size:13px;color:#4d5f68}} .post{{margin:6px 0}} .src{{font-size:13px}} .tag{{margin:8px 0 4px;font-size:12px;font-weight:700;color:#0a726b}}
 textarea{{box-sizing:border-box;width:100%;font:inherit;border:1px solid #c5d3d8;border-radius:8px;padding:8px}}
+.pol{{display:inline-block;background:#b7791f;color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:0 6px;margin-right:6px}}
 .draft{{border-top:1px dashed #d8e3e7;margin-top:10px;padding-top:8px}} .dtype{{font-size:12px;color:#4d5f68;margin-bottom:4px}}
 .btns{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}} button,.go{{font:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:7px 16px;cursor:pointer;text-decoration:none}}
 button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background:#0a9a8f;color:#fff;border:1px solid #0a9a8f}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
-<p class="lead">直近60分・表示5,000以上の投稿から、当社のトラッカーかシステムで答えられるもの {len(cards)}件（表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
+<p class="lead">直近60分の、表示2,000以上の投稿と議員・首長の投稿から {len(cards)}件（議員を先に、表示の多い順）。文は直してから使える（ボタンは直した文を使う）。投稿するのは人。</p>
 {''.join(rows)}
 <script>
 function cur(i){{return document.getElementById('t'+i).value}}
