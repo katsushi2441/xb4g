@@ -413,6 +413,14 @@ def build(posts_path):
                 break
         empty = {"posts": len(posts), "v1000": sum(1 for p in posts.values() if (p.get("views") or 0) >= 1000), "prev": prev}
     open(out, "w", encoding="utf-8").write(page(day, stamp, cards, empty))
+    # メール通知用の要約（x_reply_jobs.py が読んで katsushi2441@gmail.com へ送る。2026-10-02 ユーザー指示）
+    summary = [{"name": c["p"].get("name"), "screen_name": c["p"].get("screen_name"), "views": c["p"].get("views"),
+                "url": c["p"].get("url"), "text": re.sub(r"\s+", " ", c["p"].get("text") or "")[:200], "label": c["label"],
+                "politician": X.is_politician(c["p"]),
+                "drafts": [d["text"] for d in c["drafts"]],
+                "intents": ["https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": c["p"]["id"], "text": d["text"]})
+                            for d in c["drafts"]]} for c in cards]
+    json.dump(summary, open(out[:-5] + ".json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     return out, len(cards)
 
 

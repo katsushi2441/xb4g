@@ -43,7 +43,50 @@ def run_x_reply_job(within: int = 40, **_) -> dict:
     html = urllib.request.urlopen(f"https://proto.exbridge.jp/xreply-{token}/", timeout=30).read().decode("utf-8", "ignore")
     ok = f"X 返信候補 {day} {stamp}" in html
     n = len(re.findall(r"<article>", html))
-    return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "steps": steps}
+    mailed = notify_mail(day, stamp, f"https://proto.exbridge.jp/xreply-{token}/") if ok else "skip (page not updated)"
+    return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps}
+
+
+MAIL_TO = "katsushi2441@gmail.com"
+
+
+def notify_mail(day, stamp, page_url):
+    """候補ができた回だけ、候補と文案と「文入りで返信画面を開く」リンクをメールで送る（2026-10-02 ユーザー指示）。
+    0件の回（深夜など）は送らない。送信は katsushi2441@gmail.com の Gmail SMTP（aixec/.env の GMAIL_APP_PASSWORD）。"""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.header import Header
+    p = os.path.join(OUT, day, f"reply-{stamp}.json")
+    if not os.path.exists(p):
+        return "skip (no summary)"
+    cards = json.load(open(p, encoding="utf-8"))
+    if not cards:
+        return "skip (0 cards)"
+    pw = ""
+    for ln in open("/home/kojima/work/aixec/.env", encoding="utf-8"):
+        if ln.startswith("GMAIL_APP_PASSWORD="):
+            pw = ln.split("=", 1)[1].strip().strip("\"'").replace(" ", "")
+    if not pw:
+        return "skip (no app password)"
+    lines = [f"X 返信候補 {day} {stamp[:2]}:{stamp[2:]} ／ {len(cards)}件（表示の多い順）", "", f"一覧ページ: {page_url}", ""]
+    for i, c in enumerate(cards, 1):
+        lines += [f"■{i}. {'【議員】' if c.get('politician') else ''}{c.get('name')} @{c.get('screen_name')}（表示{(c.get('views') or 0):,}）",
+                  f"元の投稿: {c.get('url')}", f"内容: {c.get('text')}", f"リンク先: {c.get('label')}", ""]
+        for j, (d, u) in enumerate(zip(c.get("drafts") or [], c.get("intents") or []), 1):
+            lines += [f"［案{j}］", d, f"→ 文入りで返信画面を開く: {u}", ""]
+        lines.append("")
+    lines.append("投稿は人が確かめてから行ってください。このメールは kdeck の giin-x-reply-candidates から自動で送っています。")
+    msg = MIMEText("\n".join(lines), "plain", "utf-8")
+    msg["Subject"] = Header(f"X返信候補 {stamp[:2]}:{stamp[2:]} {len(cards)}件", "utf-8")
+    msg["From"] = MAIL_TO
+    msg["To"] = MAIL_TO
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as sm:
+            sm.login(MAIL_TO, pw)
+            sm.sendmail(MAIL_TO, [MAIL_TO], msg.as_string())
+        return f"sent {len(cards)}"
+    except Exception as e:  # noqa: BLE001
+        return f"error {type(e).__name__}"
 
 
 if __name__ == "__main__":
