@@ -93,6 +93,17 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
         $on = $cur === $p || strpos($cur, $p . '/') === 0;
         $navh .= '<a href="' . g_url($p) . '"' . ($on ? ' class="on"' : '') . '>' . $label . '</a>';
     }
+    // 運営会社の帯（2026-10-03）。左に社名とロゴ、右に AI-IT顧問・代理店募集・kappstore。xb4g.com でだけ出す
+    if ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com')) {
+        $r = 'giin-corpbar';
+        echo '<div class="corpbar"><div class="inner">'
+           . '<a class="cb-co" href="https://exbridge.jp/?ref=' . $r . '"><img src="https://exbridge.jp/images/logo-mark-128.png" width="20" height="20" alt="">株式会社エクスブリッジ</a>'
+           . '<nav class="cb-links" aria-label="運営会社">'
+           . '<a href="https://exbridge.jp/ai-it-komon.html?ref=' . $r . '">AI-IT顧問</a>'
+           . '<a href="https://kurage.exbridge.jp/reseller.html?ref=' . $r . '">代理店募集</a>'
+           . '<a href="https://kappstore.exbridge.jp/?ref=' . $r . '">Kurage App Store</a>'
+           . '</nav></div></div>';
+    }
     echo '<header class="site"><div class="inner">'
        . '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
        . '<small>愛知の有権者が選んだ45人が、国会で何を話したか</small></span></a>'
@@ -165,6 +176,7 @@ a{color:var(--teal-d);text-decoration-thickness:1px;text-underline-offset:3px}
 a:hover{color:var(--teal)}
 img{max-width:100%;height:auto}
 b,strong{font-weight:700}
+.corpbar{background:#f3f6f8;border-bottom:1px solid var(--line);font-size:12px;line-height:1.4}.corpbar .inner{max-width:1080px;margin:0 auto;padding:5px 16px;display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}.corpbar a{color:#3d4b58;text-decoration:none}.corpbar a:hover{color:#0a726b;text-decoration:underline}.cb-co{display:inline-flex;align-items:center;gap:6px;font-weight:700}.cb-co img{width:20px;height:20px}.cb-links{display:flex;gap:4px 14px;flex-wrap:wrap}@media(min-width:1100px){body:has(.g-cols) .corpbar .inner{max-width:1360px}}
 header.site{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 header.site .inner,footer.site .inner{max-width:1080px;margin:0 auto;padding:12px 16px}
 header.site .inner{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;padding-bottom:0}
