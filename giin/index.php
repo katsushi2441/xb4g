@@ -1123,7 +1123,10 @@ function g_page_tracker(string $key, int $page): void
     $desc = $t['name'] . 'について、全国の国会議員の質疑' . number_format((int)$st['q']) . '件と政府の答弁'
           . number_format((int)$st['gov']) . '件を国会会議録から集めました（' . g_date($st['first']) . '〜'
           . g_date($st['last']) . '）。だれが質問し、政府が何と答えたかを日付と会議録リンクで並べています。';
+    $faq = g_tracker_faq($t, $st, $qs, $years, $latestGov);
     $ld = g_jsonld([
+        ['@type' => 'FAQPage', 'mainEntity' => array_map(fn($x) => ['@type' => 'Question', 'name' => $x[0],
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => $x[1]]], $faq)],
         g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker'], [$t['name'], '/tracker/' . $key]]),
         ['@type' => 'Article', '@id' => g_abs('tracker/' . $key), 'url' => g_abs('tracker/' . $key),
          'headline' => $title, 'description' => $desc, 'inLanguage' => 'ja',
@@ -1153,6 +1156,8 @@ function g_page_tracker(string $key, int $page): void
        . '<div class="c"><b>' . (int)$st['speakers'] . '</b><span>取り上げた<br>議員</span></div>'
        . '<div class="c"><b>' . g_e(substr((string)$st['last'], 0, 4)) . '</b><span>最新 ' . g_e(substr((string)$st['last'], 5)) . '<br>（最初 ' . g_e(substr((string)$st['first'], 0, 7)) . '）</span></div>'
        . '</div></section>';
+    // 答えを先に一文で（AI検索・強調スニペットが引用しやすい形）
+    echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1]) . '</p>';
     echo '<p class="note">集め方：「' . g_e(implode('」「', $words)) . '」を含む発言を、国立国会図書館の国会会議録検索システムから'
        . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の45人に限りません）。'
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
@@ -1183,6 +1188,11 @@ function g_page_tracker(string $key, int $page): void
         echo '<h2 data-en="Latest">直近の質疑</h2>';
         foreach ($latestQ as $s) { g_tracker_speech($s, $words); }
     }
+
+    // ---- よくある質問（会議録のデータから機械的に作る） ----
+    echo '<h2 data-en="FAQ">よくある質問</h2><div class="panel">';
+    foreach ($faq as $x) { echo '<details style="margin:0 0 8px"><summary style="cursor:pointer;font-weight:700">' . g_e($x[0]) . '</summary><p style="margin:8px 0 4px">' . g_e($x[1]) . '</p></details>'; }
+    echo '</div>';
 
     // ---- 論点（人が書いた枠。数字は入れない） ----
     if (!empty($t['questions'])) {

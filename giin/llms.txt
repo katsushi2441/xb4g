@@ -1,0 +1,65 @@
+# 愛知の国会議員 発言ログ／国会トラッカー
+
+> 国立国会図書館の国会会議録検索システムから、ことがらごとに「だれが国会で質問し、政府が何と答えたか」を機械的に集めて並べるサイト。要約・賛否の判定はしない。運営は株式会社エクスブリッジ（名古屋市）。
+
+## 何が分かるか
+- 国会トラッカー：ことがら（例: 電子カルテ義務化、不登校、年収の壁）ごとに、全国の国会議員の質疑と政府答弁の件数・年ごとの推移・取り上げた議員・直近の答弁
+- 議員ページ：愛知県選出の国会議員45人が、いつ・どの会議で・何を質問したか
+- 数字はすべて会議録の発言を語で数えたもの。発言の文脈は各ページの会議録リンクで確かめる
+
+## 国会トラッカー一覧（質疑件数・答弁件数・期間）
+- [内密出産の法整備](https://xb4g.com/giin/tracker/naimitsu-shussan): 質疑118件・政府答弁89件（2017-05-31〜2026-07-10）
+- [特別養子縁組の制度](https://xb4g.com/giin/tracker/tokubetsu-yoshi-engumi): 質疑347件・政府答弁335件（2016-02-25〜2026-05-08）
+- [OTC類似薬の保険給付見直し](https://xb4g.com/giin/tracker/otc-ruiji-yaku): 質疑281件・政府答弁189件（2016-02-26〜2026-06-25）
+- [救急車の有料化と適正利用](https://xb4g.com/giin/tracker/kyukyusha-yuryoka): 質疑31件・政府答弁22件（2016-02-23〜2026-06-25）
+- [人生会議（ACP）の法制化](https://xb4g.com/giin/tracker/jinsei-kaigi): 質疑43件・政府答弁40件（2018-04-04〜2026-06-18）
+- [後期高齢者の窓口負担](https://xb4g.com/giin/tracker/koki-koreisha-futan): 質疑288件・政府答弁183件（2016-02-09〜2026-07-14）
+- [こども誰でも通園制度](https://xb4g.com/giin/tracker/kodomo-daredemo-tsuen): 質疑161件・政府答弁213件（2023-04-04〜2026-06-15）
+- [給特法と教員の働き方](https://xb4g.com/giin/tracker/kyutokuho): 質疑715件・政府答弁525件（2016-03-23〜2026-06-16）
+- [特別児童扶養手当・障害児福祉手当の所得制限](https://xb4g.com/giin/tracker/tokubetsu-jido-fuyo-teate): 質疑68件・政府答弁63件（2016-04-26〜2026-04-21）
+- [家事支援サービスと国家資格化](https://xb4g.com/giin/tracker/kaji-shien): 質疑54件・政府答弁41件（2016-03-16〜2026-06-05）
+- [取適法（下請法改正）と価格転嫁](https://xb4g.com/giin/tracker/torishikiho-kakaku-tenka): 質疑547件・政府答弁674件（2016-01-07〜2026-07-22）
+- [公益通報者保護法の改正](https://xb4g.com/giin/tracker/koeki-tsuho): 質疑283件・政府答弁218件（2017-04-11〜2026-07-16）
+- [自動車関連税の見直し（環境性能割・暫定税率）](https://xb4g.com/giin/tracker/jidosha-kanren-zei): 質疑209件・政府答弁218件（2016-01-07〜2026-07-24）
+- [金融教育の義務教育化](https://xb4g.com/giin/tracker/kinyu-kyoiku): 質疑241件・政府答弁272件（2016-03-18〜2026-07-14）
+- [財政法4条・地方財政法5条（国債と地方債の原則）](https://xb4g.com/giin/tracker/zaiseiho-4jo): 質疑121件・政府答弁82件（2016-01-26〜2026-06-10）
+- [住民税減税と地方の課税自主権](https://xb4g.com/giin/tracker/juminzei-genzei): 質疑37件・政府答弁27件（2017-03-31〜2026-06-04）
+- [消費税減税](https://xb4g.com/giin/tracker/shohizei-genzei): 質疑1,136件・政府答弁574件（2016-01-06〜2026-07-27）
+- [外為法改正と対内直接投資の審査](https://xb4g.com/giin/tracker/gaitameho-fdi): 質疑230件・政府答弁255件（2016-04-27〜2026-07-16）
+- [自動運転の社会実装](https://xb4g.com/giin/tracker/jido-unten): 質疑898件・政府答弁861件（2016-01-19〜2026-07-22）
+- [デジタル民主主義とブロードリスニング](https://xb4g.com/giin/tracker/digital-minshu): 質疑22件・政府答弁4件（2016-05-19〜2026-07-08）
+- [不登校と子どもの居場所](https://xb4g.com/giin/tracker/futoko): 質疑1,329件・政府答弁943件（2016-01-19〜2026-07-27）
+- [自殺対策とこどもの自殺](https://xb4g.com/giin/tracker/jisatsu-taisaku): 質疑546件・政府答弁490件（2016-02-18〜2026-07-27）
+- [基礎控除の引き上げ・物価連動（年収の壁）](https://xb4g.com/giin/tracker/kisokojo-bukka-rendo): 質疑807件・政府答弁567件（2016-01-15〜2026-07-27）
+- [政党交付金の返還と政党助成法](https://xb4g.com/giin/tracker/seito-kofukin): 質疑203件・政府答弁38件（2016-01-06〜2026-06-23）
+- [カスタマーハラスメント対策](https://xb4g.com/giin/tracker/kasuhara-taisaku): 質疑405件・政府答弁254件（2018-12-05〜2026-07-15）
+- [国家情報会議とインテリジェンス体制](https://xb4g.com/giin/tracker/kokka-joho-kaigi): 質疑723件・政府答弁514件（2016-02-23〜2026-07-15）
+- [経済安全保障推進法（基幹インフラ・海底ケーブル）](https://xb4g.com/giin/tracker/keizai-anpo-infra): 質疑696件・政府答弁777件（2016-02-17〜2026-07-22）
+- [更年期症状と女性の健康（プレコンセプションケア）](https://xb4g.com/giin/tracker/konenki-josei-kenko): 質疑113件・政府答弁136件（2016-01-28〜2026-07-10）
+- [特別市（特別自治市）の制度化](https://xb4g.com/giin/tracker/tokubetsu-shi): 質疑112件・政府答弁48件（2011-02-07〜2026-07-24）
+- [国連憲章の旧敵国条項の削除](https://xb4g.com/giin/tracker/kyu-tekikoku-joko): 質疑263件・政府答弁145件（1990-04-24〜2025-11-28）
+- [公立病院の赤字と経営](https://xb4g.com/giin/tracker/koritsu-byoin-keiei): 質疑199件・政府答弁105件（2020-01-28〜2026-06-09）
+- [トマホークの取得と反撃能力](https://xb4g.com/giin/tracker/tomahawk-hangeki): 質疑307件・政府答弁112件（2013-02-12〜2026-07-14）
+- [AIエージェントの安全と行政での利用](https://xb4g.com/giin/tracker/ai-agent): 質疑34件・政府答弁10件（2025-01-31〜2026-07-10）
+- [国立大学の学長選考と意向投票](https://xb4g.com/giin/tracker/gakucho-senko): 質疑157件・政府答弁166件（2003-04-03〜2025-05-07）
+- [成田空港の機能強化（第二の開港）](https://xb4g.com/giin/tracker/narita-kinoukyouka): 質疑41件・政府答弁114件（2010-02-19〜2026-07-22）
+- [育休の穴埋めと、代わりに働く人への手当](https://xb4g.com/giin/tracker/ikukyu-gyomu-daitai): 質疑40件・政府答弁75件（2010-02-17〜2025-11-20）
+- [鉄道が災害で止まったときの代行輸送](https://xb4g.com/giin/tracker/daiko-yuso): 質疑22件・政府答弁32件（2012-03-28〜2026-05-14）
+- [給付付き税額控除](https://xb4g.com/giin/tracker/kyufu-tsuki-zeigaku-kojo): 質疑328件・政府答弁229件（2010-02-24〜2026-07-16）
+- [罹災証明書と住宅の応急修理](https://xb4g.com/giin/tracker/rissai-shomei): 質疑398件・政府答弁368件（2011-03-22〜2026-06-19）
+- [日本版DBS（子どもと接する仕事の性犯罪歴確認）](https://xb4g.com/giin/tracker/nihonban-dbs): 質疑156件・政府答弁133件（2021-03-16〜2026-07-10）
+- [共同募金（赤い羽根）の使い道と監督](https://xb4g.com/giin/tracker/kyodo-bokin): 質疑31件・政府答弁31件（2010-02-24〜2025-06-06）
+- [政治資金収支報告書のオンライン提出とデータベース化](https://xb4g.com/giin/tracker/shushi-hokokusho-db): 質疑180件・政府答弁56件（2017-04-12〜2026-06-23）
+- [子ども・子育て支援金（医療保険料への上乗せ）](https://xb4g.com/giin/tracker/kodomo-shienkin): 質疑183件・政府答弁76件（2024-01-31〜2026-07-23）
+- [自衛官の処遇改善と人材確保](https://xb4g.com/giin/tracker/jieikan-shogu): 質疑335件・政府答弁308件（2010-05-27〜2026-07-14）
+- [ネットの誹謗中傷と慰謝料](https://xb4g.com/giin/tracker/hibochusho-isharyo): 質疑5件・政府答弁5件（2015-05-13〜2026-06-01）
+- [電子カルテの普及と標準型電子カルテ](https://xb4g.com/giin/tracker/denshi-karte): 質疑204件・政府答弁241件（2010-02-10〜2026-07-23）
+- [国保逃れと国民健康保険料の負担](https://xb4g.com/giin/tracker/kokuho-nogare): 質疑44件・政府答弁10件（2010-02-03〜2026-05-26）
+- [過労死の防止と海外派遣者の労災](https://xb4g.com/giin/tracker/karoshi-boshi): 質疑51件・政府答弁73件（2014-04-03〜2026-07-06）
+- [内水氾濫と下水道の雨水対策](https://xb4g.com/giin/tracker/naisui-hanran): 質疑137件・政府答弁141件（2010-04-19〜2026-07-14）
+- [行政事業レビューと歳出の見直し](https://xb4g.com/giin/tracker/gyosei-jigyo-review): 質疑457件・政府答弁657件（2010-03-12〜2026-07-16）
+- [地下銀行と無許可の海外送金](https://xb4g.com/giin/tracker/chika-ginko): 質疑23件・政府答弁17件（2000-11-08〜2026-07-14）
+
+## 注意
+- 話者の立場（質疑・答弁）は会議録の話者表記から機械的に分けている
+- 語を含む発言を数えるので、別の文脈での言及も含まれる

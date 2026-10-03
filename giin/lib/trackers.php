@@ -237,3 +237,38 @@ function g_tracker_next(array $t): string
     }
     return $h . '</ul></div>';
 }
+
+/**
+ * AI検索（AEO/GEO）と強調スニペット向けの「問いと答え」。**すべて会議録のデータから機械的に作る**（2026-10-03）。
+ * 要約や賛否は書かない。数字・日付・話者・発言の一文だけ。FAQPage の JSON-LD と、画面のよくある質問の両方に使う。
+ */
+function g_tracker_faq(array $t, array $st, array $qs, array $years, array $latestGov): array
+{
+    $n = $t['short'] ?? $t['name'];
+    $out = [];
+    $out[] = [$n . 'は国会でどれくらい議論されていますか？',
+        g_date($st['first']) . 'から' . g_date($st['last']) . 'までに、国会会議録には' . $n . 'にふれた議員の質疑が'
+        . number_format((int)$st['q']) . '件、政府の答弁が' . number_format((int)$st['gov']) . '件あります。取り上げた議員は'
+        . (int)$st['speakers'] . '人です（「' . implode('」「', array_slice($t['words'], 0, 4)) . '」を含む発言を数えたもの）。'];
+    if ($qs) {
+        $top = array_slice($qs, 0, 3);
+        $out[] = [$n . 'を国会で多く取り上げた議員はだれですか？',
+            '取り上げた日数が多い順に、' . implode('、', array_map(fn($r) => $r['speaker'] . '（' . (int)$r['days'] . '日・最新 ' . g_date($r['last']) . '）', $top))
+            . 'です。'];
+    }
+    if ($latestGov) {
+        $g = $latestGov[0];
+        $ex = g_tracker_excerpt((string)$g['body'], $t['words'], 1);
+        $out[] = ['政府は' . $n . 'について最近なんと答えていますか？',
+            g_date($g['date']) . 'の' . $g['house'] . ' ' . $g['meeting'] . 'で、' . $g['speaker']
+            . ($g['position'] ? '（' . $g['position'] . '）' : '') . 'が答弁しています。'
+            . ($ex ? '答弁の一文：「' . $ex[0] . '」' : '') . '前後の文脈は会議録で確かめてください。'];
+    }
+    if (count($years) >= 2) {
+        $peak = $years[0];
+        foreach ($years as $y) { if ((int)$y['n'] > (int)$peak['n']) { $peak = $y; } }
+        $out[] = [$n . 'が国会で最も多く議論されたのはいつですか？',
+            '件数が最も多かったのは' . $peak['y'] . '年で、質疑' . (int)$peak['q'] . '件・答弁' . (int)$peak['gov'] . '件でした。'];
+    }
+    return $out;
+}
