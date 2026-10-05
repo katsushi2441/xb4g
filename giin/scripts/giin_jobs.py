@@ -141,6 +141,9 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         # **全国トラッカー。** 愛知の45人に限らず、議員立法で法整備が動いていることがら
         # （data/trackers.json）の全発言を会議録から集め直す（表 tracker_speech）
         ("全国トラッカー", [PY, os.path.join(SCRIPTS, "fetch_tracker.py")]),
+        # **法案。** 議案の一覧と経過（gian.csv＋いまの国会は参議院の議案情報から直接）を毎日。
+        # 発言・質問主意書・賛否のつなぎは、古い会期は1回だけ、新しい2会期は7日ごとに取り直す
+        ("法案", [PY, os.path.join(SCRIPTS, "fetch_bills.py")]),
         # 選挙区ダッシュボード（289区）。各製品のDBを足し直す。他製品側の更新を拾うため毎日回す
         ("選挙区ダッシュボード", [PY, os.path.join(SCRIPTS, "build_senkyoku.py")]),
         ("選挙区の議員名簿", [PY, os.path.join(SCRIPTS, "build_senkyoku_members.py")]),

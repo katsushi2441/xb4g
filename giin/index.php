@@ -16,6 +16,7 @@ require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
 require __DIR__ . '/lib/trackers.php';
+require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/senkyoku.php';
 
@@ -49,6 +50,7 @@ function g_route(string $path, int $page): void
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
     if (preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
+    if (preg_match('#^/bill/(\d+-[a-z]+-\d+)$#', $path, $m)) { g_page_bill($m[1]); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
     if (preg_match('#^/senkyoku/([a-z]+-\d+)$#', $path, $m)) { g_page_senkyoku($m[1]); return; }
     switch ($path) {
@@ -62,6 +64,7 @@ function g_route(string $path, int $page): void
         case '/about':   g_page_about(); return;
         case '/ai':      g_page_ai(); return;
         case '/tracker': g_page_trackers(); return;
+        case '/bill':    g_page_bills($page); return;
         case '/senkyoku': g_page_senkyoku_list(); return;
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
@@ -1164,6 +1167,15 @@ function g_page_tracker(string $key, int $page): void
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
     echo g_tracker_next($t);
+    // この話題の語を件名に含む法案（審議の経過と、その法案に触れた質疑へ）
+    if ($rb = g_bills_for_words((array)$words, 5)) {
+        echo '<h2 data-en="Bills">この話題に関係する法案</h2><div class="panel"><ul>';
+        foreach ($rb as $b) {
+            echo '<li><a href="' . g_url('bill/' . $b['id']) . '">' . g_e($b['title']) . '</a> '
+               . g_bill_status_pill((string)$b['status']) . ' <span class="note">' . g_e(g_date($b['last_date'])) . '</span></li>';
+        }
+        echo '</ul></div>';
+    }
     if ($side) { echo g_cm_sp('giin-tracker'); }   // スマホだけ: ここにCM枠（広い画面では右の列の上に出る）
     echo g_tracker_explain($t);
 

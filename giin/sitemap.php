@@ -35,6 +35,11 @@ foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly', 
 foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'weekly', $trackerLast[$t['key']] ?? $speechLast]; }
 foreach (g_all('SELECT key FROM senkyoku ORDER BY rowid') as $s) { $urls[] = ['senkyoku/' . $s['key'], '0.8', 'weekly', $speechLast]; }
 foreach (g_parties() as $p) { $urls[] = ['party/' . g_party_slug($p['party']), '0.8', 'weekly', $speechLast]; }
+// 法案（scripts/fetch_bills.py）。lastmod は最後の動きの日（毎回 now にしない）
+if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE type='table' AND name='bill'")) {
+    $urls[] = ['bill', '0.9', 'weekly', (string)g_val('SELECT MAX(last_date) FROM bill')];
+    foreach (g_all('SELECT id, last_date FROM bill ORDER BY id') as $b) { $urls[] = ['bill/' . $b['id'], '0.7', 'monthly', (string)$b['last_date']]; }
+}
 foreach (g_all('SELECT slug, last_date FROM giin ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.8', 'weekly', substr((string)($g['last_date'] ?: $speechLast), 0, 10)]; }
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
