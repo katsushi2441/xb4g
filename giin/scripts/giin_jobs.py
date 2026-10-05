@@ -143,6 +143,8 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("全国トラッカー", [PY, os.path.join(SCRIPTS, "fetch_tracker.py")]),
         # **法案。** 議案の一覧と経過（gian.csv＋いまの国会は参議院の議案情報から直接）を毎日。
         # 発言・質問主意書・賛否のつなぎは、古い会期は1回だけ、新しい2会期は7日ごとに取り直す
+        # 衆参の委員会の委員名簿（法案ページの「この法案に声を届けるには」）。名簿が取れなければ前回の分を残す
+        ("委員会の名簿", [PY, os.path.join(SCRIPTS, "fetch_committees.py")]),
         ("法案", [PY, os.path.join(SCRIPTS, "fetch_bills.py")]),
         # 法案の「この法案で変わること」（手元の gemma4・元の文と数字を照合して合わないものは載せない）。新しく出た法案だけ
         ("法案の説明", [PY, os.path.join(SCRIPTS, "build_bill_explain.py"), "--limit", "30"]),

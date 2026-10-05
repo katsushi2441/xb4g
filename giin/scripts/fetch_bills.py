@@ -291,6 +291,9 @@ def link_speeches(con, b: dict) -> None:
         body = s.get("speech") or ""
         if "審査の経過" in body[:200]:
             role = "report"          # 委員長報告（本会議）。質疑にも答弁にも数えない
+        elif re.match(r"○\S{1,12}?(委員長|副委員長|議長|副議長|会長|委員長代理)[ \u3000]", body):
+            # 委員長・議長の議事進行。会議録の肩書欄が空のことが多いので、本文の頭（○美延委員長）で見分ける
+            continue
         else:
             role = "gov" if GOV.search(pos) else "q"
         nq += role == "q"

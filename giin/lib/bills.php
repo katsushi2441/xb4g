@@ -158,6 +158,11 @@ function g_page_bills(int $page): void
        . '<div class="kv"><div class="c"><b>' . number_format($all) . '</b><span>法案・予算・条約</span></div>'
        . '<div class="c"><b>' . number_format($passed) . '</b><span>成立・承認</span></div>'
        . '<div class="c"><b>' . (int)$sesRange['a'] . '〜' . (int)$sesRange['b'] . '</b><span>国会の回次</span></div></div></section>';
+    $nowN = (int)g_val("SELECT COUNT(*) FROM bill WHERE status IN ('委員会で審査中','審議中')");
+    if ($nowN && !$filtered) {
+        echo '<p class="answer" style="margin:14px 0 6px">いまの国会で審査中の法案は <a href="' . g_url('bill') . '?s=' . rawurlencode('委員会で審査中') . '"><b>' . $nowN . '件</b></a>。'
+           . '法案ごとに、審査している委員会の委員と、国会へ声を届ける方法を載せています。</p>';
+    }
     // 絞り込み
     $opt = fn(array $o, string $cur) => implode('', array_map(fn($k, $v) => '<option value="' . g_e((string)$k) . '"' . ((string)$k === $cur ? ' selected' : '') . '>' . g_e($v) . '</option>', array_keys($o), $o));
     $sess = [];
@@ -258,6 +263,8 @@ function g_page_bill(string $id): void
     }
     if (!$sp) { echo '<p class="note">件名がそのまま出てくる発言は見つかりませんでした（委員会で審査されていない法案や、略称で呼ばれた発言は拾えていません）。</p>'; }
 
+    echo g_bill_voice($b, $trs);
+
     echo '<h2 data-en="Related">この法案につながるもの</h2><div class="panel"><ul>';
     if ((int)$b['shuisho_count'] && $b['shuisho_word']) {
         echo '<li>質問主意書と答弁書：「' . g_e($b['shuisho_word']) . '」を含むもの <b>' . (int)$b['shuisho_count'] . '件</b>　'
@@ -285,4 +292,65 @@ function g_bill_speech(array $s, string $kw): void
        . ($s['role'] === 'gov' ? '<span class="pill gray">答弁</span>' : '')
        . '</div><p class="t">' . g_mark(g_e((string)$s['excerpt']), $kw) . '</p>'
        . '<div class="lk"><a href="' . g_e($s['url']) . '" rel="nofollow noopener" target="_blank">この発言を会議録で読む</a></div></div>';
+}
+
+/** 合意点マップ（kconsensus）を用意している話題。トラッカーの key → URL。意見が大きく割れている話題だけ */
+const G_BILL_CONSENSUS = ['shohizei-genzei' => 'https://kurage.exbridge.jp/kconsensus.php/t/shohizei/'];
+
+/**
+ * 「この法案に声を届けるには」。いまの国会で審査中の法案だけに出す（委員名簿は「いまの」委員なので、過去の法案には使えない）。
+ * 当社は意見を集めない。誰が審査していて、どこへどう届ければいいかを、国会の公開情報だけで示す。
+ */
+function g_bill_voice(array $b, array $trs): string
+{
+    if (!in_array($b['status'], ['委員会で審査中', '審議中'], true)) { return ''; }
+    if (!(bool)g_val("SELECT 1 FROM sqlite_master WHERE type='table' AND name='committee_member'")) { return ''; }
+    $asof = substr(g_meta('committee_at'), 0, 10);
+    $h = '<h2 data-en="Your voice">この法案に声を届けるには</h2>'
+       . '<p>法案は、付託された委員会で審査されてから本会議で採決されます。当サイトは意見を集めません。'
+       . 'だれが審査しているかと、届ける方法を国会の公開情報から並べています。</p>';
+    $aichi = [];
+    foreach (['衆議院' => 'shu', '参議院' => 'san'] as $house => $k) {
+        $comm = (string)$b[$k . '_committee'];
+        if ($comm === '') { continue; }
+        $mem = g_all('SELECT m.*, g.slug FROM committee_member m LEFT JOIN giin g ON g.id=m.giin_id WHERE m.house=? AND m.committee=? ORDER BY m.ord', [$house, $comm]);
+        $h .= '<div class="panel"><p style="margin:0 0 6px"><b>' . g_e($house . ' ' . $comm) . '</b>';
+        if (!$mem) {
+            $h .= '<br><span class="note">この委員会の名簿は、まだ公開されていません。</span></p></div>';
+            continue;
+        }
+        $kaiha = [];
+        foreach ($mem as $m) { $kaiha[$m['kaiha']] = ($kaiha[$m['kaiha']] ?? 0) + 1; }
+        arsort($kaiha);
+        $lead = array_values(array_filter($mem, fn($m) => in_array($m['role'], ['委員長', '理事', '会長'], true)));
+        $h .= '　<span class="note">委員 ' . count($mem) . '人（' . g_e($asof) . '時点）</span></p>'
+            . '<p style="margin:0 0 6px">' . implode('、', array_map(fn($m) => g_e($m['role'] . ' ' . $m['name'] . '（' . $m['kaiha'] . '）'), array_slice($lead, 0, 12))) . '</p>'
+            . '<p class="note" style="margin:0 0 6px">会派ごとの人数：' . g_e(implode('・', array_map(fn($k, $v) => $k . ' ' . $v, array_keys($kaiha), $kaiha))) . '</p>'
+            . '<details><summary style="cursor:pointer">委員の全員を見る</summary><p style="margin:6px 0 0">'
+            . implode('、', array_map(function ($m) {
+                  $n = g_e($m['name']) . '（' . g_e($m['kaiha']) . '）';
+                  return $m['slug'] ? '<a href="' . g_url($m['slug']) . '">' . $n . '</a>' : $n;
+              }, $mem))
+            . '</p></details>'
+            . '<p class="note" style="margin:6px 0 0"><a href="' . g_e($mem[0]['url']) . '" rel="nofollow noopener" target="_blank">' . g_e($house) . 'の委員名簿</a></p></div>';
+        foreach ($mem as $m) { if ($m['slug']) { $aichi[] = $m; } }
+    }
+    if ($aichi) {
+        $h .= '<p><b>愛知の議員で、この委員会の委員の人：</b>'
+            . implode('、', array_map(fn($m) => '<a href="' . g_url($m['slug']) . '">' . g_e($m['name']) . '</a>（' . g_e($m['house'] . '・' . $m['role']) . '）', $aichi))
+            . '。議員のページから、これまでの国会での発言と公式サイトを見られます。</p>';
+    }
+    $h .= '<div class="panel"><p style="margin:0 0 6px"><b>国会への請願</b></p>'
+        . '<p style="margin:0 0 6px">国会に意見を届ける公式の方法が請願です。請願書は、議員の紹介を受けて、衆議院議長または参議院議長あてに出します。'
+        . '同じ人が同じ会期に同じ趣旨の請願を重ねて出すことはできません。</p>'
+        . '<p class="note" style="margin:0"><a href="https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/tetuzuki/seigan.htm" rel="nofollow noopener" target="_blank">衆議院：請願・陳情書・意見書の手続</a>　'
+        . '<a href="https://www.sangiin.go.jp/japanese/annai/index.html" rel="nofollow noopener" target="_blank">参議院：請願・地方議会からの意見書の提出</a></p></div>';
+    foreach ($trs as $t) {
+        if (isset(G_BILL_CONSENSUS[$t['key']])) {
+            $h .= '<p>この話題は意見が大きく割れています。賛否の割れ方と、どの立場からも賛成が多い点を、'
+                . '<a href="' . g_e(G_BILL_CONSENSUS[$t['key']]) . '?ref=giin-bill" rel="noopener" target="_blank">合意点マップ</a>で見られます。</p>';
+            break;
+        }
+    }
+    return $h;
 }
