@@ -71,6 +71,14 @@ def link_catalog():
         if m.get("url", "").startswith("https://"):
             cat.append({"種類": "当社のシステムのデモ・紹介ページ", "題名": m["name"],
                         "説明": re.sub(r"実測[:：].*", "", m.get("keyword") or "")[:200], "url": m["url"]})
+    # 経営者の制度カレンダーの項目ページ（「106万円の壁はいつから」のような投稿に、トップではなく該当の項目を出す。2026-10-05）
+    try:
+        php = open(os.path.join(WORK, "kseidocal", "php", "kseidocal.php"), encoding="utf-8").read()
+        for m in re.finditer(r"\['slug' => '([\w-]+)', 'seo' => '([^']+)', 'name' => '([^']+)'.*?'what' => '([^']+)'", php, re.S):
+            cat.append({"種類": "当社のシステムのデモ・紹介ページ", "題名": m.group(2) + "（" + m.group(3) + "）",
+                        "説明": m.group(4)[:200], "url": f"https://kurage.exbridge.jp/kseidocal.php/i/{m.group(1)}/"})
+    except OSError:
+        pass
     for t in X.trackers():
         cat.append({"種類": "国会トラッカー（国会の質疑と政府答弁を会議録から集めたページ）", "題名": t["name"],
                     "説明": (t.get("lead") or "")[:200] + " 語: " + "・".join(t.get("words") or []),
