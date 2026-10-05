@@ -266,8 +266,8 @@ def codex_batch(items, workdir):
     """全候補の文案を codex に1回で書かせる（codex は1回で2万トークン近く使うので、1件ずつ呼ばない）"""
     schema = {"type": "object", "additionalProperties": False, "required": ["replies"],
               "properties": {"replies": {"type": "array", "items": {
-                  "type": "object", "additionalProperties": False, "required": ["id", "link", "drafts"],
-                  "properties": {"id": {"type": "string"}, "link": {"type": "integer"}, "drafts": {"type": "array", "items": {
+                  "type": "object", "additionalProperties": False, "required": ["id", "link", "link2", "drafts"],
+                  "properties": {"id": {"type": "string"}, "link": {"type": "integer"}, "link2": {"type": "integer"}, "drafts": {"type": "array", "items": {
                       "type": "object", "additionalProperties": False, "required": ["type", "text"],
                       "properties": {"type": {"type": "string"}, "text": {"type": "string"}}}}}}}}}
     sp = os.path.join(workdir, "codex-schema.json"); op = os.path.join(workdir, "codex-out.json")
@@ -277,6 +277,8 @@ def codex_batch(items, workdir):
         cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "自己紹介": (it["post"].get("description") or "")[:120],
                       "投稿": it["post"]["text"][:700],
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
+        if it.get("url", "").startswith("https://xb4g.com/giin/tracker/"):
+            cases[-1]["付けるトラッカー"] = it["label"]
         if it["links"]:
             cases[-1]["リンク候補"] = [dict(番号=i + 1, 種類=l["種類"], 題名=l["題名"], 説明=l["説明"]) for i, l in enumerate(it["links"])]
     prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに2つ書いてください（その投稿に合う型を2つ選び、どちらもそのまま投稿できる出来にする）。ファイルの読み書きやコマンドの実行はしないでください。
@@ -294,7 +296,10 @@ def codex_batch(items, workdir):
 - 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
 - 主語は「当社」（弊社は使わない）。「網羅」「お役に立てます」のような売り込みの言葉は使わない
 - 返信しないほうがよい投稿（街頭演説やあいさつだけの投稿、他人への攻撃・罵倒、個人的な被害の吐露など、国会の事実を添えると失礼になるもの）は、drafts を空にする
-- 「リンク候補」がある候補は、投稿の中身にいちばん近いものを1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
+- **リンクは当社のシステムのデモ・紹介ページ（LP）を優先する。** 「リンク候補」に投稿の中身に合う「当社のシステムのデモ・紹介ページ」があれば、それを link に入れる（国会トラッカーや記事より先）。
+- link2 には、2つ目のURLとして付けると役に立つものを1つだけ入れる：link がデモ・紹介ページなら、投稿に合う国会トラッカー（リンク候補にあれば）。link が国会トラッカーや記事なら、投稿に合うデモ・紹介ページ。合うものが無ければ 0。link と同じ番号は入れない
+- 候補に「付けるトラッカー」がある場合（トラッカーは必ず付く）、リンク候補（デモ・紹介ページ）から投稿に合うものを1つ link に入れる。合うものが無ければ link は 0 でよい（その場合もトラッカーだけで返信を書く）。この場合 link2 は 0
+- 「付けるトラッカー」が無く「リンク候補」がある候補は、投稿の中身にいちばん近いもの（デモ・紹介ページを優先）を1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）
 
 {STYLE}
@@ -302,7 +307,7 @@ def codex_batch(items, workdir):
 # 候補
 {json.dumps(cases, ensure_ascii=False, indent=1)}
 
-replies に、候補の id ごとに link（選んだリンク候補の番号。無ければ 0）と drafts（type と text を2つ）を入れて返してください。"""
+replies に、候補の id ごとに link（選んだリンク候補の番号。無ければ 0）、link2（2つ目。無ければ 0）と drafts（type と text を2つ）を入れて返してください。"""
     env = dict(os.environ, PATH=os.path.dirname(CODEX_BIN) + ":" + os.environ.get("PATH", ""))   # codex は node で動く
     r = subprocess.run([CODEX_BIN, "exec", "--skip-git-repo-check", "--ephemeral", "-s", "read-only", "-m", CODEX_MODEL,
                         "--output-schema", sp, "-o", op, "-"], input=prompt, capture_output=True, text=True,
@@ -310,7 +315,7 @@ replies に、候補の id ごとに link（選んだリンク候補の番号。
     if r.returncode != 0 or not os.path.exists(op):
         raise RuntimeError(f"codex が失敗: {r.stderr[-500:]}")
     rep = json.loads(open(op, encoding="utf-8").read())["replies"]
-    return {x["id"]: x["drafts"] for x in rep}, {x["id"]: x.get("link", 0) for x in rep}
+    return {x["id"]: x["drafts"] for x in rep}, {x["id"]: (x.get("link", 0), x.get("link2", 0)) for x in rep}
 
 
 def make_item(p, field, mmdd, r=None):
@@ -320,10 +325,15 @@ def make_item(p, field, mmdd, r=None):
         (m for f in X.SYSTEMS for m in [X.match_system(f, p["text"])] if m), None)
     pol = X.is_politician(p)
     kf, links = None, []
+    if tr:
+        # トラッカーが当たった投稿でも、当社のシステムのデモ・紹介ページ（LP）が合えば一緒に付ける（2026-10-05 ユーザー指示「LPがあるならトラッカーより優先」）
+        links = [l for l in related_links(p["text"], k=16) if l["種類"].startswith("当社のシステム")][:4]
     if not (tr or sy):
         # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
         # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
-        links = related_links(p["text"])
+        links = related_links(p["text"], k=10)
+        # LP（デモ・紹介ページ）を先頭に並べる（codex にも優先させる）
+        links = [l for l in links if l["種類"].startswith("当社のシステム")] + [l for l in links if not l["種類"].startswith("当社のシステム")]
         if not links:
             return None   # リンク先が無い返信は出さない（トラッカーの一覧には付けない）
         kf, kw = kokkai_facts(p["text"])
@@ -358,7 +368,15 @@ def finish(items, texts, picks):
     """codex の答え（文案・選んだリンク）を検査して、ページに出すカードにする"""
     cards = []
     for it in items:
-        n = picks.get(it["id"], 0)
+        n, n2 = picks.get(it["id"], (0, 0))
+        tracker_url = it["url"] if it["url"].startswith("https://xb4g.com/giin/tracker/") else ""
+        if tracker_url and it["links"] and 1 <= n <= len(it["links"]):
+            # トラッカー＋LP：LP を先に、トラッカーを2つ目に
+            ln = it["links"][n - 1]
+            it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"] + "\n" + tracker_url
+            it["label"] = f"デモ・紹介ページ「{ln['題名'][:30]}」＋{it['label']}"
+            it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
+            n = 0
         if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
             ln = it["links"][n - 1]
             it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"]
@@ -367,6 +385,12 @@ def finish(items, texts, picks):
             else:
                 it["label"] = f"関連: {ln['種類'].split('（')[0]}「{ln['題名'][:40]}」"
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
+            if 1 <= n2 <= len(it["links"]) and n2 != n:   # 2つ目のURL（デモ＋トラッカー、記事＋デモ など）。LP を先に置く
+                l2 = it["links"][n2 - 1]
+                u2 = l2["url"] + ("&" if "?" in l2["url"] else "?") + "ref=" + it["ref"]
+                lp_first = l2["種類"].startswith("当社のシステム") and not ln["種類"].startswith("当社のシステム")
+                it["url"] = u2 + "\n" + it["url"] if lp_first else it["url"] + "\n" + u2
+                it["label"] += f"＋「{l2['題名'][:30]}」"
         if not it["url"]:
             continue   # 関連ページ（デモ・ブログ・note・個別のトラッカー）が選ばれなかった
         drafts = []
