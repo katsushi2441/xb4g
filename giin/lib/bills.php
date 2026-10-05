@@ -219,6 +219,18 @@ function g_page_bill(string $id): void
        . '<div class="c"><b>' . number_format(count($gov)) . '</b><span>政府の答弁<br>（載せた分）</span></div></div></section>';
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px">' . g_e($answer) . '</p>';
 
+    // この法案で変わること（scripts/build_bill_explain.py）。AIの要約であることと元の文書を、必ず一緒に出す
+    $ex = !empty($b['explain']) ? (json_decode((string)$b['explain'], true) ?: []) : [];
+    if ($ex) {
+        $srcUrl = ($b['explain_source'] ?? '') === '要旨' ? $b['summary_url'] : $b['text_url'];
+        $srcName = ($b['explain_source'] ?? '') === '要旨' ? '参議院の議案要旨' : '法律案の本文の「理由」';
+        echo '<section class="panel" style="margin:14px 0"><h2 data-en="Summary" style="margin-top:0">この法案で変わること <span class="pill gray" style="vertical-align:middle">AIによる要約</span></h2><ul style="margin:6px 0 8px;padding-left:1.2em">';
+        foreach ($ex as $line) { echo '<li style="margin:4px 0">' . g_e((string)$line) . '</li>'; }
+        echo '</ul><p class="note" style="margin:0">' . g_e($srcName) . 'から、当社のサーバーの生成AI（gemma4）が作った要約です。'
+           . '数字と日付は元の文と照らし合わせ、合わないものは載せていません。正確な内容は元の文書で確かめてください。'
+           . ($srcUrl ? '　<a href="' . g_e($srcUrl) . '" rel="nofollow noopener" target="_blank">元の文書（PDF）</a>' : '') . '</p></section>';
+    }
+
     echo '<h2 data-en="Timeline">審議の経過</h2><table style="table-layout:fixed"><tr><th style="width:9.6em">日付</th><th>できごと</th></tr>';
     foreach (g_bill_timeline($b) as [$d, $w]) { echo '<tr><td style="white-space:nowrap">' . g_e($d ? g_date($d) : '—') . '</td><td style="overflow-wrap:anywhere">' . g_e($w) . '</td></tr>'; }
     echo '</table>';
