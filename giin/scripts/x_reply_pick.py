@@ -114,6 +114,17 @@ POLITICIAN_WORDS = {"一般質問", "委員会", "視察", "議会", "国会", "
 NOT_POLITICIAN = r"広報|公式|役所|危機管理|事務局|県庁|都庁|市役所|区役所|町役場|村役場|消防|警察|ニュース|新聞|放送"
 
 
+# 国会議員（衆議院・参議院）。地方議員・首長と分けて返信の枠を取るため（2026-10-08 ユーザー指示
+# 「国会議員への返信を増やしたい」「衆議院と参議院のキーワードフィルタ」）。「元衆議院議員」「前参議院議員」は除く
+# 「衆院選」「参院選」だけでは当てない（市議の自己紹介に出る）。「議員」まで続く書き方だけ。候補者は除く
+KOKKAI = r"(?<![元前])(衆議院|参議院|衆院|参院|国会)議員(?!候補|選|秘書|事務所)"
+
+
+def is_kokkai(p):
+    t = (p.get("name") or "") + " " + (p.get("description") or "")
+    return is_politician(p) and bool(re.search(KOKKAI, t)) and not re.search(r"(?:県|市|区|町|村|都|道|府)議会議員", p.get("name") or "")
+
+
 def is_politician(p):
     if re.search(NOT_POLITICIAN, p.get("name") or ""):
         return False
@@ -243,7 +254,9 @@ def pick(args):
     import glob
     pp = args.posts or sorted(glob.glob(os.path.join(OUT, day, "posts-*.json")))[-1]
     posts = [x for x in json.load(open(pp, encoding="utf-8"))
-             if (x.get("views") or 0) >= args.min_views or (is_politician(x) and (x.get("views") or 0) >= args.min_views_politician)]
+             if (x.get("views") or 0) >= args.min_views
+             or (is_politician(x) and (x.get("views") or 0) >= args.min_views_politician)
+             or (is_kokkai(x) and (x.get("views") or 0) >= args.min_views_kokkai)]
     stamp = os.path.basename(pp)[6:-5]
     jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
@@ -298,6 +311,8 @@ if __name__ == "__main__":
     ap.add_argument("--min-faves", type=int, default=5)
     ap.add_argument("--min-views", type=int, default=1000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する（議員・首長は除く）。X の検索に条件が無いので集めたあとで絞る")
     ap.add_argument("--min-views-politician", type=int, default=100, help="議員・首長の投稿の表示の下限")
+    ap.add_argument("--min-views-kokkai", type=int, default=30,
+                    help="国会議員（衆議院・参議院）の投稿の表示の下限。投稿から40分以内だと表示がまだ少ない（丹野議員の投稿は見つけた時点で27）")
     ap.add_argument("--posts", help="pick で使う posts-*.json（省略時はその日の最新）")
     ap.add_argument("--backend", default="jevlocal")
     ap.add_argument("--top", type=int, default=30)

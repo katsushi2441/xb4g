@@ -25,6 +25,10 @@ sys.path.insert(0, HERE)
 import x_reply_pick as X  # noqa: E402
 
 MAX_ITEMS = 15   # 1回に文案を作る上限（codex の枠を守る）
+# そのうち国会議員（衆議院・参議院）の投稿に先に割り当てる枠。表示の多い順だけで選ぶと、議員の投稿（表示の中央値は
+# 200前後）は報道機関（1,000〜数万）に毎回押し出され、2026-10-08 は分野の当たった議員の投稿174件（うち国会議員77件）
+# から文案になったのは2件だった。地方議員・首長は今までどおり表示の多い順で競う（2026-10-08 ユーザー指示）
+N_KOKKAI = 6
 # kdeck の worker（systemd）の PATH には nvm の bin が無いので、見つからなければ既定の場所を使う
 CODEX_BIN = os.environ.get("CODEX_BIN") or __import__("shutil").which("codex") or "/home/kojima/.nvm/versions/node/v20.20.2/bin/codex"
 CODEX_MODEL = "gpt-6-sol"   # astra ではなく sol（2026-10-01 ユーザー指定。codex CLI 0.159.3 以上が要る）
@@ -426,11 +430,15 @@ def build(posts_path):
         it = make_item(p, r["field"], mmdd, r)
         if it:
             items.append(it)
-    # 文案を作る対象は表示の多い順（議員を先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちる）
-    items = sorted(items, key=lambda it: -it["post"]["views"])[:MAX_ITEMS]
+    # 文案を作る対象: 国会議員の投稿を N_KOKKAI 件まで先に取り（その中は表示の多い順）、残りの枠は表示の多い順。
+    # 国会議員を全部先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちるので、上限を決めて分ける
+    by_views = sorted(items, key=lambda it: -it["post"]["views"])
+    kokkai = [it for it in by_views if X.is_kokkai(it["post"])][:N_KOKKAI]
+    ids = {it["id"] for it in kokkai}
+    items = kokkai + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai)]
     texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
     cards = finish(items, texts, picks)
-    cards.sort(key=lambda c: -c["p"]["views"])   # ページは表示の多い順（ニュース・議員を区別しない）
+    cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), -c["p"]["views"]))   # ページは国会議員を先に、その中と残りは表示の多い順
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     empty = None
     if not cards:
@@ -470,7 +478,7 @@ def card_html(c, pre="t"):
 <a class="go" data-i="{pre}{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
         n += 1
     return f"""<article>
-<div class="who">{'<span class="pol">議員</span>' if X.is_politician(p) else ''}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
+<div class="who">{'<span class="pol kokkai">国会議員</span>' if X.is_kokkai(p) else ('<span class="pol">議員</span>' if X.is_politician(p) else '')}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}</div>
@@ -497,6 +505,7 @@ article{{background:#fff;border:1px solid #d8e3e7;border-radius:10px;padding:14p
 .who{{font-size:13px;color:#4d5f68}} .post{{margin:6px 0}} .src{{font-size:13px}} .tag{{margin:8px 0 4px;font-size:12px;font-weight:700;color:#0a726b}}
 textarea{{box-sizing:border-box;width:100%;font:inherit;border:1px solid #c5d3d8;border-radius:8px;padding:8px}}
 .pol{{display:inline-block;background:#b7791f;color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:0 6px;margin-right:6px}}
+.pol.kokkai{{background:#0a726b}}
 .draft{{border-top:1px dashed #d8e3e7;margin-top:10px;padding-top:8px}} .dtype{{font-size:12px;color:#4d5f68;margin-bottom:4px}}
 .btns{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}} button,.go{{font:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:7px 16px;cursor:pointer;text-decoration:none}}
 button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background:#0a9a8f;color:#fff;border:1px solid #0a9a8f}}
