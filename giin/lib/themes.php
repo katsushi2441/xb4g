@@ -393,7 +393,7 @@ function g_kaigi_excerpt(string $speech_id, array $words, int $max = 3): array
 }
 
 /** ことがらに関連する公開統計。**数値はAIに書かせず、公表資料から人が書き写したもの。**
- *  議員ごとではなく、ことがらごとに持つ。45人全員に同じものが出るので中立が保てる。 */
+ *  議員ごとではなく、ことがらごとに持つ。46人全員に同じものが出るので中立が保てる。 */
 function g_stats(string $theme, ?string $tracker = null): array
 {
     static $all = null;

@@ -599,5 +599,20 @@
   "id": 45,
   "party": "国民民主",
   "slug": "mizuno-koichi"
+ },
+ {
+  "house": "参議院",
+  "display": "伊藤　辰夫",
+  "name": "伊藤辰夫",
+  "kana": "いとう　たつお",
+  "district": "比例",
+  "wins": "1",
+  "kaiha": "国民民主党・新緑風会",
+  "profile": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/profile/7025009.htm",
+  "photo": "https://www.sangiin.go.jp/japanese/joho1/kousei/giin/photo/g7025009.jpg",
+  "term_end": "2031-07-28",
+  "id": 46,
+  "party": "国民民主",
+  "slug": "ito-tatsuo"
  }
 ]

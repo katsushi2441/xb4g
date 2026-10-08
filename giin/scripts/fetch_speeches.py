@@ -56,6 +56,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="frm", default="2023-01-01")
     ap.add_argument("--since-last", action="store_true")
+    ap.add_argument("--only", type=int, nargs="*", help="発言を取る議員の id（新しく足した議員だけ取るとき）")
     a = ap.parse_args()
 
     os.makedirs(os.path.dirname(DB), exist_ok=True)
@@ -77,6 +78,8 @@ def main():
 
     total = 0
     for r in roster:
+        if a.only and r["id"] not in a.only:
+            continue
         frm = a.frm
         if a.since_last:
             last = con.execute("SELECT last_date FROM giin WHERE id=?", (r["id"],)).fetchone()[0]

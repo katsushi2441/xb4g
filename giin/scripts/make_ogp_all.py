@@ -105,7 +105,7 @@ def main():
         args = ["%" + w + "%" for w in t["words"]]
         c = con.execute(f"SELECT COUNT(*) FROM speech WHERE kind='q' AND ({ors})", args).fetchone()[0]
         card(os.path.join(OUT, f"theme-{t['slug']}.png"),
-             "愛知の国会議員45人の質疑から",
+             "愛知の国会議員46人の質疑から",
              t["name"] + "について、",
              "だれが何と言ったか。",
              f"該当する質疑 {c:,}件。だれが何件ふれたかも出します。",
@@ -123,7 +123,7 @@ def main():
         JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai'
         WHERE s.kind='q'""").fetchone()[0]
     card(os.path.join(OUT, "ai-tokushu.png"),
-         "愛知の国会議員45人の質疑から",
+         "愛知の国会議員46人の質疑から",
          "AIを国会で、",
          "だれが論じているか。",
          f"AIに触れた質疑 {ai_q:,}件、{ai_g}人。何日・いくつの会議で持ち出したかで並べます。",
@@ -132,7 +132,7 @@ def main():
          "xb4g.com/giin/ai")
     n += 1
 
-    # 全国トラッカー。**愛知の45人ではなく全国の発言**なので、帯の文言を変える
+    # 全国トラッカー。**愛知の46人ではなく全国の発言**なので、帯の文言を変える
     trackers = json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))
     for t in trackers:
         r = con.execute("""SELECT COUNT(*), SUM(kind='q'), SUM(kind='gov'),

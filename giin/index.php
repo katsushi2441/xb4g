@@ -8,6 +8,7 @@
  *
  * **収録の線引き**：愛知の有権者の一票が当落に効く議員。
  *   衆議院 愛知1〜16区 ／ 衆議院 比例東海ブロック ／ 参議院 愛知県選挙区 ＝ 45人。
+ *   ＋参議院比例のうち愛知の地方議会の議員を務めた人（2026-10-08 伊藤辰夫・元愛知県議）＝ 46人。
  * 党派で選ばない。恣意的な取捨選択が無いので「なぜこの人が入っているのか」に一言で答えられる。
  */
 declare(strict_types=1);
@@ -128,13 +129,13 @@ function g_page_top(): void
 {
     $n  = (int)g_val("SELECT COUNT(*) FROM speech WHERE kind='q'");
     $ng = (int)g_val('SELECT COUNT(*) FROM giin');
-    g_head('', '愛知の有権者が選んだ国会議員45人（衆議院 愛知1〜16区・比例東海・参議院 愛知県選挙区）が、'
+    g_head('', '愛知の有権者が選んだ国会議員46人（衆議院 愛知1〜16区・比例東海・参議院 愛知県選挙区ほか）が、'
         . '国会で何を質問したかを ' . number_format($n) . '件の質疑から引けます。要約はしません。', '/',
         ['jsonld' => g_jsonld([
             ['@type' => 'WebSite', '@id' => g_abs(''), 'url' => g_abs(''), 'name' => G_SITE,
              'inLanguage' => 'ja',
              'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
-                 . '国会議員45人が、国会でいつ・どの会議で何を質問したかを引ける道具。',
+                 . '国会議員46人が、国会でいつ・どの会議で何を質問したかを引ける道具。',
              'publisher' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ',
                              'url' => 'https://xb4g.com/'],
              'potentialAction' => ['@type' => 'SearchAction',
@@ -143,9 +144,9 @@ function g_page_top(): void
                  'query-input' => 'required name=search_term_string']],
             // AI検索に「これは何のデータか」を機械可読で渡す
             ['@type' => 'Dataset', '@id' => g_abs('') . '#dataset',
-             'name' => '愛知の国会議員45人の国会発言',
+             'name' => '愛知の国会議員46人の国会発言',
              'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
-                 . '国会議員45人について、国会会議録から取得した発言 '
+                 . '国会議員46人について、国会会議録から取得した発言 '
                  . number_format((int)g_val('SELECT COUNT(*) FROM speech')) . '件。'
                  . '議員としての質疑・大臣としての答弁・委員長としての議事整理を分けて数えている。'
                  . '要約や論評は含まない。',
@@ -228,7 +229,7 @@ function g_page_top(): void
            . '<p class="more"><a class="btn" href="' . g_url('ai') . '">愛知の国会議員はAIをどう論じているか</a></p></div>';
     }
 
-    // 全国トラッカーへの導線。**愛知の45人に限らず**全国の発言を追っていることがら（1つの枠にまとめて出す）
+    // 全国トラッカーへの導線。**愛知の46人に限らず**全国の発言を追っていることがら（1つの枠にまとめて出す）
     $trs = [];
     foreach (g_trackers() as $tr) {
         $st = g_tracker_stats($tr['key']);
@@ -236,7 +237,7 @@ function g_page_top(): void
     }
     if ($trs) {
         echo '<h2 data-en="Tracker">国会トラッカー：法整備はどこまで来たか</h2>'
-           . '<div class="panel"><p>これらのことがらだけは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
+           . '<div class="panel"><p>これらのことがらだけは、愛知の46人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
            . 'だれが取り上げ、政府が何と答えてきたかを日付順に並べています。</p><div class="grid">';
         foreach ($trs as [$tr, $st]) {
             echo '<a class="card" href="' . g_url('tracker/' . $tr['key']) . '">'
@@ -380,7 +381,7 @@ function g_page_giin(int $id, int $page): void
         if ($all > count($uq)) {
             echo '<p class="note">ほかに' . ($all - count($uq)) . '語あります。</p>';
         }
-        echo '<p class="note">45人の質疑' . number_format((int)g_val('SELECT SUM(n_q) FROM giin'))
+        echo '<p class="note">46人の質疑' . number_format((int)g_val('SELECT SUM(n_q) FROM giin'))
            . '件を全部読み、<b>4回以上・2日以上にまたがって使われた語</b>のうち、'
            . 'ほかの44人が一度も使っていないものを機械的に拾いました。'
            . '多い少ないの比較ではありません。</p>';
@@ -452,7 +453,7 @@ function g_page_giin(int $id, int $page): void
     if ($trs) {
         usort($trs, fn($a, $b) => $b[0]['days'] <=> $a[0]['days'] ?: $b[0]['n'] <=> $a[0]['n']);
         echo '<h2 data-en="Tracker">国会トラッカー：' . g_e($g['plain']) . '議員が取り上げていることがらは、国会全体でどこまで来たか</h2>'
-           . '<div class="panel"><p>これらのことがらは、愛知の45人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集めています。'
+           . '<div class="panel"><p>これらのことがらは、愛知の46人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集めています。'
            . '件数は' . g_e($g['plain']) . '議員の質疑の数と日数、その下が全国の規模です。</p><div class="grid">';
         foreach ($trs as [$tr, $st]) {
             echo '<a class="card" href="' . g_url('tracker/' . $tr['key']) . '">'
@@ -644,7 +645,7 @@ function g_page_theme(string $slug, int $page): void
          'about' => ['@type' => 'Thing', 'name' => $t['name']],
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
     ]);
-    g_head($title, $t['lead'] . '愛知の有権者が選んだ国会議員45人の発言から、'
+    g_head($title, $t['lead'] . '愛知の有権者が選んだ国会議員46人の発言から、'
         . $t['name'] . 'に触れた' . number_format($total) . '件を集めました。',
         '/theme/' . $slug, ['jsonld' => $ld, 'image' => g_abs('img/og/theme-' . $slug . '.png')]);
 
@@ -656,11 +657,11 @@ function g_page_theme(string $slug, int $page): void
        . '</p>'
        . '<p class="note">拾っている語：' . g_e(implode('、', $t['words']))
        . '。語が出てきた発言を機械的に集めたもので、賛成・反対の判定はしていません。</p>';
-    // このことがらに全国トラッカーがあれば、先に案内する（愛知の45人の発言だけでは法整備の進み方が分からない）
+    // このことがらに全国トラッカーがあれば、先に案内する（愛知の46人の発言だけでは法整備の進み方が分からない）
     foreach (g_trackers_for_theme($slug) as $tr) {
         $trSt = g_tracker_stats($tr['key']);
         if (!$trSt) { continue; }
-        echo '<div class="panel"><p><b>国会トラッカー：</b>' . g_e($tr['name']) . 'は、愛知の45人に限らず'
+        echo '<div class="panel"><p><b>国会トラッカー：</b>' . g_e($tr['name']) . 'は、愛知の46人に限らず'
            . '<b>全国の国会議員の発言</b>も追っています。質疑' . number_format((int)$trSt['q']) . '件・政府の答弁'
            . number_format((int)$trSt['gov']) . '件・取り上げた議員' . (int)$trSt['speakers'] . '人（'
            . g_e(g_date($trSt['last'])) . 'まで）。</p>'
@@ -746,9 +747,9 @@ function g_page_search(int $page): void
         ORDER BY n_q DESC LIMIT 12", ['%' . $nq . '%', '%' . $nq . '%', '%' . $nq . '%', '%' . strtolower($nq) . '%']);
 
     g_head($q !== '' ? '「' . $q . '」の発言' : '議員名、またはことばで探す',
-        $q !== '' ? '愛知の国会議員45人の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
+        $q !== '' ? '愛知の国会議員46人の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
                   . ($members ? '名前に一致する議員は' . count($members) . '人です。' : '')
-                  : '愛知の国会議員45人を名前で、国会発言をことばで検索できます。', '/search',
+                  : '愛知の国会議員46人を名前で、国会発言をことばで検索できます。', '/search',
         ['q' => $q, 'noindex' => $q === '']);
 
     echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
@@ -796,11 +797,11 @@ function g_page_search(int $page): void
     g_kind_tabs($kind, $counts, g_url('search') . '?q=' . rawurlencode($q)
                 . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
     echo '<h2>「' . g_e($q) . '」をふくむ発言</h2><p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
-    // 検索語が全国トラッカーの語なら、愛知の45人の外へも案内する
+    // 検索語が全国トラッカーの語なら、愛知の46人の外へも案内する
     $tr = g_tracker_for_query($q);
     if ($tr && g_tracker_stats($tr['key'])) {
         echo '<div class="panel note">「' . g_e($q) . '」は<a href="' . g_url('tracker/' . $tr['key']) . '">国会トラッカー：'
-           . g_e($tr['name']) . '</a>で、愛知の45人に限らず全国の国会議員の質疑と政府の答弁を追っています。</div>';
+           . g_e($tr['name']) . '</a>で、愛知の46人に限らず全国の国会議員の質疑と政府の答弁を追っています。</div>';
     }
     $lArgs = $args; $lArgs[] = $per; $lArgs[] = $off;
     foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
@@ -884,7 +885,7 @@ function g_page_themes(): void
 
 function g_page_compare(): void
 {
-    g_head('ことがら × 議員', '愛知の国会議員45人が、どのことがらに何件ふれたかの一覧です。', '/compare',
+    g_head('ことがら × 議員', '愛知の国会議員46人が、どのことがらに何件ふれたかの一覧です。', '/compare',
         ['jsonld' => g_jsonld([g_crumbs([['ホーム', '/'], ['ことがら × 議員', '/compare']])])]);
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › ことがら × 議員</nav>';
     echo '<h1>ことがら × 議員</h1>'
@@ -895,7 +896,7 @@ function g_page_compare(): void
 
     $gs = g_all('SELECT * FROM giin WHERE n_q>0 ORDER BY party, n_q DESC');
     $ts = g_themes();
-    // **1回の問い合わせで全部読む。** 以前はここで 45人×20ことがら＝900回
+    // **1回の問い合わせで全部読む。** 以前はここで 46人×20ことがら＝900回
     // 走査していて3秒近くかかっていた（2026-09-15 実測）
     $cnt = [];
     foreach (g_all("SELECT theme, giin_id, n FROM theme_count WHERE kind='q' AND giin_id>0") as $r) {
@@ -937,7 +938,7 @@ function g_page_ai(): void
     $firstN = $years ? (int)$years[0]['n'] : 0;
     $lastN = $years ? (int)$years[count($years) - 1]['n'] : 0;
 
-    $desc = '愛知の有権者の一票が当落に効く国会議員45人が、国会でAIに触れた質疑は'
+    $desc = '愛知の有権者の一票が当落に効く国会議員46人が、国会でAIに触れた質疑は'
           . number_format($nq) . '件です。'
           . 'いちばん多く語られている論点は「' . ($topics[0]['label'] ?? '') . '」で、'
           . 'だれが何日・いくつの会議で持ち出したかを並べています。';
@@ -1067,7 +1068,7 @@ function g_page_ai(): void
 /** トラッカーの一覧。ことがら一覧と違い、**全国の発言**を追っているものだけ。 */
 function g_page_trackers(): void
 {
-    $desc = '議員立法で法整備が動いていることがらについて、愛知の45人に限らず全国の国会議員の質疑と政府の答弁を'
+    $desc = '議員立法で法整備が動いていることがらについて、愛知の46人に限らず全国の国会議員の質疑と政府の答弁を'
           . '会議録から機械的に集め、日付順に並べています。';
     // 「国会トラッカー」は月間0。実際に検索されているのは「国会議事録 検索」590。
     g_head('国会議事録から、法案のいまを追う｜28のことがらの質疑と政府答弁', $desc, '/tracker', ['jsonld' => g_jsonld([
@@ -1096,7 +1097,7 @@ function g_page_trackers(): void
 }
 
 /** ひとつのことがらの全国トラッカー。
- *  **愛知の45人の発言だけでは「法整備はどこまで来たか」が分からない**ので、
+ *  **愛知の46人の発言だけでは「法整備はどこまで来たか」が分からない**ので、
  *  この画面だけは会議録の全発言（質疑と政府の答弁）を集めて出す。
  *  要約はしない。政府の答弁も質疑も、語を含む文をそのまま抜いて会議録へつなぐ。 */
 function g_page_tracker(string $key, int $page): void
@@ -1162,7 +1163,7 @@ function g_page_tracker(string $key, int $page): void
     // 答えを先に一文で（AI検索・強調スニペットが引用しやすい形）
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1]) . '</p>';
     echo '<p class="note">集め方：「' . g_e(implode('」「', $words)) . '」を含む発言を、国立国会図書館の国会会議録検索システムから'
-       . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の45人に限りません）。'
+       . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の46人に限りません）。'
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
@@ -1271,7 +1272,7 @@ function g_page_tracker(string $key, int $page): void
     $aichi = array_values(array_filter($qs, fn($r) => !empty($r['slug'])));
     echo '<h2>愛知の議員は</h2><div class="panel">';
     if ($aichi) {
-        echo '<p>愛知の有権者の一票が当落に効く45人のうち、' . g_e($t['short'] ?? $t['name']) . 'を国会で取り上げているのは次の議員です。</p><ul>';
+        echo '<p>愛知の有権者の一票が当落に効く46人のうち、' . g_e($t['short'] ?? $t['name']) . 'を国会で取り上げているのは次の議員です。</p><ul>';
         foreach ($aichi as $r) {
             echo '<li><a href="' . g_url($r['slug']) . '">' . g_e($r['plain']) . '</a>（' . g_e($r['house']) . '）　'
                . (int)$r['n'] . '件・' . (int)$r['days'] . '日、最後は' . g_e(g_date($r['last']))
@@ -1279,10 +1280,10 @@ function g_page_tracker(string $key, int $page): void
         }
         echo '</ul>';
     } else {
-        echo '<p>愛知の45人には、このことがらの質疑がまだありません。</p>';
+        echo '<p>愛知の46人には、このことがらの質疑がまだありません。</p>';
     }
     if ($theme) {
-        echo '<p class="note">愛知の45人の発言は<a href="' . g_url('theme/' . $theme['slug']) . '">ことがら「'
+        echo '<p class="note">愛知の46人の発言は<a href="' . g_url('theme/' . $theme['slug']) . '">ことがら「'
            . g_e($theme['name']) . '」</a>にまとめています（こちらは' . g_e(g_meta('range_from')) . '以降）。</p>';
     }
     echo '</div>';
@@ -1341,8 +1342,9 @@ function g_page_about(): void
          . '発言の抜粋と、国会会議録へのリンクを並べています。要約や論評はしません。'],
         ['だれを収録していますか？',
          '愛知の有権者の一票が当落に効く議員を収録しています。衆議院 愛知1区〜16区、'
-         . '衆議院 比例代表 東海ブロック、参議院 愛知県選挙区の45人です。'
-         . '参議院の比例代表は全国共通なので入れていません。党派では選んでいません。'],
+         . '衆議院 比例代表 東海ブロック、参議院 愛知県選挙区の45人に、'
+         . '参議院 比例代表のうち愛知の地方議会の議員を務めた1人を加えた46人です。'
+         . '参議院の比例代表は全国共通なので、愛知の地方議員を務めた人のほかは入れていません。党派では選んでいません。'],
         ['発言の件数はどう数えていますか？',
          '議員として質問・討論した発言だけを既定で数えています。委員長としての議事整理'
          . '（「次に、○○君。」）や、大臣・副大臣としての答弁は別に数えています。'
@@ -1359,7 +1361,7 @@ function g_page_about(): void
          . '載せません。なりすましのアカウントを本人のものとして出さないためです。'
          . 'どこで確認したかは各ページに書いています。'],
         ['なぜ議員によってページの中身に差があるのですか？',
-         '発言の収録は45人全員が同じです。同じAPIから同じ処理で取り込み、同じ規則で'
+         '発言の収録は46人全員が同じです。同じAPIから同じ処理で取り込み、同じ規則で'
          . '分類しています。差が出ているのは公式サイト・SNSのリンクで、これは人が1人ずつ'
          . '調べて確認する手作業のため、まだ全員ぶん揃っていません。'
          . '取引の有無で選んだものではありませんが、偏っているのは事実です。'
@@ -1442,7 +1444,7 @@ function g_page_about(): void
 
        . '<h2 id="links">本人の発信について</h2>'
        . '<div class="alert"><b>いま、ここは全員ぶん揃っていません。</b><br>'
-       . '公式サイト・X・YouTube のリンクが入っているのは、45人中 '
+       . '公式サイト・X・YouTube のリンクが入っているのは、46人中 '
        . '<b>' . (int)g_links_count() . '人</b>です。'
        . '公式サイトのURLを人が1人ずつ調べて確認する作業なので、必ず誰かが最初になります。'
        . '最初の1人は、この機能を作るときの見本にした議員です。'
@@ -1641,7 +1643,7 @@ function g_page_parties(): void
            . '<i style="width:' . round(100 - $pq, 1) . '%;background:#e6f4f2"></i></div></td></tr>';
     }
     echo '</table></div>';
-    echo '<p class="note">上段が45人に占める人数の割合、下段が全質疑に占める割合です。'
+    echo '<p class="note">上段が46人に占める人数の割合、下段が全質疑に占める割合です。'
        . '両者がずれている会派ほど、与党・野党の立場の違いが効いています。</p>';
     g_foot();
 }
@@ -1660,7 +1662,7 @@ function g_page_party(string $slug): void
     $pn = $tot ? (int)$p['n'] / $tot * 100 : 0;
     $pq = $totq ? (int)$p['q'] / $totq * 100 : 0;
 
-    $desc = $name . 'の愛知関係の国会議員' . (int)$p['n'] . '人（45人中'
+    $desc = $name . 'の愛知関係の国会議員' . (int)$p['n'] . '人（46人中'
           . round($pn) . '%）が、国会で行った質疑は' . number_format((int)$p['q']) . '件'
           . '（全体の' . round($pq) . '%）です。件数の差は立場の差なので、読み方も書いています。';
     $ld = g_jsonld([
@@ -1679,7 +1681,7 @@ function g_page_party(string $slug): void
        . g_e($name) . 'は<b>' . (int)$p['n'] . '人</b>です。</p>';
 
     echo '<div class="kv">'
-       . '<div class="c"><b>' . (int)$p['n'] . '</b><span>人<br>45人中 ' . round($pn) . '%</span></div>'
+       . '<div class="c"><b>' . (int)$p['n'] . '</b><span>人<br>46人中 ' . round($pn) . '%</span></div>'
        . '<div class="c"><b>' . number_format((int)$p['q']) . '</b><span>質疑<br>全体の ' . round($pq) . '%</span></div>'
        . '<div class="c"><b>' . number_format((int)$p['q'] / max(1, (int)$p['n'])) . '</b><span>1人あたり<br>の質疑</span></div>'
        . '<div class="c"><b>' . number_format((int)$p['gov']) . '</b><span>答弁<br>大臣・副大臣・政務官</span></div>'

@@ -106,7 +106,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     }
     echo '<header class="site"><div class="inner">'
        . '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
-       . '<small>愛知の有権者が選んだ45人が、国会で何を話したか</small></span></a>'
+       . '<small>愛知の有権者が選んだ46人が、国会で何を話したか</small></span></a>'
        . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
        . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）">'
        . '<button>探す</button></form>'
@@ -150,7 +150,7 @@ function g_foot(): void
        . '当社は「政治活動の事務を安くする」範囲に限って支援します。'
        . '特定の政党・候補者を支援することはありません。'
        . '<b>発言の収録は、収録対象や取引先に左右されません</b>'
-       . '（45人全員を同じ処理で取り込み、同じ規則で分類しています）。'
+       . '（46人全員を同じ処理で取り込み、同じ規則で分類しています）。'
        . 'ただし公式サイトやSNSのリンクは手作業で足しているため、'
        . '<b>いまは' . (int)g_links_count() . '人ぶんしか入っていません。</b>'
        . '<a href="' . g_url('about') . '#links">なぜそうなっているか</a></p>'

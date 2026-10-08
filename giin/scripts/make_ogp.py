@@ -40,7 +40,7 @@ dr.text((cx, 116), badge, font=f_badge, fill="#0a726b", anchor="mm")
 dr.text((cx, 218), "その議員は国会で、", font=f_h, fill="#12202f", anchor="mm")
 dr.text((cx, 296), "何と言いましたか。", font=f_h2, fill="#0a9a8f", anchor="mm")
 
-dr.text((cx, 370), "愛知の有権者が選んだ45人の発言を、日付と会議名で引く。", font=f_s, fill="#5d6b7a", anchor="mm")
+dr.text((cx, 370), "愛知の有権者が選んだ46人の発言を、日付と会議名で引く。", font=f_s, fill="#5d6b7a", anchor="mm")
 dr.text((cx, 410), "要約しません。抜粋と会議録へのリンクだけ。", font=f_s, fill="#5d6b7a", anchor="mm")
 
 dr.rounded_rectangle([cx - 240, 468, cx + 240, 528], radius=16, fill="#0a9a8f")

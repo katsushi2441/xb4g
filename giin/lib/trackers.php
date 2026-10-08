@@ -1,8 +1,8 @@
 <?php
-/** 全国トラッカー。**愛知の45人に限らず**、ひとつのことがらについて国会の全発言を追う。
+/** 全国トラッカー。**愛知の46人に限らず**、ひとつのことがらについて国会の全発言を追う。
  *
  *  表 tracker_speech は scripts/fetch_tracker.py が会議録 API から作る（speech 表には混ぜない。
- *  あちらは45人の発言を数える表なので、混ぜると件数の意味が変わる）。
+ *  あちらは46人の発言を数える表なので、混ぜると件数の意味が変わる）。
  *  定義は data/trackers.json。表が無い設置でも画面を壊さないよう、無ければ空を返す。
  *  要約はしない。抜粋は語のまわりの文をそのまま出す。 */
 declare(strict_types=1);
@@ -94,7 +94,7 @@ function g_tracker_list(string $key, string $kind, int $limit, int $offset = 0):
                   WHERE t.tracker=?$w ORDER BY t.date DESC, t.speech_order DESC LIMIT ? OFFSET ?", $a);
 }
 
-/** その議員（愛知の45人）がこのトラッカーに何件・何日あるか。議員ページの導線用。 */
+/** その議員（愛知の46人）がこのトラッカーに何件・何日あるか。議員ページの導線用。 */
 function g_tracker_of_giin(int $giin_id): array
 {
     if (!g_tracker_ready() || $giin_id <= 0) { return []; }
@@ -141,7 +141,7 @@ function g_tracker_excerpt(string $body, array $words, int $max = 2): array
     return $out;
 }
 
-/** 全国の発言1件の描画。話者は会議録の表記のまま。愛知の45人なら議員ページへ渡す。 */
+/** 全国の発言1件の描画。話者は会議録の表記のまま。愛知の46人なら議員ページへ渡す。 */
 function g_tracker_speech(array $s, array $words): void
 {
     $hit = array_values(array_filter($words, fn($w) => mb_strpos((string)$s['body'], $w, 0, 'UTF-8') !== false));

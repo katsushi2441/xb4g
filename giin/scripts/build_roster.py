@@ -5,6 +5,8 @@
   衆議院 愛知1〜16区 ／ 衆議院 比例東海ブロック ／ 参議院 愛知県選挙区
 参議院比例は全国共通なので入れない。この線なら恣意的な取捨選択が無く、
 「なぜこの人が入っていて、あの人が入っていないのか」に一言で答えられる。
+例外＝参議院比例のうち、愛知の地方議会の議員を務めた人（AICHI_LOCAL_HIREI。2026-10-08 伊藤辰夫・元愛知県議）。
+  愛知の有権者が地方選で選んできた人なので入れる。id がずれないよう名簿の末尾に足す。
 
 出典:
   衆議院 会派別議員一覧 https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/syu/0NNkaiha.htm
@@ -90,6 +92,10 @@ def fetch_shugiin():
     return rows
 
 
+# 参議院比例のうち、愛知の地方議会の議員を務めた人（議員氏名＝参議院CSVの表記）
+AICHI_LOCAL_HIREI = {"伊藤　辰夫": "元愛知県議会議員"}
+
+
 def fetch_sangiin():
     # 参議院CSVの会派欄は略称（「民主」など）なので、kaiha.csv で正式名に戻す
     full = {}
@@ -98,15 +104,16 @@ def fetch_sangiin():
     body = get(SAN_CSV)
     rows = []
     for r in csv.DictReader(io.StringIO(body)):
-        if r.get("選挙区", "").strip() != "愛知":
-            continue
         disp = r["議員氏名"].strip()
+        ku = r.get("選挙区", "").strip()
+        if ku != "愛知" and not (ku == "比例" and disp in AICHI_LOCAL_HIREI):
+            continue
         rows.append({
             "house": "参議院",
             "display": disp,
             "name": norm_name(disp),
             "kana": r.get("読み方", "").strip(),
-            "district": "愛知",
+            "district": ku,
             "wins": r.get("当選回数", "").strip(),
             "kaiha": full.get(r.get("会派", "").strip(), r.get("会派", "").strip()),
             "profile": r.get("議員個人の紹介ページ", "").strip(),
@@ -119,8 +126,10 @@ def fetch_sangiin():
 def main():
     shu = fetch_shugiin()
     target = [r for r in shu if re.match(r"^愛知\d+$", r["district"]) or "東海" in r["district"]]
-    san = fetch_sangiin()
-    rows = target + san
+    san_all = fetch_sangiin()
+    san = [r for r in san_all if r["district"] == "愛知"]
+    extra = [r for r in san_all if r["district"] != "愛知"]   # 末尾に足す（既存の id を動かさない）
+    rows = target + san + extra
     for i, r in enumerate(rows, 1):
         r["id"] = i
         r["party"] = party_of(r["kaiha"])
