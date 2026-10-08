@@ -107,12 +107,57 @@ def name_hit(r, name, desc):
     return sn in t or bool(kana_sn and kana_sn in t)
 
 
+# 異体字は通常の字に寄せてから比べる（櫻井充→「桜井充」など）
+_ITAI = str.maketrans("櫻髙﨑邊邉澤濱齋齊廣眞嶋德惠藏龍國", "桜高崎辺辺沢浜斎斉広真島徳恵蔵竜国")
+_LOCAL = re.compile(r"区議|市議|町議|村議|県議|都議|府議|道議|県連|総支部|連盟|後援会|秘書")
+
+
+def _kata2hira(s):
+    return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in s)
+
+
+def full_name_hit(r, name):
+    """表示名に、姓と名の両方（それぞれ漢字かかな）があるか。
+
+    2026-10-09: 姓と「議員」の文字がプロフィールのどこかにあれば本人としていたため、
+    自己紹介に「衆議院議員岸田文雄事務所」と経歴を書いた杉並区議が岸田文雄議員として通り、
+    通知に別人の投稿が出た。地方議員・県連・連盟など別人の表示名も弾く。"""
+    nm = _kata2hira(re.sub(r"[\s　]", "", (name or "")).translate(_ITAI))
+    if not nm or _LOCAL.search(nm):
+        return False
+    full = re.sub(r"[\s　]", "", r["name"]).translate(_ITAI)
+    sn = surname(r).translate(_ITAI)
+    given = full[len(sn):] if full.startswith(sn) else ""
+    kana = re.split(r"[\s　]+", (r.get("kana") or "").strip())
+    k_sn, k_given = (kana + ["", ""])[:2]
+    ok_sn = sn in nm or bool(k_sn and k_sn in nm)
+    ok_given = bool(given and given in nm) or bool(k_given and k_given in nm)
+    return ok_sn and ok_given
+
+
 def looks_like(r, name, desc):
     t = (name or "") + " " + (desc or "")
-    sn, kana_sn = surname(r), re.split(r"[\s　]+", (r.get("kana") or "").strip())[0]
-    has_name = sn in t or (kana_sn and kana_sn in t)
     has_title = bool(re.search(r"衆議院|参議院|衆院|参院|議員", t))
-    return has_name and has_title
+    return full_name_hit(r, name) and has_title
+
+
+def recheck():
+    """ネットに出ずに、保存済みの表示名で検索由来の対応を照合し直す。"""
+    rows = load()
+    bad = []
+    for r in rows:
+        if not r.get("x") or r.get("source") == "wikidata":
+            continue
+        ok = looks_like(r, r.get("x_name"), r.get("x_desc"))
+        if not ok and r.get("verified"):
+            bad.append((r["name"], r["x"], r.get("x_name")))
+        r["verified"] = ok
+        if not ok:
+            r["note"] = f"照合し直しで不一致（表示名: {r.get('x_name')}）"
+    save(rows)
+    for b in bad:
+        print("外した", *b)
+    print("外した数", len(bad))
 
 
 def search():
@@ -191,4 +236,4 @@ def verify():
 
 
 if __name__ == "__main__":
-    {"roster": roster, "match": match, "search": search, "verify": verify}[sys.argv[1]]()
+    {"roster": roster, "match": match, "search": search, "verify": verify, "recheck": recheck}[sys.argv[1]]()
