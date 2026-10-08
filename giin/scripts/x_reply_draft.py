@@ -560,6 +560,13 @@ document.getElementById('one').addEventListener('submit',function(e){{
     }}).catch(function(){{setTimeout(poll,6000)}})}})();
   }}).catch(function(){{btn.disabled=false;say('送れませんでした。時間をおいてもう一度',1)}});
 }});
+
+// メール（国会議員の投稿の通知）のリンクから ?url=… で開いたら、その投稿の返信候補を自動で作り始める（2026-10-08）
+(function(){{try{{var q=new URLSearchParams(location.search).get('url');
+  if(q&&/^https:\/\/(x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d+/.test(q)){{
+    var f=document.getElementById('one');document.getElementById('ourl').value=q;
+    f.scrollIntoView({{block:'start'}});f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event('submit',{{cancelable:true}}));
+    history.replaceState(null,'',location.pathname+'#one')}}}}catch(e){{}}}})();
 </script></main></body></html>"""
 
 
