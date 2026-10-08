@@ -127,8 +127,12 @@ def run(dry=False):
                 "url": h["t"].get("url"), "text": h["t"].get("text")} for h in hits],
               open(os.path.join(OUT, f"hits-{stamp}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"返信する価値あり {len(hits)}件（高い {sum(1 for h in hits if h['value'] == 3)}件）")
-    if hits and not dry:
-        print("メール:", mail(hits))
+    if not dry:
+        # 0件の回も送る（2026-10-09 ユーザー指示。黙ると、止まったのか0件なのか分からない）
+        print("メール:", mail(hits) if hits else mail_status(
+            f"国会議員の投稿 0件（{datetime.datetime.now():%H:%M}）",
+            [f"{len(rows)}人を確認し、{datetime.datetime.fromtimestamp(since):%H:%M} 以降の新しい投稿は {len(posts)}件でした。",
+             "そのうち返信する価値があると判定したものは 0件です（処理は最後まで動いています）。"]))
     if not dry:
         st["last_ts"] = now
         st["sent"] = (list(posts) + st.get("sent", []))[:3000]
@@ -137,6 +141,31 @@ def run(dry=False):
         for h in hits:
             print(h["value"], h["r"]["name"], h["point"], h["t"].get("url"))
     return {"posts": len(posts), "hits": len(hits)}
+
+
+def _password():
+    for ln in open("/home/kojima/work/aixec/.env", encoding="utf-8"):
+        if ln.startswith("GMAIL_APP_PASSWORD="):
+            return ln.split("=", 1)[1].strip().strip("\"'").replace(" ", "")
+    return ""
+
+
+def mail_status(subject, lines):
+    """0件の回と失敗した回の知らせ"""
+    pw = _password()
+    if not pw:
+        return "skip (no app password)"
+    msg = MIMEText("\n".join(lines + ["", "kdeck の giin-kokkai-x-watch から自動で送っています。"]), "plain", "utf-8")
+    msg["Subject"] = Header(subject, "utf-8")
+    msg["From"] = MAIL_TO
+    msg["To"] = MAIL_TO
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as sm:
+            sm.login(MAIL_TO, pw)
+            sm.sendmail(MAIL_TO, [MAIL_TO], msg.as_string())
+        return "sent 0"
+    except Exception as e:  # noqa: BLE001
+        return f"error {type(e).__name__}"
 
 
 def mail(hits):
@@ -179,8 +208,14 @@ def mail(hits):
 
 
 def run_kokkai_x_watch_job(**_):
-    """kdeck から呼ぶ入口"""
-    r = run()
+    """kdeck から呼ぶ入口。失敗した回もメールで知らせてから、ジョブとしては失敗にする"""
+    try:
+        r = run()
+    except Exception as e:  # noqa: BLE001
+        import traceback
+        mail_status(f"国会議員の投稿 監視が失敗（{datetime.datetime.now():%H:%M}）",
+                    [f"{type(e).__name__}: {e}", "", traceback.format_exc()[-1500:]])
+        raise
     return {"ok": True, "items": r["hits"], **r}
 
 
