@@ -26,8 +26,12 @@ STATE = os.path.join(OUT, "state.json")
 OLLAMA = "http://192.168.0.3:11434"
 LLM = "gemma4:12b-it-qat"
 MAIL_TO = "katsushi2441@gmail.com"
-FIRST_WINDOW = 90 * 60   # 初回は直近90分
-MAX_WINDOW = 6 * 3600    # 止まっていた後でも、さかのぼるのは6時間まで（古い投稿に返信しても読まれない）
+# 返信は元の投稿から60分以内に出したいので、知らせるのは投稿から40分以内のものだけ（2026-10-08 ユーザー指示）。
+# 15分おきに回すので、ふだんは投稿から15〜20分で届く。止まっていた後でも40分より前はさかのぼらない
+TARGET_AGE = 40 * 60
+REPLY_LIMIT = 60 * 60
+FIRST_WINDOW = TARGET_AGE
+MAX_WINDOW = TARGET_AGE
 
 SCHEMA = {"type": "object", "properties": {
     "value": {"type": "integer", "minimum": 0, "maximum": 3},
@@ -101,7 +105,7 @@ def run(dry=False):
     for i in range(0, len(handles), 20):
         q = "(" + " OR ".join(f"from:{h}" for h in handles[i:i + 20]) + f") since_time:{since} -filter:replies"
         for t in fx_search(q):
-            if t.get("type") != "status" or (t.get("created_timestamp") or 0) < since:
+            if t.get("type") != "status" or (t.get("created_timestamp") or 0) < max(since, now - TARGET_AGE):
                 continue
             h = (t.get("author") or {}).get("screen_name", "").lower()
             if h in by_handle and t["id"] not in st["sent"]:
@@ -144,11 +148,12 @@ def mail(hits):
         return "skip (no app password)"
     pu, slugs = page_url(), aichi_slugs()
     n3 = sum(1 for h in hits if h["value"] == 3)
-    L = [f"国会議員の投稿のうち、返信する価値があると判定したもの {len(hits)}件（高い {n3}件）。", ""]
+    L = [f"国会議員の投稿のうち、返信する価値があると判定したもの {len(hits)}件（高い {n3}件）。投稿から40分以内のものだけです。返信は投稿から60分以内が目安です。", ""]
     for i, h in enumerate(hits, 1):
         r, t = h["r"], h["t"]
         ago = int((time.time() - (t.get("created_timestamp") or time.time())) / 60)
-        L += [f"■{i}. {'★高い ' if h['value'] == 3 else ''}{r['display']}（{r['house']}・{r.get('kaiha', '')}・{r.get('district', '')}）{ago}分前・表示{(t.get('views') or 0):,}",
+        left = max(0, REPLY_LIMIT // 60 - ago)
+        L += [f"■{i}. {'★高い ' if h['value'] == 3 else ''}{r['display']}（{r['house']}・{r.get('kaiha', '')}・{r.get('district', '')}）{ago}分前の投稿・返信の目安まであと{left}分・表示{(t.get('views') or 0):,}",
               f"論点: {h['point']}　／　判定の理由: {h['reason']}",
               "内容: " + re.sub(r"\s+", " ", t.get("text") or "")[:220], "",
               f"・元の投稿: {t.get('url')}",

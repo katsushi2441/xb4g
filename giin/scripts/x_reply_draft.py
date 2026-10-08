@@ -514,7 +514,11 @@ button{{background:#fff;border:1px solid #0a9a8f;color:#0a726b}} .go{{background
 .one button{{background:#0a9a8f;color:#fff}} .one button:disabled{{opacity:.5;cursor:wait}} .ostate{{font-size:13px;color:#4d5f68;margin-top:6px;min-height:1.2em}} .ostate.err{{color:#b42318}}
 #mine article{{border:2px solid #0a9a8f;margin-top:4px}} .h2{{font-size:16px;margin:18px 0 8px}} [hidden]{{display:none!important}}
 .minehead{{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#4d5f68}} .del{{font-size:12px;padding:2px 10px;border-color:#c5d3d8;color:#4d5f68}}
+.auto{{background:#fff7e6;border:3px solid #e07a2e;border-radius:12px;padding:14px 16px;margin:0 0 16px}} .auto b{{display:block;font-size:17px}}
+.auto .ostate{{font-size:15px;color:#13232c;font-weight:700}} .auto a{{font-size:13px}} .hl{{outline:4px solid #e07a2e;outline-offset:3px;border-radius:10px}}
 </style></head><body><main><h1>X 返信候補 {day} {stamp[:2]}:{stamp[2:]}</h1>
+<section id="auto" class="auto" hidden><b id="autot">メールのリンクから開きました。この投稿の返信候補を作っています（1〜2分）</b>
+<a id="autou" href="#" target="_blank" rel="noopener">元の投稿を開く</a><div id="autos" class="ostate">受け付けています…</div></section>
 <form id="one" class="one"{form}><label for="ourl">返信したい X の投稿の URL を入れると、その投稿の返信候補を作ります（1〜3分）</label>
 <div class="row"><input id="ourl" type="url" required placeholder="https://x.com/アカウント/status/数字"><button type="submit" id="obtn">返信候補を作る</button></div>
 <div id="ostate" class="ostate"></div></form>
@@ -543,7 +547,9 @@ fetch('ask.php?list=1').then(function(r){{return r.json()}}).then(function(d){{(
 mine.addEventListener('click',function(e){{var b=e.target.closest('.del');if(!b)return;
   fetch('ask.php?del='+encodeURIComponent(b.dataset.id)).then(function(){{var x=document.getElementById('j'+b.dataset.id);if(x)x.remove();
   if(!mine.children.length)document.getElementById('minewrap').hidden=true}})}});
-function say(t,err){{st.textContent=t;st.className='ostate'+(err?' err':'')}}
+var AUTO=false;
+function say(t,err){{st.textContent=t;st.className='ostate'+(err?' err':'');
+  if(AUTO){{var a=document.getElementById('autos');a.textContent=t;a.className='ostate'+(err?' err':'')}}}}
 document.getElementById('one').addEventListener('submit',function(e){{
   e.preventDefault();var url=document.getElementById('ourl').value.trim();
   btn.disabled=true;say('受け付けています…');
@@ -553,9 +559,11 @@ document.getElementById('one').addEventListener('submit',function(e){{
     var t0=Date.now();
     (function poll(){{fetch('ask.php?id='+encodeURIComponent(d.id)).then(function(r){{return r.json()}}).then(function(s){{
       if(s.state==='done'){{btn.disabled=false;
-        if(s.html){{say('できました（'+Math.round((Date.now()-t0)/1000)+'秒）。下の「URL から作った候補」に残ります');add({{id:d.id,t:Date.now()/1000,html:s.html}},true)}}
-        else say(s.message||'返信候補を作れませんでした',1);return}}
-      if(s.state==='error'){{btn.disabled=false;say(s.message||'失敗しました',1);return}}
+        if(s.html){{say('できました（'+Math.round((Date.now()-t0)/1000)+'秒）。下の「URL から作った候補」に残ります');add({{id:d.id,t:Date.now()/1000,html:s.html}},true);
+          if(AUTO){{document.getElementById('autot').textContent='できました。すぐ下に返信候補を出しています';
+            var x=document.getElementById('j'+d.id);if(x){{x.classList.add('hl');x.scrollIntoView({{behavior:'smooth',block:'start'}})}}}}}}
+        else {{say(s.message||'返信候補を作れませんでした',1);if(AUTO)document.getElementById('autot').textContent='この投稿の返信候補は作れませんでした（理由は下）'}}return}}
+      if(s.state==='error'){{btn.disabled=false;say(s.message||'失敗しました',1);if(AUTO)document.getElementById('autot').textContent='返信候補を作れませんでした（理由は下）';return}}
       say((s.message||'作っています')+'…（'+Math.round((Date.now()-t0)/1000)+'秒）');setTimeout(poll,4000);
     }}).catch(function(){{setTimeout(poll,6000)}})}})();
   }}).catch(function(){{btn.disabled=false;say('送れませんでした。時間をおいてもう一度',1)}});
@@ -564,8 +572,9 @@ document.getElementById('one').addEventListener('submit',function(e){{
 // メール（国会議員の投稿の通知）のリンクから ?url=… で開いたら、その投稿の返信候補を自動で作り始める（2026-10-08）
 (function(){{try{{var q=new URLSearchParams(location.search).get('url');
   if(q&&/^https:\/\/(x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d+/.test(q)){{
+    AUTO=true;var box=document.getElementById('auto');box.hidden=false;document.getElementById('autou').href=q;
     var f=document.getElementById('one');document.getElementById('ourl').value=q;
-    f.scrollIntoView({{block:'start'}});f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event('submit',{{cancelable:true}}));
+    window.scrollTo(0,0);f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event('submit',{{cancelable:true}}));
     history.replaceState(null,'',location.pathname+'#one')}}}}catch(e){{}}}})();
 </script></main></body></html>"""
 
@@ -619,6 +628,11 @@ def one(url):
         return {"message": "投稿を読めませんでした（消された・鍵つき・URL違いのどれか）"}
     p = X.slim(t)
     p["url"] = p.get("url") or f"https://x.com/{m.group(1)}/status/{m.group(2)}"
+    # 引用の投稿は、話の中身が引用元にあることが多い（玉木代表「調査すると明言していただきたかった」＋引用元の速報）。
+    # 引用元の本文も渡さないと、付けるページも文案も決められない（2026-10-08）
+    q = t.get("quote") or {}
+    if q.get("text"):
+        p["text"] = (p.get("text") or "") + "\n［引用元 @" + ((q.get("author") or {}).get("screen_name") or "") + "］" + q["text"]
     it = make_item(p, None, datetime.date.today().strftime("%m%d"))
     if not it:
         return {"message": "この投稿に付けられる当社のページ（トラッカー・デモ・ブログ・note）が見つかりませんでした"}
