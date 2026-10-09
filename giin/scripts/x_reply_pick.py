@@ -170,8 +170,21 @@ def collect(args):
     os.makedirs(os.path.join(OUT, day), exist_ok=True)
     seen = {}
     since_ts = int(time.time()) - args.within * 60
+    # 持ち時間（2026-10-09）。議員一覧が増え続け（10/9 だけで 2,697→2,735 人）、混む時間帯は集めるだけで
+    # 20分の制限を超えて、集めた分ごと失敗していた（12:55・18:14 の回）。超えたら残りの検索を打ち切って先へ進む
+    deadline = time.time() + args.budget
+    cut = []
+    def over(stage):
+        if time.time() > deadline:
+            if stage not in cut:
+                cut.append(stage)
+                print(f"\n持ち時間（{args.budget}秒）を超えたので「{stage}」以降の検索を打ち切る", flush=True)
+            return True
+        return False
     qs = queries(since_ts, args.min_faves)
     for i, q in enumerate(qs, 1):
+        if over("語の検索"):
+            break
         for x in fx_search(q):
             if x.get("type") == "status" and x["id"] not in seen:
                 if (x.get("created_timestamp") or 0) < since_ts:   # 念のため手元でも時刻で切る
@@ -187,6 +200,8 @@ def collect(args):
     handles = sorted(reg)
     npol = 0
     for i in range(0, len(handles), 20):
+        if over("議員一覧"):
+            break
         q = "(" + " OR ".join(f"from:{h}" for h in handles[i:i + 20]) + f") since_time:{since_ts} -filter:replies"
         for x in fx_search(q, pages=3, since_ts=since_ts):
             if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= since_ts:
@@ -201,6 +216,8 @@ def collect(args):
     news = json.load(open(os.path.join(ROOT, "data", "x_news_accounts.json"), encoding="utf-8"))["handles"]
     nnews = 0
     for i in range(0, len(news), 20):
+        if over("報道一覧"):
+            break
         q = "(" + " OR ".join(f"from:{h}" for h in news[i:i + 20]) + f") since_time:{since_ts} -filter:replies"
         for x in fx_search(q, pages=5, since_ts=since_ts):
             if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= since_ts:
@@ -210,6 +227,8 @@ def collect(args):
     # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す
     pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
     for i, w in enumerate(pol_qs, 1):
+        if over("議員がよく使う語"):
+            break
         for x in fx_search(f"{w} since_time:{since_ts} lang:ja -filter:replies", pages=3, since_ts=since_ts):
             if x.get("type") != "status" or x["id"] in seen or (x.get("created_timestamp") or 0) < since_ts:
                 continue
@@ -224,7 +243,7 @@ def collect(args):
         if is_politician(v) and v.get("screen_name"):
             reg[v["screen_name"]] = v.get("name") or ""
     json.dump(dict(sorted(reg.items())), open(reg_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(f"議員一覧 {len(reg)}人")
+    print(f"議員一覧 {len(reg)}人" + (f"（持ち時間切れで打ち切り: {'・'.join(cut)}）" if cut else ""))
     stamp = datetime.datetime.now().strftime("%H%M")
     p = os.path.join(OUT, day, f"posts-{stamp}.json")
     json.dump(sorted(seen.values(), key=lambda s: -s["likes"]), open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -328,6 +347,7 @@ if __name__ == "__main__":
     ap.add_argument("--date", default=today.isoformat())
     ap.add_argument("--within", type=int, default=40, help="何分以内の投稿を対象にするか")
     ap.add_argument("--min-faves", type=int, default=5)
+    ap.add_argument("--budget", type=int, default=840, help="collect の持ち時間（秒）。超えたら残りの検索を打ち切って保存する（ジョブの制限は1200秒）")
     ap.add_argument("--min-views", type=int, default=1000, help="インプレッション（表示回数）がこれ以上の投稿だけ判定する（議員・首長は除く）。X の検索に条件が無いので集めたあとで絞る")
     ap.add_argument("--min-views-politician", type=int, default=100, help="議員・首長の投稿の表示の下限")
     ap.add_argument("--min-views-kokkai", type=int, default=30,
