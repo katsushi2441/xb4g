@@ -23,7 +23,7 @@ $urls = [
     ['theme', '0.9', 'weekly', $speechLast],
     // トラッカーの一覧ページ。個別28本は下で足していたのにハブだけ漏れていて、
     // 2026-09-19 時点で tracker/* は1本もクロールされていなかった。
-    ['tracker', '0.9', 'weekly', max($trackerLast ?: [$speechLast])],
+    ['tracker', '0.9', 'weekly', max(max($trackerLast ?: [$speechLast]), '2026-10-09')],
     ['senkyoku', '0.9', 'weekly', $speechLast],
     ['party', '0.9', 'weekly', $speechLast],
     ['news', '0.8', 'daily', $newsLast],
@@ -32,7 +32,11 @@ $urls = [
     ['about', '0.5', 'monthly', $fileLast],
 ];
 foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly', $speechLast]; }
-foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'weekly', $trackerLast[$t['key']] ?? $speechLast]; }
+// トラッカーの lastmod は「最後の発言の日」「トラッカーを作った日（trackers.json の added）」「ページの作りを変えた日」の新しい方。
+// 最後の発言の日だけだと、10/9 に作ったデジタル教科書が「6月9日」に見え、新しいページだと伝わらなかった（2026-10-09）。
+// ページの作りを変えた日＝全トラッカーの冒頭に「数字で見る要点」を足した日（本当に中身が変わった日。毎回 now にはしない）
+$trackerRevised = '2026-10-09';
+foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'weekly', max($trackerLast[$t['key']] ?? $speechLast, (string)($t['added'] ?? ''), $trackerRevised)]; }
 foreach (g_all('SELECT key FROM senkyoku ORDER BY rowid') as $s) { $urls[] = ['senkyoku/' . $s['key'], '0.8', 'weekly', $speechLast]; }
 foreach (g_parties() as $p) { $urls[] = ['party/' . g_party_slug($p['party']), '0.8', 'weekly', $speechLast]; }
 // 法案（scripts/fetch_bills.py）。lastmod は最後の動きの日（毎回 now にしない）

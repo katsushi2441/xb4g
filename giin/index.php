@@ -1162,6 +1162,12 @@ function g_page_tracker(string $key, int $page): void
        . '</div></section>';
     // 答えを先に一文で（AI検索・強調スニペットが引用しやすい形）
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1]) . '</p>';
+    // 当社が数えた要点（会議録の写しではない、このページだけの中身。2026-10-09）
+    if ($pts = g_tracker_points($t, $st, $years, $qs, $latestGov)) {
+        echo '<div class="panel"><h2 style="margin-top:0" data-en="Key facts">数字で見る要点</h2><ul>';
+        foreach ($pts as $p) { echo '<li>' . g_e($p) . '</li>'; }
+        echo '</ul></div>';
+    }
     echo '<p class="note">集め方：「' . g_e(implode('」「', $words)) . '」を含む発言を、国立国会図書館の国会会議録検索システムから'
        . g_e(g_date($t['from'])) . '以降ぶん機械的に集めたものです（愛知の46人に限りません）。'
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'

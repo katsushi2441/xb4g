@@ -242,6 +242,62 @@ function g_tracker_next(array $t): string
  * AI検索（AEO/GEO）と強調スニペット向けの「問いと答え」。**すべて会議録のデータから機械的に作る**（2026-10-03）。
  * 要約や賛否は書かない。数字・日付・話者・発言の一文だけ。FAQPage の JSON-LD と、画面のよくある質問の両方に使う。
  */
+/** 会派名を党の短い名前に寄せる。「自由民主党」は「民主党」を含むので、自民を先に見る（2026-10-09） */
+function g_party_short(string $k): string
+{
+    $rules = [['自由民主', '自民'], ['立憲民主', '立憲民主'], ['国民民主', '国民民主'], ['公明', '公明'], ['維新', '維新'],
+              ['共産', '共産'], ['れいわ', 'れいわ'], ['参政', '参政'], ['チームみらい', 'チームみらい'], ['社会民主', '社民'],
+              ['民主党', '旧民主・民進'], ['民進', '旧民主・民進'], ['希望の党', '希望'], ['みんなの党', 'みんな'], ['中道改革', '中道改革連合'], ['有志', '有志の会']];
+    foreach ($rules as [$needle, $name]) { if (mb_strpos($k, $needle) !== false) { return $name; } }
+    return $k !== '' ? $k : 'その他';
+}
+
+/** 党（会派）ごとの質疑の件数。多い順 */
+function g_tracker_parties(string $key): array
+{
+    if (!g_tracker_ready()) { return []; }
+    $by = [];
+    foreach (g_all("SELECT kaiha_at k, COUNT(*) n FROM tracker_speech WHERE tracker=? AND kind='q' GROUP BY kaiha_at", [$key]) as $r) {
+        $p = g_party_short((string)$r['k']);
+        $by[$p] = ($by[$p] ?? 0) + (int)$r['n'];
+    }
+    arsort($by);
+    return $by;
+}
+
+/** 当社が会議録から数えた要点（ページの冒頭に出す。引用の写しではない、このページだけの中身。2026-10-09） */
+function g_tracker_points(array $t, array $st, array $years, array $qs, array $latestGov): array
+{
+    $n = $t['short'] ?? $t['name'];
+    $out = [];
+    $qy = array_values(array_filter($years, fn($y) => (int)$y['q'] > 0));
+    if ($qy) {
+        $peak = $qy[0];
+        foreach ($qy as $y) { if ((int)$y['q'] > (int)$peak['q']) { $peak = $y; } }
+        $last = end($qy);
+        $s = '質疑がいちばん多かったのは' . $peak['y'] . '年の' . number_format((int)$peak['q']) . '件です。';
+        if ($last['y'] !== $peak['y']) { $s .= '直近の' . $last['y'] . '年は' . number_format((int)$last['q']) . '件です。'; }
+        $out[] = $s;
+    }
+    $parties = g_tracker_parties((string)$t['key']);
+    $tot = array_sum($parties);
+    if ($tot > 0) {
+        $top = array_slice($parties, 0, 3, true);
+        $out[] = '党（会派）ごとの質疑は、' . implode('、', array_map(fn($p, $c) => $p . ' ' . number_format($c) . '件（' . round($c * 100 / $tot) . '%）',
+                 array_keys($top), array_values($top))) . 'の順に多くなっています。';
+    }
+    if ($qs) {
+        $q = $qs[0];
+        $out[] = 'もっとも多くの日に取り上げた議員は、' . $q['speaker'] . '（' . g_party_short((string)($q['kaiha'] ?? '')) . '・' . (int)$q['days'] . '日）です。';
+    }
+    if ($latestGov) {
+        $g = $latestGov[0];
+        $pos = preg_replace('/（.*$/u', '', (string)($g['position'] ?? ''));
+        $out[] = '直近の政府答弁は、' . g_date($g['date']) . 'の' . $g['house'] . ' ' . $g['meeting'] . 'で、' . $g['speaker'] . ($pos !== '' ? '（' . $pos . '）' : '') . 'が答えたものです。';
+    }
+    return $out;
+}
+
 function g_tracker_faq(array $t, array $st, array $qs, array $years, array $latestGov): array
 {
     $n = $t['short'] ?? $t['name'];
@@ -250,6 +306,13 @@ function g_tracker_faq(array $t, array $st, array $qs, array $years, array $late
         g_date($st['first']) . 'から' . g_date($st['last']) . 'までに、国会会議録には' . $n . 'にふれた議員の質疑が'
         . number_format((int)$st['q']) . '件、政府の答弁が' . number_format((int)$st['gov']) . '件あります。取り上げた議員は'
         . (int)$st['speakers'] . '人です（「' . implode('」「', array_slice($t['words'], 0, 4)) . '」を含む発言を数えたもの）。'];
+    $pt = g_tracker_parties((string)($t['key'] ?? ''));
+    if ($pt && array_sum($pt) > 0) {
+        $tot = array_sum($pt); $top3 = array_slice($pt, 0, 3, true);
+        $out[] = [$n . 'を国会で多く取り上げているのは、どの党ですか？',
+            '議員の質疑' . number_format($tot) . '件を党（会派）ごとに数えると、' . implode('、', array_map(fn($p, $c) => $p . ' ' . number_format($c) . '件',
+            array_keys($top3), array_values($top3))) . 'の順です（発言時の会派で数えたもの）。'];
+    }
     if ($qs) {
         $top = array_slice($qs, 0, 3);
         $out[] = [$n . 'を国会で多く取り上げた議員はだれですか？',
