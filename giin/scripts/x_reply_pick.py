@@ -60,6 +60,30 @@ FIT_Q = ("この投稿は、国の制度・法律・政策・災害について�
 FIELD_Q = "この投稿は、どの分野の話題か"
 
 
+def fx_timeline(handles, since_ts, workers=4):
+    """議員ごとの最新の投稿（fxtwitter /2/profile/<handle>/statuses）。検索が使えないときの代わり（2026-10-10）。
+    2026-10-09 22時ごろから fxtwitter の /2/search がどの語でも 404 を返すようになり、返信候補も国会議員の監視も
+    集める投稿が0件になった。投稿1件・プロフィール・この時系列の入口は動いている。返信とリポストは検索と同じく除く"""
+    import concurrent.futures as cf
+    def one(h):
+        u = f"https://api.fxtwitter.com/2/profile/{urllib.parse.quote(h)}/statuses"
+        r = subprocess.run(["curl", "-s", "-m", "20", "-A", "Mozilla/5.0", u], capture_output=True, text=True).stdout
+        try:
+            res = json.loads(r).get("results") or []
+        except ValueError:
+            return []
+        return [x for x in res if x.get("type") == "status" and (x.get("created_timestamp") or 0) >= since_ts
+                and not x.get("replying_to") and not x.get("reposted_by")]
+    out = []
+    with cf.ThreadPoolExecutor(workers) as ex:
+        for res in ex.map(one, handles):
+            out += res
+    return out
+
+
+SEARCH_DOWN = {"down": False}
+
+
 def fx_search(q, pages=1, since_ts=0):
     """X の検索（fxtwitter）。1ページ20件。pages>1 なら cursor で次のページへ。since_ts より古い投稿が出たら止める"""
     out, cursor = [], None
@@ -74,6 +98,14 @@ def fx_search(q, pages=1, since_ts=0):
         except ValueError:
             break
         res = d.get("results", [])
+        if not res and d.get("code") == 404:
+            # 検索が止まっている。from: の検索なら議員ごとの時系列で代わりに読む（語の検索には代わりが無い）
+            SEARCH_DOWN["down"] = True
+            hs = re.findall(r"from:([A-Za-z0-9_]+)", q)
+            if hs:
+                st = since_ts or int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
+                return fx_timeline(hs, st)
+            break
         out += res
         cursor = (d.get("cursor") or {}).get("bottom")
         if not res or not cursor or min((x.get("created_timestamp") or 0) for x in res) < since_ts:
@@ -198,6 +230,12 @@ def collect(args):
     reg_path = os.path.join(ROOT, "data", "x_politicians.json")
     reg = json.load(open(reg_path, encoding="utf-8")) if os.path.exists(reg_path) else {}
     handles = sorted(reg)
+    # 国会議員を先に読む。検索が止まって議員ごとの時系列で読むときは、持ち時間で後ろが打ち切られるため（2026-10-10）
+    try:
+        kok = {r["x"].lower() for r in json.load(open(os.path.join(ROOT, "data", "kokkai_x.json"), encoding="utf-8")) if r.get("verified") and r.get("x")}
+        handles = [h for h in handles if h.lower() in kok] + [h for h in handles if h.lower() not in kok]
+    except Exception:
+        pass
     npol = 0
     for i in range(0, len(handles), 20):
         if over("議員一覧"):

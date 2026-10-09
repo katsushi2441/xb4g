@@ -59,6 +59,13 @@ def fx_search(q, pages=3):
         u = "https://api.fxtwitter.com/2/search?q=" + urllib.parse.quote(q) + (f"&cursor={urllib.parse.quote(cursor)}" if cursor else "")
         try:
             d = json.load(urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "xb4g-giin/1.0"}), timeout=40))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                # 2026-10-09 22時ごろから検索が 404。議員ごとの時系列で代わりに読む（x_reply_pick.fx_timeline）
+                hs = re.findall(r"from:([A-Za-z0-9_]+)", q)
+                st = int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
+                return X.fx_timeline(hs, st) if hs else []
+            break
         except Exception:
             break
         out += d.get("results") or []
