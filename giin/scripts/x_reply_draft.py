@@ -629,11 +629,35 @@ def deploy(path):
     return f"https://proto.exbridge.jp/xreply-{token}/"
 
 
-def one(url):
+# 作った1件は投稿IDごとに残し、同じ投稿ならその場で返す（2026-10-09）。押してから codex で作ると毎回10〜40秒待たされ、
+# 同時に1件しか作れないので続けて押すと断られていた。国会議員のX監視は「★高い」をメールの前にここで作っておく
+ONE_CACHE = os.path.join(X.OUT, "one", "cache")
+ONE_CACHE_SEC = 6 * 3600
+
+
+def one_cache_path(post_id):
+    return os.path.join(ONE_CACHE, f"{post_id}.json")
+
+
+def one(url, use_cache=True):
     """URL を入れた1件の返信候補（ページの「返信候補を作る」から呼ぶ）。{"html": カード} か {"message": 作れなかった理由}"""
     m = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]+)/status/(\d+)", url or "")
     if not m:
         return {"message": "X の投稿の URL（https://x.com/…/status/数字）を入れてください"}
+    cp = one_cache_path(m.group(2))
+    if use_cache and os.path.exists(cp) and time.time() - os.path.getmtime(cp) < ONE_CACHE_SEC:
+        try:
+            return json.load(open(cp, encoding="utf-8"))
+        except ValueError:
+            pass
+    r = _one(url, m)
+    if r.get("html"):
+        os.makedirs(ONE_CACHE, exist_ok=True)
+        json.dump(r, open(cp, "w", encoding="utf-8"), ensure_ascii=False)
+    return r
+
+
+def _one(url, m):
     r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0", f"https://api.fxtwitter.com/2/status/{m.group(2)}"],
                        capture_output=True, text=True).stdout
     try:

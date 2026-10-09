@@ -168,6 +168,22 @@ def mail_status(subject, lines):
         return f"error {type(e).__name__}"
 
 
+def prebuild(hits):
+    """「★高い」は、メールを送る前に返信候補を作っておく（押してから作ると10〜40秒待たされる。2026-10-09）。
+    作ったものは x_reply_draft.one のキャッシュに残り、メールのリンクを押すとすぐ出る。codex の枠を守るため高いものだけ"""
+    import x_reply_draft as D
+    done = set()
+    for h in hits:
+        if h["value"] != 3:
+            continue
+        try:
+            if D.one(h["t"].get("url") or "").get("html"):
+                done.add(h["t"].get("url"))
+        except Exception:  # noqa: BLE001  作れなくてもメールは送る（押せばその場で作る）
+            pass
+    return done
+
+
 def mail(hits):
     pw = ""
     for ln in open("/home/kojima/work/aixec/.env", encoding="utf-8"):
@@ -176,6 +192,7 @@ def mail(hits):
     if not pw:
         return "skip (no app password)"
     pu, slugs = page_url(), aichi_slugs()
+    ready = prebuild(hits)
     n3 = sum(1 for h in hits if h["value"] == 3)
     L = [f"国会議員の投稿のうち、返信する価値があると判定したもの {len(hits)}件（高い {n3}件）。投稿から30分以内のものだけです。返信は投稿から60分以内が目安です。", ""]
     for i, h in enumerate(hits, 1):
@@ -186,7 +203,7 @@ def mail(hits):
               f"論点: {h['point']}　／　判定の理由: {h['reason']}",
               "内容: " + re.sub(r"\s+", " ", t.get("text") or "")[:220], "",
               f"・元の投稿: {t.get('url')}",
-              f"・返信候補を作る（開くと作り始めます）: {pu}?url={urllib.parse.quote(t.get('url') or '', safe='')}"]
+              f"・返信候補{'（作成済み・開くとすぐ出ます）' if t.get('url') in ready else 'を作る（開くと作り始めます）'}: {pu}?url={urllib.parse.quote(t.get('url') or '', safe='')}"]
         if r.get("profile"):
             L.append(f"・{r['house']}の議員紹介: {r['profile']}")
         if r["name"] in slugs:
