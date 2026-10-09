@@ -109,8 +109,9 @@ def yahoo_search(q, since_ts=0, pages=1):
         elif isinstance(o, list):
             for v in o:
                 walk(v)
-    for b in [1, 11, 21][:pages]:
-        u = "https://search.yahoo.co.jp/realtime/search?" + urllib.parse.urlencode({"p": words, "ei": "UTF-8", "b": b})
+    # 新着順（b=1）だけでは直近10分ほどの小さなアカウントの投稿しか出ない。話題順（md=h）も読み、表示の多い投稿を拾う
+    for prm in [{"b": 1}, {"md": "h"}, {"b": 11}, {"b": 21}][:pages + 1]:
+        u = "https://search.yahoo.co.jp/realtime/search?" + urllib.parse.urlencode({"p": words, "ei": "UTF-8", **prm})
         h = subprocess.run(["curl", "-s", "-m", "30", "-A", YAHOO_UA, u], capture_output=True, text=True).stdout
         m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', h, re.S)
         if not m:
@@ -120,27 +121,60 @@ def yahoo_search(q, since_ts=0, pages=1):
         except ValueError:
             break
         time.sleep(1)
-    out = []
+    # Yahoo の likesCount は拾った瞬間の数（投稿直後なのでほぼ0。2026-10-10 実測: 4語×40分で5以上は0件）。
+    # これで絞ると全部落ちるので、返信と古いものだけ外して fxtwitter で今の数字を読み、そのあとで絞る
+    ids = []
     for t in acc:
         tid = str(t.get("id") or "")
-        if not tid or t.get("inReplyTo") or _snowflake_ts(tid) < st:
-            continue
-        if (t.get("likesCount") or 0) < mf and not re.search(POLITICIAN, t.get("name") or ""):
-            continue
-        r = subprocess.run(["curl", "-s", "-m", "20", "-A", "Mozilla/5.0", f"https://api.fxtwitter.com/2/status/{tid}"],
-                           capture_output=True, text=True).stdout
-        try:
-            x = json.loads(r).get("status")
-        except ValueError:
-            x = None
-        if x and x.get("type") == "status":
-            out.append(x)
-    return out
+        if tid and not t.get("inReplyTo") and _snowflake_ts(tid) >= st and tid not in ids:
+            ids.append(tid)
+    def status(tid):
+        if tid not in _YAHOO_SEEN:
+            r = subprocess.run(["curl", "-s", "-m", "20", "-A", "Mozilla/5.0", f"https://api.fxtwitter.com/2/status/{tid}"],
+                               capture_output=True, text=True).stdout
+            try:
+                x = json.loads(r).get("status")
+            except ValueError:
+                x = None
+            _YAHOO_SEEN[tid] = x if x and x.get("type") == "status" else None
+        return _YAHOO_SEEN[tid]
+    import concurrent.futures as cf
+    with cf.ThreadPoolExecutor(6) as ex:
+        got = list(ex.map(status, ids))
+    a = lambda x: x.get("author") or {}
+    return [x for x in got if x and ((x.get("likes") or 0) >= mf or re.search(POLITICIAN, (a(x).get("name") or "") + " " + (a(x).get("description") or "")))]
+
+
+_YAHOO_SEEN = {}   # 1回の実行の中で同じ投稿を何度も読まない（語が違っても同じ投稿が出る）
+
+
+def _fallback(q, since_ts=0):
+    """検索が止まっているときの代わり。from: なら議員ごとの時系列、語なら Yahoo!リアルタイム検索"""
+    hs = re.findall(r"from:([A-Za-z0-9_]+)", q)
+    if hs:
+        st = since_ts or int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
+        return fx_timeline(hs, st, workers=6)
+    return yahoo_search(q, since_ts)
+
+
+def search_down():
+    """この回のはじめに1回だけ検索を試す。404なら止まっている"""
+    r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0",
+                        "https://api.fxtwitter.com/2/search?" + urllib.parse.urlencode({"q": "国会"})],
+                       capture_output=True, text=True).stdout
+    try:
+        d = json.loads(r)
+    except ValueError:
+        return False
+    SEARCH_DOWN["down"] = not d.get("results") and d.get("code") == 404
+    return SEARCH_DOWN["down"]
 
 
 def fx_search(q, pages=1, since_ts=0):
     """X の検索（fxtwitter）。1ページ20件。pages>1 なら cursor で次のページへ。since_ts より古い投稿が出たら止める"""
     out, cursor = [], None
+    if SEARCH_DOWN["down"]:   # この回で一度404を見たら、語ごとに検索を試さず代わりの読み方へ（1回数秒かかるため）
+        return _fallback(q, since_ts)
     for _ in range(pages):
         params = {"q": q}
         if cursor:
@@ -155,11 +189,7 @@ def fx_search(q, pages=1, since_ts=0):
         if not res and d.get("code") == 404:
             # 検索が止まっている。from: の検索なら議員ごとの時系列で代わりに読む（語の検索には代わりが無い）
             SEARCH_DOWN["down"] = True
-            hs = re.findall(r"from:([A-Za-z0-9_]+)", q)
-            if hs:
-                st = since_ts or int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
-                return fx_timeline(hs, st)
-            return yahoo_search(q, since_ts)
+            return _fallback(q, since_ts)
         out += res
         cursor = (d.get("cursor") or {}).get("bottom")
         if not res or not cursor or min((x.get("created_timestamp") or 0) for x in res) < since_ts:
@@ -268,17 +298,25 @@ def collect(args):
             return True
         return False
     qs = queries(since_ts, args.min_faves)
-    for i, q in enumerate(qs, 1):
-        if over("語の検索"):
-            break
-        for x in fx_search(q):
-            if x.get("type") == "status" and x["id"] not in seen:
-                if (x.get("created_timestamp") or 0) < since_ts:   # 念のため手元でも時刻で切る
-                    continue
-                s = slim(x); s["query"] = q.split(" since_time:")[0]; seen[x["id"]] = s
-        print(f"\r{i}/{len(qs)} {len(seen)}件", end="", flush=True)
-        time.sleep(2)
-    print()
+    def words_stage():
+        for i, q in enumerate(qs, 1):
+            if over("語の検索"):
+                break
+            for x in fx_search(q):
+                if x.get("type") == "status" and x["id"] not in seen:
+                    if (x.get("created_timestamp") or 0) < since_ts:   # 念のため手元でも時刻で切る
+                        continue
+                    s = slim(x); s["query"] = q.split(" since_time:")[0]; seen[x["id"]] = s
+            print(f"\r{i}/{len(qs)} {len(seen)}件", end="", flush=True)
+            time.sleep(0.5 if down else 2)
+        print()
+    # 検索が止まっているとき（2026-10-10）は、語の検索の代わり（Yahoo）が1語19秒かかり、78語のうち44語で持ち時間を
+    # 使い切って、件数の大半を占める議員・報道の段に一度も進めなかった。止まっている間は議員・報道を先に読み、語は残りの時間で
+    down = search_down()
+    if down:
+        print("fxtwitter の検索が止まっている（404）。議員・報道を時系列で先に読み、語は Yahoo!リアルタイム検索で残りの時間に読む", flush=True)
+    else:
+        words_stage()
     # 議員・首長はいいねが少なくても対象。
     # ① これまでに見つけた議員のアカウントを from: でまとめて引く（語に関係なく、その時間の投稿を全部拾う）
     reg_path = os.path.join(ROOT, "data", "x_politicians.json")
@@ -301,7 +339,7 @@ def collect(args):
                 if is_politician(s):
                     s["query"] = "from:議員一覧"; seen[x["id"]] = s; npol += 1
         print(f"\r議員一覧 {min(i + 20, len(handles))}/{len(handles)} {npol}件", end="", flush=True)
-        time.sleep(2)
+        time.sleep(0 if down else 2)
     print()
     # ①' 報道機関。いいねが付きにくく（朝日は表示1,000超でもいいね0〜10）、見出しにトラッカーの語も出ないので、
     #     語の検索（min_faves つき）では拾えない。from: でその時間の投稿を全部引き、表示の下限は pick で掛ける
@@ -314,10 +352,13 @@ def collect(args):
         for x in fx_search(q, pages=5, since_ts=since_ts):
             if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= since_ts:
                 s = slim(x); s["query"] = "from:報道一覧"; seen[x["id"]] = s; nnews += 1
-        time.sleep(2)
+        time.sleep(0 if down else 2)
     print(f"報道一覧 {len(news)}アカウント {nnews}件")
-    # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す
-    pol_qs = sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
+    if down:
+        words_stage()
+    # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す。
+    #    検索が止まっている間は飛ばす（議員は①で全員の時系列を読んでいる）
+    pol_qs = [] if down else sorted({q.split(" since_time:")[0] for q in qs} | POLITICIAN_WORDS)
     for i, w in enumerate(pol_qs, 1):
         if over("議員がよく使う語"):
             break
