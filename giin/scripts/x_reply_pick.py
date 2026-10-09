@@ -82,6 +82,60 @@ def fx_timeline(handles, since_ts, workers=4):
 
 
 SEARCH_DOWN = {"down": False}
+YAHOO_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+
+
+def _snowflake_ts(tid):
+    try:
+        return ((int(tid) >> 22) + 1288834974657) / 1000
+    except (TypeError, ValueError):
+        return 0
+
+
+def yahoo_search(q, since_ts=0, pages=1):
+    """語の検索の代わり: Yahoo!リアルタイム検索（ログイン不要・curl で読める。2026-10-10）。
+    fxtwitter の /2/search が止まっている間、語の検索に使う。表示回数が取れないので、いいねの条件を満たす投稿か
+    名前が議員らしい投稿だけ fxtwitter の投稿1件の読み取り（/2/status は動いている）で数字を補って、検索と同じ形で返す"""
+    words = re.sub(r"\s*(since_time:\d+|min_faves:\d+|lang:\w+|-filter:\w+)", "", q).strip()
+    mf = int((re.search(r"min_faves:(\d+)", q) or [0, 0])[1])
+    st = since_ts or int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
+    acc = []
+    def walk(o):
+        if isinstance(o, dict):
+            if "screenName" in o and ("text" in o or "displayText" in o):
+                acc.append(o)
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    for b in [1, 11, 21][:pages]:
+        u = "https://search.yahoo.co.jp/realtime/search?" + urllib.parse.urlencode({"p": words, "ei": "UTF-8", "b": b})
+        h = subprocess.run(["curl", "-s", "-m", "30", "-A", YAHOO_UA, u], capture_output=True, text=True).stdout
+        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', h, re.S)
+        if not m:
+            break
+        try:
+            walk(json.loads(m.group(1)))
+        except ValueError:
+            break
+        time.sleep(1)
+    out = []
+    for t in acc:
+        tid = str(t.get("id") or "")
+        if not tid or t.get("inReplyTo") or _snowflake_ts(tid) < st:
+            continue
+        if (t.get("likesCount") or 0) < mf and not re.search(POLITICIAN, t.get("name") or ""):
+            continue
+        r = subprocess.run(["curl", "-s", "-m", "20", "-A", "Mozilla/5.0", f"https://api.fxtwitter.com/2/status/{tid}"],
+                           capture_output=True, text=True).stdout
+        try:
+            x = json.loads(r).get("status")
+        except ValueError:
+            x = None
+        if x and x.get("type") == "status":
+            out.append(x)
+    return out
 
 
 def fx_search(q, pages=1, since_ts=0):
@@ -105,7 +159,7 @@ def fx_search(q, pages=1, since_ts=0):
             if hs:
                 st = since_ts or int((re.search(r"since_time:(\d+)", q) or [0, 0])[1])
                 return fx_timeline(hs, st)
-            break
+            return yahoo_search(q, since_ts)
         out += res
         cursor = (d.get("cursor") or {}).get("bottom")
         if not res or not cursor or min((x.get("created_timestamp") or 0) for x in res) < since_ts:

@@ -53,6 +53,16 @@ def load_state():
         return {"last_ts": 0, "sent": []}
 
 
+def search_alive():
+    """fxtwitter の検索が今使えるか（1回だけ試す）"""
+    try:
+        d = json.load(urllib.request.urlopen(urllib.request.Request(
+            "https://api.fxtwitter.com/2/search?q=" + urllib.parse.quote("国会"), headers={"User-Agent": "xb4g-giin/1.0"}), timeout=30))
+        return bool(d.get("results"))
+    except Exception:
+        return False
+
+
 def fx_search(q, pages=3):
     out, cursor = [], ""
     for _ in range(pages):
@@ -106,6 +116,13 @@ def run(dry=False):
     by_handle = {r["x"].lower(): r for r in rows}
     st = load_state()
     now = int(time.time())
+    # 検索（/2/search）が止まっている間は、議員ごとの時系列で読む（1回で約580回の読み取り）。fxtwitter に負担を
+    # かけすぎないよう、時系列で読むのは25分に1回にする（kdeck は15分おきのまま。検索が戻れば自動で毎回に戻る）。2026-10-10
+    if not search_alive():
+        if now - int(st.get("last_fallback") or 0) < 25 * 60:
+            print("検索が止まっているので、時系列での読み取りは25分に1回。今回は見送り")
+            return {"posts": 0, "hits": 0, "skipped": "search-down"}
+        st["last_fallback"] = now
     since = max(st.get("last_ts") or (now - FIRST_WINDOW), now - MAX_WINDOW)
     handles = sorted(by_handle)
     posts = {}
