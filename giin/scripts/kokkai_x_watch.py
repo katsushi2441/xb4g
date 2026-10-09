@@ -26,9 +26,9 @@ STATE = os.path.join(OUT, "state.json")
 OLLAMA = "http://192.168.0.3:11434"
 LLM = "gemma4:12b-it-qat"
 MAIL_TO = "katsushi2441@gmail.com"
-# 返信は元の投稿から60分以内に出したいので、知らせるのは投稿から40分以内のものだけ（2026-10-08 ユーザー指示）。
-# 15分おきに回すので、ふだんは投稿から15〜20分で届く。止まっていた後でも40分より前はさかのぼらない
-TARGET_AGE = 40 * 60
+# 返信は元の投稿から60分以内に出したいので、知らせるのは投稿から30分以内のものだけ（2026-10-08 は40分、10-09 ユーザー指示で30分）。
+# 15分おきに回すので、ふだんは投稿から15〜20分で届く。止まっていた後でも30分より前はさかのぼらない
+TARGET_AGE = 30 * 60
 REPLY_LIMIT = 60 * 60
 FIRST_WINDOW = TARGET_AGE
 MAX_WINDOW = TARGET_AGE
@@ -177,7 +177,7 @@ def mail(hits):
         return "skip (no app password)"
     pu, slugs = page_url(), aichi_slugs()
     n3 = sum(1 for h in hits if h["value"] == 3)
-    L = [f"国会議員の投稿のうち、返信する価値があると判定したもの {len(hits)}件（高い {n3}件）。投稿から40分以内のものだけです。返信は投稿から60分以内が目安です。", ""]
+    L = [f"国会議員の投稿のうち、返信する価値があると判定したもの {len(hits)}件（高い {n3}件）。投稿から30分以内のものだけです。返信は投稿から60分以内が目安です。", ""]
     for i, h in enumerate(hits, 1):
         r, t = h["r"], h["t"]
         ago = int((time.time() - (t.get("created_timestamp") or time.time())) / 60)

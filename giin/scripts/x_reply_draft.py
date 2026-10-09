@@ -413,6 +413,20 @@ def finish(items, texts, picks):
     return cards
 
 
+# 返信は投稿から60分以内が目安。候補に出すのは、ページを書き出す時点で投稿から30分以内のものだけ（2026-10-09 ユーザー指示「30分以内にしようか」）。
+# 集めるのは直近40分でも、判定と文案に15〜20分かかり、公開時点では45〜61分たっていた（10/9 06:33〜10:34 の各回を実測）
+MAX_AGE_MIN = 30
+
+
+def age_min(p, now=None):
+    """投稿からの経過分。created_timestamp が無ければ投稿IDの時刻部分（snowflake）から出す"""
+    ts = p.get("created_timestamp")
+    if not ts:
+        m = re.search(r"(\d{15,})", str(p.get("id") or p.get("url") or ""))
+        ts = ((int(m.group(1)) >> 22) + 1288834974657) / 1000 if m else 0
+    return ((now or time.time()) - ts) / 60 if ts else 1e9
+
+
 def build(posts_path):
     day = os.path.basename(os.path.dirname(posts_path))
     stamp = os.path.basename(posts_path)[6:-5]
@@ -432,12 +446,14 @@ def build(posts_path):
             items.append(it)
     # 文案を作る対象: 国会議員の投稿を N_KOKKAI 件まで先に取り（その中は表示の多い順）、残りの枠は表示の多い順。
     # 国会議員を全部先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちるので、上限を決めて分ける
+    items = [it for it in items if age_min(it["post"]) <= MAX_AGE_MIN]   # 文案を作る前に、もう古いものは外す
     by_views = sorted(items, key=lambda it: -it["post"]["views"])
     kokkai = [it for it in by_views if X.is_kokkai(it["post"])][:N_KOKKAI]
     ids = {it["id"] for it in kokkai}
     items = kokkai + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai)]
     texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
     cards = finish(items, texts, picks)
+    cards = [c for c in cards if age_min(c["p"]) <= MAX_AGE_MIN]   # 文案を作っている間に30分を過ぎたものも外す
     cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), -c["p"]["views"]))   # ページは国会議員を先に、その中と残りは表示の多い順
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     empty = None
