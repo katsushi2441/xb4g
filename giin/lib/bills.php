@@ -308,7 +308,7 @@ function g_bill_voice(array $b, array $trs): string
     if (!(bool)g_val("SELECT 1 FROM sqlite_master WHERE type='table' AND name='committee_member'")) { return ''; }
     $asof = substr(g_meta('committee_at'), 0, 10);
     $h = '<h2 data-en="Your voice">この法案に声を届けるには</h2>'
-       . '<p>法案は、付託された委員会で審査されてから本会議で採決されます。当サイトは意見を集めません。'
+       . '<p>法案は、付託された委員会で審査されてから本会議で採決されます。当社の Kurage 法案AIインタビューで寄せられた意見も、国会に届く公式の窓口ではありません。'
        . 'だれが審査しているかと、届ける方法を国会の公開情報から並べています。</p>';
     $aichi = [];
     foreach (['衆議院' => 'shu', '参議院' => 'san'] as $house => $k) {
