@@ -263,6 +263,7 @@ function g_page_bill(string $id): void
     }
     if (!$sp) { echo '<p class="note">件名がそのまま出てくる発言は見つかりませんでした（委員会で審査されていない法案や、略称で呼ばれた発言は拾えていません）。</p>'; }
 
+    echo g_bill_khouan($b);
     echo g_bill_voice($b, $trs);
 
     echo '<h2 data-en="Related">この法案につながるもの</h2><div class="panel"><ul>';
@@ -353,4 +354,84 @@ function g_bill_voice(array $b, array $trs): string
         }
     }
     return $h;
+}
+
+/**
+ * Kurage 法案AIインタビュー（khouan）の枠を3つ。khouan に取り込んだ法案（いまの国会で審議中）だけに出す。
+ * khouan の公開 API（読み取り専用）をサーバー側で読み、10分だけ手元に置く。khouan が落ちていても、このページは出す
+ * （前に読めた内容があればそれを出し、無ければ枠ごと出さない）。当サイトは意見を集めない。集めるのは khouan。
+ */
+function g_khouan_summary(string $id): ?array
+{
+    $api = defined('G_KHOUAN_API') ? G_KHOUAN_API : 'https://kurage.exbridge.jp/khouan.php/api/bill/';
+    $dir = __DIR__ . '/../data/cache';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) { $dir = sys_get_temp_dir(); }
+    $f = $dir . '/khouan_' . preg_replace('/[^0-9a-z-]/', '', $id) . '.json';
+    $old = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+    $age = is_file($f) ? time() - (int)filemtime($f) : PHP_INT_MAX;
+    if (is_array($old) && $age < (isset($old['_err']) ? 120 : 600)) {
+        return isset($old['_none']) || isset($old['_err']) ? ($old['_last'] ?? null) : $old;
+    }
+    $ctx = stream_context_create(['http' => ['timeout' => 4, 'ignore_errors' => true, 'header' => "User-Agent: xb4g-giin\r\n"]]);
+    $raw = @file_get_contents($api . rawurlencode($id) . '/summary', false, $ctx);
+    $code = 0;
+    foreach ($http_response_header ?? [] as $h) { if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)) { $code = (int)$m[1]; } }
+    $d = $raw !== false ? json_decode($raw, true) : null;
+    if ($code === 200 && is_array($d) && isset($d['bill_id'])) {
+        @file_put_contents($f, json_encode($d, JSON_UNESCAPED_UNICODE));
+        return $d;
+    }
+    if ($code === 404) {   // khouan に取り込んでいない法案
+        @file_put_contents($f, json_encode(['_none' => 1]));
+        return null;
+    }
+    // 落ちている・遅い: 前に読めた内容を出し、2分は聞きに行かない
+    $last = is_array($old) ? (isset($old['_err']) || isset($old['_none']) ? ($old['_last'] ?? null) : $old) : null;
+    @file_put_contents($f, json_encode(['_err' => 1, '_last' => $last], JSON_UNESCAPED_UNICODE));
+    return $last;
+}
+
+function g_bill_khouan(array $b): string
+{
+    if (!in_array($b['status'], ['委員会で審査中', '審議中'], true)) { return ''; }
+    $d = g_khouan_summary((string)$b['id']);
+    if (!$d || empty($d['accepting'])) { return ''; }
+    $ref = '#ref=giin-bill';
+    $h = '<h2 data-en="AI Interview">この法案に意見を伝える（AIインタビュー）</h2><div class="panel">'
+       . '<p style="margin:0 0 8px">AIが5問前後で、賛否・理由・暮らしへの影響・懸念・提案を聞き、答えに合わせて質問を重ねて「意見のまとめ」を作ります。'
+       . 'まとめを確かめて同意したときだけ保存し、公開するかどうかも選べます。名前は聞きません。</p>'
+       . '<p style="margin:0 0 6px"><a class="btn" href="' . g_e($d['interview_url'] . $ref) . '" rel="noopener">AIインタビューで意見を伝える（約5分）</a></p>'
+       . '<p class="note" style="margin:0">当社の別のシステム <a href="' . g_e($d['bill_url'] . $ref) . '" rel="noopener">Kurage 法案AIインタビュー</a> が受け付けます。国会の公式の窓口ではありません。</p></div>';
+
+    $h .= '<h2 data-en="Opinions">みんなの意見（話題）</h2><div class="panel">';
+    $n = (int)($d['opinions'] ?? 0);
+    if (!empty($d['topics'])) {
+        $h .= '<p style="margin:0 0 6px">公開に同意された意見 <b>' . $n . '件</b> を、意味の近さで <b>' . count($d['topics']) . 'つ</b>の話題に分けました。話題の名前と要約はAIが付けたものです。件数は意見の数で、賛成・反対の数ではありません。</p><ul style="margin:0;padding-left:1.2em">';
+        foreach ($d['topics'] as $t) {
+            $h .= '<li style="margin:8px 0"><b>' . g_e($t['name']) . '</b> <span class="note">' . (int)$t['size'] . '件</span><br>' . g_e($t['summary']);
+            foreach (array_slice($t['examples'] ?? [], 0, 1) as $e) {
+                $h .= '<br><span class="note">例：「' . g_e(mb_strimwidth((string)$e['text'], 0, 90, '…', 'UTF-8')) . '」 <a href="' . g_e($e['url'] . $ref) . '" rel="noopener">まとめを読む</a></span>';
+            }
+            $h .= '</li>';
+        }
+        $h .= '</ul>';
+    } elseif ($n > 0) {
+        $h .= '<p style="margin:0 0 6px">公開に同意された意見は <b>' . $n . '件</b> です。5件集まると、話題に分けて表示します。</p><ul style="margin:0;padding-left:1.2em">';
+        foreach (array_slice($d['recent'] ?? [], 0, 3) as $e) {
+            $h .= '<li>「' . g_e(mb_strimwidth((string)$e['text'], 0, 90, '…', 'UTF-8')) . '」 <a href="' . g_e($e['url'] . $ref) . '" rel="noopener">まとめを読む</a></li>';
+        }
+        $h .= '</ul>';
+    } else {
+        $h .= '<p style="margin:0">まだ公開された意見はありません。AIインタビューで公開に同意された意見が集まると、ここに話題ごとに表示します。</p>';
+    }
+    $h .= '<p class="note" style="margin:6px 0 0"><a href="' . g_e($d['bill_url'] . $ref) . '" rel="noopener">意見の一覧と話題を見る</a></p></div>';
+
+    $h .= '<h2 data-en="Consensus">どこで割れて、どこで一致しているか（合意形成AI）</h2><div class="panel">';
+    if (!empty($d['kconsensus_url'])) {
+        $h .= '<p style="margin:0 0 6px">意見の話題から、賛成か反対かを問える論点を立てました。論点に賛否を押すと、意見のグループと、立場が違っても一致する点が出ます。</p>'
+            . '<p style="margin:0"><a class="btn" href="' . g_e($d['kconsensus_url'] . $ref) . '" rel="noopener">Kurage 合意形成AIで見る</a></p>';
+    } else {
+        $h .= '<p style="margin:0">意見が集まり、話題に分けられたら、話題から賛否を問える論点を立てて <a href="https://kurage.exbridge.jp/kconsensus.php/' . $ref . '" rel="noopener">Kurage 合意形成AI（合意点マップ）</a> に渡します。それまでは準備中です。</p>';
+    }
+    return $h . '</div>';
 }
