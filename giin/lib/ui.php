@@ -159,6 +159,9 @@ function g_foot(): void
        . '<script>(function(){var s=document.createElement("script");'
        . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
        . '+"&ref="+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>'
+       // 計測の ref は #ref=… に置く（?ref= だと Google が ref ごとに別のURLとして拾い、評価が割れた。2026-10-10）。
+       // 「#ayumi&ref=…」のときは、& の前の目印へ飛ぶ
+       . '<script>(function(){var h=location.hash.slice(1),i=h.split("&")[0];if(i&&i.indexOf("ref=")!==0&&h.indexOf("ref=")>0){var e=document.getElementById(i);if(e){e.scrollIntoView();}}})();</script>'
        // 再販パートナー募集の枠（中身は kurage_web/partner-bar.js）。当社の公開先でだけ読む（配布版を置いたサイトからは当社へ通信しない）
        . ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com') ? '<script src="https://kurage.exbridge.jp/partner-bar.js" defer></script><script src="https://kurage.exbridge.jp/kpv_cm.js" defer></script>' : '')
        . '</body></html>';

@@ -355,18 +355,25 @@ def make_item(p, field, mmdd, r=None):
         what = f"国会トラッカー「{tr['name']}」: 全国の国会議員の質疑と政府の答弁を、国会会議録から集めて並べたもの"
         facts = tracker_facts(tr["key"])
         facts["発言"] = closest_answers(tr["key"], p["text"], tr.get("words") or [tr["short"]])
-        url = f"https://xb4g.com/giin/tracker/{tr['key']}?ref={ref}"
+        url = with_ref(f"https://xb4g.com/giin/tracker/{tr['key']}", ref)
         label = f"トラッカー: {tr['short']}"
         fb = f"この論点が国会でどう議論されてきたか、質疑{facts['質疑の件数']}件と政府答弁{facts['政府答弁の件数']}件を会議録から並べています。"
     else:
         what = f"{sy[0]}: {SYSTEM_FACTS.get(sy[0], '')}"
         facts = {"説明": SYSTEM_FACTS.get(sy[0], "")}
-        url = f"{sy[1]}?ref={ref}"
+        url = with_ref(sy[1], ref)
         label = f"システム: {sy[0]}"
         fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
     return {"id": p["id"], "post": p, "r": r or {}, "what": what, "facts": facts, "url": url, "label": label, "fb": fb,
             "links": links, "ref": ref}
 
+
+
+def with_ref(url, ref):
+    """計測の ref を #ref=… で付ける（2026-10-10）。?ref= だと Google が ref ごとに別のURLとして拾い、
+    canonical を書いていても ref 付きのURLが検索結果に出て、本来のURLが読まれなかった。# から後ろは
+    Google がURLとして扱わず、simpletrack は location.href ごと記録するので人数は数えられる"""
+    return url + ("&" if "#" in url else "#") + "ref=" + ref
 
 def finish(items, texts, picks):
     """codex の答え（文案・選んだリンク）を検査して、ページに出すカードにする"""
@@ -377,13 +384,13 @@ def finish(items, texts, picks):
         if tracker_url and it["links"] and 1 <= n <= len(it["links"]):
             # トラッカー＋LP：LP を先に、トラッカーを2つ目に
             ln = it["links"][n - 1]
-            it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"] + "\n" + tracker_url
+            it["url"] = with_ref(ln["url"], it["ref"]) + "\n" + tracker_url
             it["label"] = f"デモ・紹介ページ「{ln['題名'][:30]}」＋{it['label']}"
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
             n = 0
         if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
             ln = it["links"][n - 1]
-            it["url"] = ln["url"] + ("&" if "?" in ln["url"] else "?") + "ref=" + it["ref"]
+            it["url"] = with_ref(ln["url"], it["ref"])
             if ln["url"].startswith("https://xb4g.com/giin/tracker/"):   # 既存のトラッカー（分野の規則では当たらず、語の近さで選んだ）
                 it["label"] = f"トラッカー: {ln['題名'][:40]}（語の近さで選択）"
             else:
@@ -391,7 +398,7 @@ def finish(items, texts, picks):
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
             if 1 <= n2 <= len(it["links"]) and n2 != n:   # 2つ目のURL（デモ＋トラッカー、記事＋デモ など）。LP を先に置く
                 l2 = it["links"][n2 - 1]
-                u2 = l2["url"] + ("&" if "?" in l2["url"] else "?") + "ref=" + it["ref"]
+                u2 = with_ref(l2["url"], it["ref"])
                 lp_first = l2["種類"].startswith("当社のシステム") and not ln["種類"].startswith("当社のシステム")
                 it["url"] = u2 + "\n" + it["url"] if lp_first else it["url"] + "\n" + u2
                 it["label"] += f"＋「{l2['題名'][:30]}」"
