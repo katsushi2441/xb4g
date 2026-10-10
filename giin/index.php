@@ -1071,7 +1071,7 @@ function g_page_trackers(): void
     $desc = '議員立法で法整備が動いていることがらについて、愛知の46人に限らず全国の国会議員の質疑と政府の答弁を'
           . '会議録から機械的に集め、日付順に並べています。';
     // 「国会トラッカー」は月間0。実際に検索されているのは「国会議事録 検索」590。
-    g_head('国会議事録から、法案のいまを追う｜28のことがらの質疑と政府答弁', $desc, '/tracker', ['jsonld' => g_jsonld([
+    g_head('国会議事録から、法案のいまを追う｜' . count(g_trackers()) . 'のことがらの質疑と政府答弁', $desc, '/tracker', ['jsonld' => g_jsonld([
         g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker']])])]);
     $rows = []; $sq = 0; $sg = 0;
     foreach (g_trackers() as $t) {
