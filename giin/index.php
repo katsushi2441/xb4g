@@ -1068,31 +1068,42 @@ function g_page_ai(): void
 /** トラッカーの一覧。ことがら一覧と違い、**全国の発言**を追っているものだけ。 */
 function g_page_trackers(): void
 {
-    $desc = '議員立法で法整備が動いていることがらについて、愛知の46人に限らず全国の国会議員の質疑と政府の答弁を'
-          . '会議録から機械的に集め、日付順に並べています。';
-    // 「国会トラッカー」は月間0。実際に検索されているのは「国会議事録 検索」590。
-    g_head('国会議事録から、法案のいまを追う｜' . count(g_trackers()) . 'のことがらの質疑と政府答弁', $desc, '/tracker', ['jsonld' => g_jsonld([
-        g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker']])])]);
+    $n = count(g_trackers());
+    $desc = '年収の壁、不登校、消費税減税など' . $n . 'のテーマについて、全国の国会議員の質疑と政府の答弁を国会会議録から集め、'
+          . 'だれが質問し、政府が何と答えたかを日付順に並べています。テーマの名前や言葉で国会答弁を探せます。';
+    // 一覧は「国会答弁 検索」260・「国会 答弁」2,400・「国会 質疑」480 の受け皿にする（2026-10-13）。
+    // 以前の「国会議事録から、法案のいまを追う」は検索されない言い方だった。
+    g_head('国会答弁の検索｜' . $n . 'テーマの質疑と政府答弁を探す', $desc, '/tracker', ['jsonld' => g_jsonld([
+        g_crumbs([['ホーム', '/'], ['国会答弁の検索', '/tracker']])]), 'nosuffix' => true]);
     $rows = []; $sq = 0; $sg = 0;
     foreach (g_trackers() as $t) {
         $st = g_tracker_stats($t['key']);
         $rows[] = [$t, $st];
         if ($st) { $sq += (int)$st['q']; $sg += (int)$st['gov']; }
     }
-    echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 国会トラッカー</nav>'
-       . '<p class="kick">Diet Tracker</p><h1>国会トラッカー</h1><p class="lead" style="margin-bottom:0">' . g_e($desc) . '</p>'
+    echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 国会答弁の検索</nav>'
+       . '<p class="kick">Diet Tracker</p><h1>国会答弁の検索</h1><p class="lead" style="margin-bottom:0">' . g_e($desc) . '</p>'
        . '<div class="kv">'
-       . '<div class="c"><b>' . count($rows) . '</b><span>追っていることがら</span></div>'
+       . '<div class="c"><b>' . count($rows) . '</b><span>テーマ</span></div>'
        . '<div class="c"><b>' . number_format($sq) . '</b><span>全国の議員の質疑</span></div>'
        . '<div class="c"><b>' . number_format($sg) . '</b><span>政府の答弁</span></div>'
-       . '</div></section><div class="grid">';
+       . '</div>'
+       . '<p style="margin:14px 0 0"><label for="tq" style="font-weight:700">テーマを探す</label><br>'
+       . '<input id="tq" type="search" placeholder="例：年収の壁、不登校、介護、防災" autocomplete="off" '
+       . 'style="width:100%;max-width:520px;box-sizing:border-box;font-size:16px;padding:10px 12px;border:1px solid #c9d3dc;border-radius:8px;margin-top:6px">'
+       . '<br><span class="note" id="tqn"></span></p></section><div class="grid" id="tgrid">';
     foreach ($rows as [$t, $st]) {
-        echo '<a class="card" href="' . g_url('tracker/' . $t['key']) . '">'
+        $hay = $t['name'] . ' ' . ($t['short'] ?? '') . ' ' . ($t['seo_word'] ?? '') . ' ' . implode(' ', (array)($t['words'] ?? []));
+        echo '<a class="card" data-q="' . g_e(mb_strtolower($hay)) . '" href="' . g_url('tracker/' . $t['key']) . '">'
            . '<div class="nm">' . g_e($t['name']) . '</div>'
            . '<div class="n">' . ($st ? '質疑 ' . number_format((int)$st['q']) . '件・答弁 ' . number_format((int)$st['gov']) . '件<br><span class="note">'
                                   . g_e(g_date($st['last'])) . 'まで</span>' : '準備中') . '</div></a>';
     }
     echo '</div>';
+    echo '<script>(function(){var q=document.getElementById("tq"),n=document.getElementById("tqn"),cs=[].slice.call(document.querySelectorAll("#tgrid .card"));'
+       . 'function f(){var v=q.value.trim().toLowerCase().split(/[\\s　、,]+/).filter(Boolean),k=0;'
+       . 'cs.forEach(function(c){var ok=v.every(function(w){return c.getAttribute("data-q").indexOf(w)>=0;});c.style.display=ok?"":"none";if(ok)k++;});'
+       . 'n.textContent=v.length?k+"件のテーマ":"";}q.addEventListener("input",f);})();</script>';
     g_foot();
 }
 
@@ -1122,8 +1133,11 @@ function g_page_tracker(string $key, int $page): void
     // 例: 不登校74,000／年収の壁110,000／取適法60,500。
     // 90日で /tracker/ 個別ページは表示0だった（2026-09-25 GSC実測）。
     $w = $t['seo_word'] ?? $t['short'] ?? $t['name'];
-    // 題名は trackers.json の seo_title を優先（検索される言い方「〜とは」「いつから」「いくら」を先頭に。2026-09-30）
-    $title = $t['seo_title'] ?? ($w . 'は国会でどう議論されたか｜質疑と政府答弁');
+    // 題名は「◯◯の国会答弁」で統一（2026-10-13）。
+    // 「◯◯とは」「いつから」を先頭にした seo_title（2026-09-30）は、年収の壁110,000・不登校74,000 のような大きな語で
+    // ニュースや省庁と競って100位にも入らず、トラッカーは90日で表示30回だった。
+    // ニュースと競わない「◯◯ 国会」「◯◯ 答弁」側を取る（「国会 答弁」2,400・「国会 質疑」480）。
+    $title = $w . 'の国会答弁｜だれが質問し、政府は何と答えたか';
     $desc = $t['name'] . 'について、全国の国会議員の質疑' . number_format((int)$st['q']) . '件と政府の答弁'
           . number_format((int)$st['gov']) . '件を国会会議録から集めました（' . g_date($st['first']) . '〜'
           . g_date($st['last']) . '）。だれが質問し、政府が何と答えたかを日付と会議録リンクで並べています。';
@@ -1131,7 +1145,7 @@ function g_page_tracker(string $key, int $page): void
     $ld = g_jsonld([
         ['@type' => 'FAQPage', 'mainEntity' => array_map(fn($x) => ['@type' => 'Question', 'name' => $x[0],
             'acceptedAnswer' => ['@type' => 'Answer', 'text' => $x[1]]], $faq)],
-        g_crumbs([['ホーム', '/'], ['国会トラッカー', '/tracker'], [$t['name'], '/tracker/' . $key]]),
+        g_crumbs([['ホーム', '/'], ['国会答弁の検索', '/tracker'], [$t['name'], '/tracker/' . $key]]),
         ['@type' => 'Article', '@id' => g_abs('tracker/' . $key), 'url' => g_abs('tracker/' . $key),
          'headline' => $title, 'description' => $desc, 'inLanguage' => 'ja',
          'keywords' => implode(', ', array_slice((array)($t['words'] ?? []), 0, 6)),
@@ -1139,14 +1153,14 @@ function g_page_tracker(string $key, int $page): void
          'about' => ['@type' => 'Thing', 'name' => $t['name']],
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')]],
     ]);
-    g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png'), 'nosuffix' => !empty($t['seo_title'])]);
+    g_head($title, $desc, '/tracker/' . $key, ['jsonld' => $ld, 'image' => g_abs('img/og/tracker-' . $key . '.png'), 'nosuffix' => true]);
 
     // 右の列（CM枠と災害系デモ）。相談先を出す notice 付きのページ（自殺対策など）には出さない
     $side = empty($t['notice']);
     if ($side) { echo g_side_open('giin-tracker'); }
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
-    echo '<p class="kick">Diet Tracker</p><h1>' . g_e($w . 'は国会でどう議論されたか') . '</h1>'
+    echo '<p class="kick">Diet Tracker</p><h1>' . g_e($w . 'の国会答弁と質疑') . '</h1>'
        . '<p class="lead">' . g_e($t['lead']) . '</p>';
     // 自殺など、読む人の安全に関わることがらは、数字より先に相談先を出す（trackers.json の notice）
     if (!empty($t['notice'])) {
