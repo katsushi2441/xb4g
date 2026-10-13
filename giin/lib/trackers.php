@@ -164,6 +164,9 @@ function g_tracker_speech(array $s, array $words): void
        . '<p class="t">' . g_mark(g_e($txt), $kw) . '</p>'
        . '<div class="lk"><a href="' . g_e($s['speech_url']) . '" rel="nofollow noopener" target="_blank">'
        . 'この発言を会議録で読む</a>'
+       . (in_array($s['kind'], ['q', 'gov'], true) && !empty($s['tracker'])
+          ? '　<a href="' . g_url('tracker/' . $s['tracker'] . '/' . $s['speech_id']) . '" rel="nofollow">'
+            . ($s['kind'] === 'q' ? '質問と答弁をカードで見る' : 'この答弁の質問をカードで見る') . '</a>' : '')
        . ($s['meeting_url'] ? '　<a href="' . g_e($s['meeting_url']) . '" rel="nofollow noopener" target="_blank">'
           . 'この回の会議録</a>' : '')
        . '</div></div>';

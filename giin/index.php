@@ -17,6 +17,7 @@ require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/text.php';
 require __DIR__ . '/lib/themes.php';
 require __DIR__ . '/lib/trackers.php';
+require __DIR__ . '/lib/qa.php';
 require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/senkyoku.php';
@@ -51,6 +52,9 @@ function g_route(string $path, int $page): void
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
     if (preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
+    // 質疑1件のページとカード画像（Xに貼るとカードが出る。2026-10-14）
+    if (preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)\.png$#', $path, $m)) { g_qa_png($m[1], $m[2]); return; }
+    if (preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)$#', $path, $m)) { g_page_qa($m[1], $m[2]); return; }
     if (preg_match('#^/bill/(\d+-[a-z]+-\d+)$#', $path, $m)) { g_page_bill($m[1]); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
     if (preg_match('#^/senkyoku/([a-z]+-\d+)$#', $path, $m)) { g_page_senkyoku($m[1]); return; }

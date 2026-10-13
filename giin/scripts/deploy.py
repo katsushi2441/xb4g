@@ -19,6 +19,7 @@ REMOTE = os.environ.get("GIIN_REMOTE_ROOT", "/web/xb4g_com/giin")
 # 配るもの。giin_config.php は server 側の設定なので**送らない**（上書きすると壊れる）
 # links.json（本人の発信・注目してほしい会議録）と stats.json（関連する公開データ）も
 # 画面が読むので一緒に配る。入れ忘れると、登録したのに節が出ない。
+# fonts/（質疑カード用・12MB）は既定では送らない。作り直したときだけ --only fonts
 TARGETS = ["index.php", "sitemap.php", "giin_mcp.php", "ogp.png", "lib", "img",
            "data/themes.json", "data/links.json", "data/stats.json", "data/trackers.json",
            "data/kshuisho_links.json"]
