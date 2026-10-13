@@ -5,10 +5,16 @@ declare(strict_types=1);
 
 // 設置ごとの設定。giin_config.php があればそれを使い、無ければ既定値。
 // **定数は「その行が実行されたとき」に定義される**ので、ここで先に読む。
-if (is_file(__DIR__ . '/../giin_config.php')) { require __DIR__ . '/../giin_config.php'; }
-if (!defined('G_BASE')) { define('G_BASE', '/giin'); }
-if (!defined('G_SITE')) { define('G_SITE', '愛知の国会議員 発言ログ'); }
-if (!defined('G_HOST')) { define('G_HOST', 'https://xb4g.com'); }
+// G_APP: 'giin'（議員発言ログ・既定）か 'tracker'（Kurage 国会トラッカー単体。tracker_index.php が先に決める）
+if (!defined('G_APP')) { define('G_APP', 'giin'); }
+$__cfg = __DIR__ . '/../' . (G_APP === 'tracker' ? 'tracker_config.php' : 'giin_config.php');
+if (is_file($__cfg)) { require $__cfg; }
+if (!defined('G_BASE')) { define('G_BASE', G_APP === 'tracker' ? '' : '/giin'); }
+if (!defined('G_SITE')) { define('G_SITE', G_APP === 'tracker' ? '国会トラッカー' : '愛知の国会議員 発言ログ'); }
+// 単体の配布物では、設定が無ければ開かれたホストをそのまま使う（当社のドメインを焼き込まない）
+if (!defined('G_HOST')) { define('G_HOST', G_APP === 'tracker'
+    ? ((($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'))
+    : 'https://xb4g.com'); }
 if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php で入れる
 
 /** トップ直下で予約している語。議員の slug がここに当たらないよう守る。
@@ -85,8 +91,14 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">'
        . '<style>' . g_css() . '</style></head><body>';
     // 見た目は team-mir.ai を手本にしたライトテーマ（白＋ミントの帯＋大きな数字）。色は xb4g のティール。
-    $nav = [['list', '議員一覧'], ['theme', 'ことがら'], ['tracker', '国会トラッカー'], ['bill', '法案'], ['senkyoku', '選挙区'], ['news', '最近の動き'],
+    $nav = G_APP === 'tracker' ? [['tracker', 'テーマ一覧'], ['about', 'このサイトについて']] : [['list', '議員一覧'], ['theme', 'ことがら'], ['tracker', '国会トラッカー'], ['bill', '法案'], ['senkyoku', '選挙区'], ['news', '最近の動き'],
             ['ai', 'AI特集'], ['compare', 'ことがら×議員'], ['about', 'このサイトについて']];
+    if (G_APP === 'giin' && !(defined('G_HAS_TRACKER') && G_HAS_TRACKER)) {
+        $nav = array_values(array_filter($nav, fn($n) => $n[0] !== 'tracker'));
+    }
+    if (G_APP === 'giin' && function_exists('g_sk_ready') && !g_sk_ready()) {
+        $nav = array_values(array_filter($nav, fn($n) => $n[0] !== 'senkyoku'));
+    }
     $cur = trim($path, '/');
     $navh = '';
     foreach ($nav as [$p, $label]) {
@@ -105,17 +117,21 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
            . '</nav></div></div>';
     }
     echo '<header class="site"><div class="inner">'
-       . '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
-       . '<small>愛知の有権者が選んだ46人が、国会で何を話したか</small></span></a>'
-       . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
-       . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）">'
-       . '<button>探す</button></form>'
+       . (G_APP === 'tracker'
+          ? '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">国</span><span>' . g_e(G_SITE)
+            . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>'
+          : '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
+            . '<small>愛知の有権者が選んだ46人が、国会で何を話したか</small></span></a>'
+            . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
+            . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）">'
+            . '<button>探す</button></form>')
        . '<nav class="gnav" aria-label="サイト内">' . $navh . '</nav>'
        . '</div></header><main class="wrap">';
 }
 
 function g_foot(): void
 {
+    if (G_APP === 'tracker') { g_foot_tracker(); return; }
     $u = g_meta('updated_at'); $f = g_meta('range_from');
     echo '</main><footer class="site"><div class="inner">'
        . '<p><b>出典</b>：国立国会図書館 国会会議録検索システム（発言本文・会議名・日付）／'
@@ -139,7 +155,7 @@ function g_foot(): void
        . 'この道具を作っています</small></span></a>'
        . '<div class="mk-links">'
        . '<a href="https://kappstore.exbridge.jp/app.php?id=dd868beae043026b&ref=giin">'
-       . 'この道具を買い切りで（55,000円税込・MIT・MCP同梱）</a>'
+       . 'この道具を買い切りで（110,000円税込・MIT・MCP同梱）</a>'
        . '<a href="https://exbridge.jp/solution/seiji-dantai/?ref=giin">'
        . '政治団体・後援会・議員事務所のITを業務ごとに安くする</a>'
        . '<a href="https://exbridge.jp/ai-it-komon.html?ref=giin">AI-IT顧問契約</a>'
@@ -524,4 +540,38 @@ function g_cm_sp(string $ref): string
 function g_side_close(): string
 {
     return (($_SERVER['HTTP_HOST'] ?? '') !== 'xb4g.com') ? '</div>' : '</div></div>';
+}
+
+/** ページ送り。 */
+function g_pager(int $page, int $total, int $per, string $base): void
+{
+    $last = (int)ceil($total / $per);
+    if ($last <= 1) { return; }
+    $sep = strpos($base, '?') === false ? '?' : '&';
+    echo '<div class="pager">';
+    if ($page > 1) { echo '<a href="' . g_e($base . $sep . 'p=' . ($page - 1)) . '">前へ</a>'; }
+    $from = max(1, $page - 2); $to = min($last, $page + 2);
+    if ($from > 1) { echo '<a href="' . g_e($base . $sep . 'p=1') . '">1</a><span>…</span>'; }
+    for ($i = $from; $i <= $to; $i++) {
+        echo $i === $page ? '<span class="now">' . $i . '</span>'
+                          : '<a href="' . g_e($base . $sep . 'p=' . $i) . '">' . $i . '</a>';
+    }
+    if ($to < $last) { echo '<span>…</span><a href="' . g_e($base . $sep . 'p=' . $last) . '">' . $last . '</a>'; }
+    if ($page < $last) { echo '<a href="' . g_e($base . $sep . 'p=' . ($page + 1)) . '">次へ</a>'; }
+    echo '</div>';
+}
+
+/** 国会トラッカー単体（Kurage 国会トラッカー）のフッター。名簿を持たないので、議員発言ログの断り書きは出さない */
+function g_foot_tracker(): void
+{
+    $own = ($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com';
+    echo '</main><footer class="site"><div class="inner">'
+       . '<p><b>出典</b>：国立国会図書館 国会会議録検索システム（発言本文・会議名・日付）。本文の全文は各会議録でご確認ください。</p>'
+       . '<p><b>このサイトについて</b>：テーマの語を含む発言を会議録から機械的に集め、抜粋と会議録へのリンクを並べています。'
+       . '要約・論評・賛否の判定は行いません。特定の政党・候補者を支援する目的のサイトではありません。'
+       . '　<a href="' . g_url('about') . '">このサイトについて</a></p>'
+       . ($own ? '<p class="note">作っている会社：<a href="https://exbridge.jp/#ref=kokkai-tracker">株式会社エクスブリッジ</a>（名古屋のAIシステム開発会社）</p>' : '')
+       . '</div></footer>'
+       . '<script>(function(){var h=location.hash.slice(1),i=h.split("&")[0];if(i&&i.indexOf("ref=")!==0&&h.indexOf("ref=")>0){var e=document.getElementById(i);if(e){e.scrollIntoView();}}})();</script>'
+       . '</body></html>';
 }

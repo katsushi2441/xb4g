@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS tracker_speech(
   body TEXT, speech_url TEXT, meeting_url TEXT, kind TEXT, words TEXT,
   PRIMARY KEY(tracker, speech_id));
 CREATE INDEX IF NOT EXISTS ix_ts_date ON tracker_speech(tracker, kind, date DESC);
+-- 国会トラッカー単体（Kurage 国会トラッカー）で使うとき、議員発言ログの表は無い。
+-- meta は取得日時と増分の目印、giin は画面の LEFT JOIN のための空の表（名簿を入れれば議員ページへ渡せる）
+CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT);
+CREATE TABLE IF NOT EXISTS giin(id INTEGER PRIMARY KEY, name TEXT, plain TEXT, slug TEXT, house TEXT);
 """
 
 
@@ -63,8 +67,9 @@ def main():
     trackers = json.load(open(CONF, encoding="utf-8"))
     if a.key:
         trackers = [t for t in trackers if t["key"] == a.key]
-    con = sqlite3.connect(DB)
-    con.execute("PRAGMA busy_timeout=5000")
+    # ほかの定期ジョブ（X監視など）も同じDBに書くので、待ちを長めにとる（5秒で database is locked になった・2026-10-14）
+    con = sqlite3.connect(DB, timeout=120)
+    con.execute("PRAGMA busy_timeout=120000")
     con.executescript(SCHEMA)
     # 愛知の45人: 会議録の話者表記（姓名つづき）→ giin.id
     names = {}
@@ -138,7 +143,7 @@ def main():
                                  (t["key"],)).fetchall())
         aichi = con.execute("SELECT COUNT(*) FROM tracker_speech WHERE tracker=? AND giin_id>0", (t["key"],)).fetchone()[0]
         mode = f"増分 {frm}〜" if incremental else "全部"
-        print(f"  {t['key']}: {mode} {len(rows)}件取得 → 合計{sum(kinds.values())}件 {kinds} 愛知の議員 {aichi}件 ({time.time()-t0:.0f}秒)")
+        print(f"  {t['key']}: {mode} {len(rows)}件取得 → 合計{sum(kinds.values())}件 {kinds}" + (f" 名簿の議員 {aichi}件" if names else "") + f" ({time.time()-t0:.0f}秒)")
 
 
 if __name__ == "__main__":

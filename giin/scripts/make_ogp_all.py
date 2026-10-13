@@ -20,6 +20,9 @@ MASCOT = os.environ.get("GIIN_MASCOT", "")
 FB = "/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc"
 FM = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 FR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+# Noto Sans CJK が入っていない機械では、同梱の fonts/（JIS第1・第2水準に絞ったもの）を使う
+if not os.path.exists(FB):
+    FB, FM, FR = (os.path.join(ROOT, "fonts", f"NotoSansJP-{w}-sub.otf") for w in ("Black", "Bold", "Regular"))
 
 _mascot = None
 if os.path.exists(MASCOT):
@@ -132,22 +135,9 @@ def main():
          "xb4g.com/giin/ai")
     n += 1
 
-    # 全国トラッカー。**愛知の46人ではなく全国の発言**なので、帯の文言を変える
-    trackers = json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))
-    for t in trackers:
-        r = con.execute("""SELECT COUNT(*), SUM(kind='q'), SUM(kind='gov'),
-                                  COUNT(DISTINCT CASE WHEN kind='q' THEN speaker END), MAX(date)
-                           FROM tracker_speech WHERE tracker=?""", (t["key"],)).fetchone() \
-            if con.execute("SELECT COUNT(*) FROM sqlite_master WHERE name='tracker_speech'").fetchone()[0] else (0, 0, 0, 0, "")
-        card(os.path.join(OUT, f"tracker-{t['key']}.png"),
-             "国会会議録から、全国の発言を機械的に集めました",
-             t["name"] + "は、",
-             "国会でどこまで来たか。",
-             f"質疑 {int(r[1] or 0):,}件・答弁 {int(r[2] or 0):,}件・議員 {int(r[3] or 0)}人（{r[4] or ''}まで）",
-             "だれが質問し、政府が何と答えたか。日付と会議録リンク。",
-             "国会トラッカー",
-             f"xb4g.com/giin/tracker/{t['key']}")
-        n += 1
+    # 全国トラッカー（Kurage 国会トラッカー単体でも使うので別ファイル）
+    import make_ogp_trackers
+    n += make_ogp_trackers.make(con, "xb4g.com/giin")
 
     # 会派ごと
     slugmap = {'自民':'jimin','国民民主':'kokumin','立憲':'rikken','公明':'komei','維新':'ishin',

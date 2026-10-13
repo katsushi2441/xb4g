@@ -38,13 +38,23 @@ function g_sk_metrics(): array
     ];
 }
 
+/** 選挙区の表があるか。**選挙区は当社の公開先だけ**（ほかの製品のDBから作るので配布物に入らない） */
+function g_sk_ready(): bool
+{
+    static $r = null;
+    if ($r === null) { $r = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='senkyoku'"); }
+    return $r;
+}
+
 function g_sk_all(): array
 {
+    if (!g_sk_ready()) { return []; }
     return g_all('SELECT key, pref, pref_slug, no, name, area, voters, gap FROM senkyoku ORDER BY rowid');
 }
 
 function g_sk_one(string $key): ?array
 {
+    if (!g_sk_ready()) { return null; }
     return g_one('SELECT * FROM senkyoku WHERE key=?', [$key]);
 }
 
@@ -60,7 +70,7 @@ function g_sk_stats(string $key): array
 /** 愛知N → aichi-N。比例・参院は null。 */
 function g_sk_key_for_district(string $district): ?string
 {
-    return preg_match('/^愛知(\d+)$/u', $district, $m) ? 'aichi-' . $m[1] : null;
+    return g_sk_ready() && preg_match('/^愛知(\d+)$/u', $district, $m) ? 'aichi-' . $m[1] : null;
 }
 
 function g_sk_pref_slugs(): array
@@ -76,6 +86,7 @@ function g_sk_pref_slugs(): array
 /** 一覧：47都道府県 × 選挙区。 */
 function g_page_senkyoku_list(): void
 {
+    if (!g_sk_ready()) { http_response_code(404); g_head('見つかりません', '', '/senkyoku', ['noindex' => true]); echo '<h1>見つかりません</h1>'; g_foot(); return; }
     $rows = g_sk_all();
     $by = [];
     foreach ($rows as $r) { $by[$r['pref']][] = $r; }

@@ -165,6 +165,10 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("いまの時点でのAI考察", [PY, os.path.join(SCRIPTS, "build_insight.py")]),
     ]:
         # 全国トラッカーは89本×NDLの3秒待ちで、増分でも20分かかる（2026-10-14実測1230秒。全件取り直しで30分を超えて止まった）
+        # 配布物に入っていない手順（当社の公開先だけのもの: 動画・X・選挙区・トラッカーなど）は飛ばす
+        if not os.path.exists(args[1]):
+            steps.append({"step": name, "code": None, "tail": ["スクリプトが無いので飛ばした"], "err": []})
+            continue
         code, out, err = _run(args, timeout=3600 if name == "全国トラッカー" else 1800)
         steps.append({"step": name, "code": code, "tail": out.strip().splitlines()[-3:],
                       "err": err.strip().splitlines()[-3:] if code else []})

@@ -228,7 +228,8 @@ function g_tracker_next(array $t): string
     }
     $n = 0;
     // 相談先を先に出すことがら（notice あり）には、関係の薄い同テーマのトラッカーを並べない
-    foreach (empty($t['notice']) ? g_trackers_for_theme((string)($t['theme'] ?? '')) : [] as $o) {
+    // テーマ（theme）を書いていないトラッカーどうしを「同じテーマ」として並べない
+    foreach (empty($t['notice']) && !empty($t['theme']) ? g_trackers_for_theme((string)$t['theme']) : [] as $o) {
         if ($o['key'] === $t['key'] || $n >= 3) { continue; }
         $items[] = [($o['seo_word'] ?? $o['short'] ?? $o['name']) . 'は国会でどう議論されたか', g_url('tracker/' . $o['key']), false];
         $n++;

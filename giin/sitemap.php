@@ -16,15 +16,13 @@ $speechLast = substr((string)(g_one('SELECT MAX(date) AS d FROM speech')['d'] ??
 $fileLast = date('Y-m-d', (int)filemtime(__DIR__ . '/index.php'));
 $newsLast = substr(g_meta('updated_at'), 0, 10) ?: $speechLast;
 $trackerLast = [];
-foreach (g_all('SELECT tracker, MAX(date) AS d FROM tracker_speech GROUP BY tracker') as $r) { $trackerLast[$r['tracker']] = substr((string)$r['d'], 0, 10); }
+foreach ((g_tracker_ready() ? g_all('SELECT tracker, MAX(date) AS d FROM tracker_speech GROUP BY tracker') : []) as $r) { $trackerLast[$r['tracker']] = substr((string)$r['d'], 0, 10); }
 $urls = [
     ['', '1.0', 'daily', $speechLast],
     ['list', '0.9', 'weekly', $speechLast],
     ['theme', '0.9', 'weekly', $speechLast],
     // トラッカーの一覧ページ。個別28本は下で足していたのにハブだけ漏れていて、
     // 2026-09-19 時点で tracker/* は1本もクロールされていなかった。
-    ['tracker', '0.9', 'weekly', max(max($trackerLast ?: [$speechLast]), '2026-10-09')],
-    ['senkyoku', '0.9', 'weekly', $speechLast],
     ['party', '0.9', 'weekly', $speechLast],
     ['news', '0.8', 'daily', $newsLast],
     ['ai', '0.9', 'weekly', $fileLast],
@@ -36,8 +34,12 @@ foreach (g_themes() as $t) { $urls[] = ['theme/' . $t['slug'], '0.9', 'weekly', 
 // 最後の発言の日だけだと、10/9 に作ったデジタル教科書が「6月9日」に見え、新しいページだと伝わらなかった（2026-10-09）。
 // ページの作りを変えた日＝全トラッカーの冒頭に「数字で見る要点」を足した日（本当に中身が変わった日。毎回 now にはしない）
 $trackerRevised = '2026-10-09';
-foreach (g_trackers() as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'weekly', max($trackerLast[$t['key']] ?? $speechLast, (string)($t['added'] ?? ''), $trackerRevised)]; }
-foreach (g_all('SELECT key FROM senkyoku ORDER BY rowid') as $s) { $urls[] = ['senkyoku/' . $s['key'], '0.8', 'weekly', $speechLast]; }
+if (is_file(__DIR__ . '/lib/tracker_pages.php') && g_trackers()) { $urls[] = ['tracker', '0.9', 'weekly', max(max($trackerLast ?: [$speechLast]), '2026-10-09')]; }
+foreach ((is_file(__DIR__ . '/lib/tracker_pages.php') ? g_trackers() : []) as $t) { $urls[] = ['tracker/' . $t['key'], '0.9', 'weekly', max($trackerLast[$t['key']] ?? $speechLast, (string)($t['added'] ?? ''), $trackerRevised)]; }
+if (g_sk_ready()) {
+    $urls[] = ['senkyoku', '0.9', 'weekly', $speechLast];
+    foreach (g_sk_all() as $s) { $urls[] = ['senkyoku/' . $s['key'], '0.8', 'weekly', $speechLast]; }
+}
 foreach (g_parties() as $p) { $urls[] = ['party/' . g_party_slug($p['party']), '0.8', 'weekly', $speechLast]; }
 // 法案（scripts/fetch_bills.py）。lastmod は最後の動きの日（毎回 now にしない）
 if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE type='table' AND name='bill'")) {
