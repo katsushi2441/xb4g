@@ -353,12 +353,18 @@ function g_page_qa(string $key, string $sid): void
 
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($canon . '.png')) . '" alt="質問と答弁のカード" '
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
-    $share = 'https://x.com/intent/post?text=' . rawurlencode(($q ? $q['speaker'] . '議員の質問と政府の答弁' : $a['speaker'] . 'の答弁')
-           . '（' . $t['name'] . '・' . g_date((string)$main['date']) . '）') . '&url=' . rawurlencode(g_abs($canon) . '#ref=x-share-qa');
+    $label = ($q ? $q['speaker'] . '議員の質問と政府の答弁' : $a['speaker'] . 'の答弁')
+           . '（' . $t['name'] . '・' . g_date((string)$main['date']) . '）';
+    $share = 'https://x.com/intent/post?text=' . rawurlencode($label) . '&url=' . rawurlencode(g_abs($canon) . '#ref=x-share-qa');
+    // 返信に貼るときは「何の話か」の1行とURLを一緒に貼りたい（URLだけだと文を自分で書くことになる・2026-10-14）
+    $copy = $label . "\n" . g_abs($canon) . '#ref=copy-qa';
     echo '<p style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px">'
        . '<a class="btn" href="' . g_e($share) . '" target="_blank" rel="noopener">Xで共有</a>'
-       . '<button class="btn o" type="button" onclick="navigator.clipboard.writeText(\'' . g_e(g_abs($canon)) . '\');this.textContent=\'URLをコピーしました\'">このページのURLをコピー</button></p>'
-       . '<p class="note">このページのURLをXやSlackに貼ると、上のカードが表示されます。</p>';
+       . '<button class="btn o" type="button" data-copy="' . g_e($copy) . '" onclick="gQaCopy(this)">タイトルとURLをコピー</button></p>'
+       . '<script>function gQaCopy(b){var t=b.getAttribute("data-copy");function ok(){b.textContent="コピーしました"}'
+       . 'if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok)}else{var a=document.createElement("textarea");'
+       . 'a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();ok()}}</script>'
+       . '<p class="note">コピーした1行とURLをXやSlackに貼ると、上のカードが表示されます。</p>';
 
     foreach ([['質問', $q, 'q'], ['答弁', $a, 'a']] as [$label, $s, $k]) {
         echo '<h2>' . $label . '</h2>';
