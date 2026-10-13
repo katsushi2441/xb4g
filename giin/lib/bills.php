@@ -213,7 +213,9 @@ function g_page_bill(string $id): void
     }
     g_head($title, $desc, '/bill/' . $id, ['jsonld' => g_jsonld([
         ['@type' => 'FAQPage', 'mainEntity' => array_map(fn($x) => ['@type' => 'Question', 'name' => $x[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $x[1]]], $faq)],
-        g_crumbs([['ホーム', '/'], ['法案', '/bill'], [$name, '/bill/' . $id]])])]);
+        g_crumbs([['ホーム', '/'], ['法案', '/bill'], [$name, '/bill/' . $id]])]),
+        // 賛否カード（lib/bill_card.php）。参議院の会派ごとの人数を1枚に。無い設置では共通の画像
+        'image' => g_abs(function_exists('g_bill_png') ? 'bill/' . $id . '.png' : 'ogp.png')]);
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › <a href="' . g_url('bill') . '">法案</a> › ' . g_e(mb_strimwidth($name, 0, 40, '…', 'UTF-8')) . '</nav>'
        . '<p class="kick">Bill · ' . g_e(g_bill_sessions($b)) . '</p><h1 style="font-size:clamp(20px,3.2vw,28px)">' . g_e($b['title']) . '</h1>'
        . '<p>' . g_bill_status_pill($b['status']) . ' <span class="pill gray">' . g_e($kind) . '</span>'
@@ -223,6 +225,13 @@ function g_page_bill(string $id): void
        . '<div class="c"><b>' . number_format(count($qs)) . '</b><span>議員の質疑<br>（載せた分）</span></div>'
        . '<div class="c"><b>' . number_format(count($gov)) . '</b><span>政府の答弁<br>（載せた分）</span></div></div></section>';
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px">' . g_e($answer) . '</p>';
+    if (function_exists('g_bill_png')) {
+        echo '<details class="panel" style="margin:10px 0"' . ($votes ? ' open' : '') . '><summary><b>' . ($votes ? '賛否のカード（Xに貼れます）' : '審議の経過のカード') . '</b></summary>'
+           . '<img src="' . g_e(g_url('bill/' . $id . '.png')) . '" alt="法案の賛否のカード" width="1200" height="630" loading="lazy" '
+           . 'style="width:100%;height:auto;display:block;border-radius:8px;margin-top:8px">';
+        g_share_buttons(mb_strimwidth((string)$b['title'], 0, 70, '…', 'UTF-8') . ($votes ? '｜参議院の会派ごとの賛否' : '｜審議の経過'), 'bill/' . $id, 'bill');
+        echo '</details>';
+    }
 
     // この法案で変わること（scripts/build_bill_explain.py）。AIの要約であることと元の文書を、必ず一緒に出す
     $ex = !empty($b['explain']) ? (json_decode((string)$b['explain'], true) ?: []) : [];

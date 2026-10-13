@@ -20,6 +20,7 @@ require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/trackers.php';
 require __DIR__ . '/lib/tracker_pages.php';
 require __DIR__ . '/lib/qa.php';
+require __DIR__ . '/lib/tracker_cards.php';
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 if (G_BASE !== '' && strpos($path, G_BASE) === 0) { $path = substr($path, strlen(G_BASE)); }
@@ -32,6 +33,9 @@ try {
     elseif ($path === '/about') { gt_page_about(); }
     elseif ($path === '/sitemap.xml') { gt_sitemap(); }
     elseif (preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); }
+    elseif (preg_match('#^/tracker/([a-z0-9-]+)\.png$#', $path, $m)) { g_tracker_png($m[1]); }
+    elseif (preg_match('#^/tracker/([a-z0-9-]+)/m/([0-9a-f]{8})\.png$#', $path, $m)) { g_tm_png($m[1], $m[2]); }
+    elseif (preg_match('#^/tracker/([a-z0-9-]+)/m/([0-9a-f]{8})$#', $path, $m)) { g_page_tm($m[1], $m[2]); }
     elseif (preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)\.png$#', $path, $m)) { g_qa_png($m[1], $m[2]); }
     elseif (preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)$#', $path, $m)) { g_page_qa($m[1], $m[2]); }
     else {

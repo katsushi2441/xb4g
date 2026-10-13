@@ -21,8 +21,11 @@ require __DIR__ . '/lib/trackers.php';
 // ファイルが無い設置（議員発言ログだけの配布）では、トラッカーの画面を出さない
 define('G_HAS_TRACKER', is_file(__DIR__ . '/lib/tracker_pages.php'));
 define('G_HAS_QA', G_HAS_TRACKER && is_file(__DIR__ . '/lib/qa.php'));
+// 法案の賛否カードはカードの部品（lib/card.php と fonts/）がある設置だけ
+define('G_HAS_CARD', is_file(__DIR__ . '/lib/card.php') && is_dir(__DIR__ . '/fonts'));
+if (G_HAS_CARD) { require __DIR__ . '/lib/bill_card.php'; }
 if (G_HAS_TRACKER) { require __DIR__ . '/lib/tracker_pages.php'; }
-if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; }
+if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker_cards.php'; }
 require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/senkyoku.php';
@@ -58,8 +61,12 @@ function g_route(string $path, int $page): void
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
     if (G_HAS_TRACKER && preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     // 質疑1件のページとカード画像（Xに貼るとカードが出る。2026-10-14）
+    if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)\.png$#', $path, $m)) { g_tracker_png($m[1]); return; }
+    if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)/m/([0-9a-f]{8})\.png$#', $path, $m)) { g_tm_png($m[1], $m[2]); return; }
+    if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)/m/([0-9a-f]{8})$#', $path, $m)) { g_page_tm($m[1], $m[2]); return; }
     if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)\.png$#', $path, $m)) { g_qa_png($m[1], $m[2]); return; }
     if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)/([0-9A-Za-z]+_\d+)$#', $path, $m)) { g_page_qa($m[1], $m[2]); return; }
+    if (G_HAS_CARD && preg_match('#^/bill/(\d+-[a-z]+-\d+)\.png$#', $path, $m)) { g_bill_png($m[1]); return; }
     if (preg_match('#^/bill/(\d+-[a-z]+-\d+)$#', $path, $m)) { g_page_bill($m[1]); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
     if (preg_match('#^/senkyoku/([a-z]+-\d+)$#', $path, $m)) { g_page_senkyoku($m[1]); return; }

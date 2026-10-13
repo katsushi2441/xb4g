@@ -15,14 +15,9 @@
  */
 declare(strict_types=1);
 
-const G_QA_FONT_DIR = __DIR__ . '/../fonts';
+require_once __DIR__ . '/card.php';
 
-function g_qa_cache_dir(): string
-{
-    $d = __DIR__ . '/../data/cache/qa';
-    if (!is_dir($d)) { @mkdir($d, 0755, true); }
-    return is_dir($d) ? $d : sys_get_temp_dir();
-}
+function g_qa_cache_dir(): string { return g_card_cache_dir('qa'); }
 
 /** 発言の立場（scripts/classify.py の kind_of と同じ規則） */
 function g_qa_kind(string $body): string
@@ -172,73 +167,6 @@ function g_qa_who_a(array $a): string
 
 /* ---------------- 画像 ---------------- */
 
-/** 字単位で折り返す（日本語は単語の区切りが無い）。幅は行全体で測る（1字ずつの外接箱は送り幅より狭く、足すと短く出る）。
- *  行頭に句読点を置かない */
-function g_qa_wrap(string $text, string $font, float $size, int $maxw, int $maxLines): array
-{
-    $lines = []; $cur = '';
-    $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-    foreach ($chars as $ch) {
-        $b = imagettfbbox($size, 0, $font, $cur . $ch);
-        if ($b[2] - $b[0] > $maxw && $cur !== '' && !preg_match('/^[、。）」』，．・ー…]$/u', $ch)) {
-            $lines[] = $cur; $cur = '';
-            if (count($lines) === $maxLines) {
-                $last = $lines[$maxLines - 1];
-                $lines[$maxLines - 1] = mb_substr($last, 0, mb_strlen($last) - 1) . '…';
-                return $lines;
-            }
-        }
-        $cur .= $ch;
-    }
-    if ($cur !== '') { $lines[] = $cur; }
-    return $lines;
-}
-
-/** 1行を描く。語（$words）の部分だけ色を変える */
-function g_qa_line($im, string $line, string $font, float $size, int $x, int $y, int $col, int $hi, array $words): void
-{
-    $mask = array_fill(0, mb_strlen($line), false);
-    foreach ($words as $w) {
-        $off = 0;
-        while (($p = mb_strpos($line, $w, $off)) !== false) {
-            for ($i = 0; $i < mb_strlen($w); $i++) { $mask[$p + $i] = true; }
-            $off = $p + 1;
-        }
-    }
-    // 同じ色の続きはまとめて描く（字ごとに描くと字間が崩れる）
-    $chars = preg_split('//u', $line, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-    $seg = ''; $segHi = null; $cx = $x;
-    // 位置は「行頭からここまで」の送り幅で決める。外接箱は最後の字の右の余白を含まないので、
-    // 区切りごとに足すと字が重なる。末尾に「あ」を付けて測り、「あ」の分を引くと送り幅になる
-    $adv = function (string $str) use ($font, $size): int {
-        if ($str === '') { return 0; }
-        $b1 = imagettfbbox($size, 0, $font, $str . 'あ'); $b2 = imagettfbbox($size, 0, $font, 'あ');
-        return $b1[2] - $b2[2];   // 原点からの右端どうしの差（左端は字の形で動くので使わない）
-    };
-    $done = '';
-    $flush = function () use (&$seg, &$segHi, &$cx, &$done, $adv, $x, $im, $font, $size, $y, $col, $hi) {
-        if ($seg === '') { return; }
-        imagettftext($im, $size, 0, $x + $adv($done), $y, $segHi ? $hi : $col, $font, $seg);
-        $done .= $seg;
-        $seg = '';
-    };
-    foreach ($chars as $i => $ch) {
-        if ($segHi !== null && $segHi !== $mask[$i]) { $flush(); }
-        $segHi = $mask[$i]; $seg .= $ch;
-    }
-    $flush();
-}
-
-function g_qa_fit(string $text, string $font, float $size, int $maxw, float $min = 14): float
-{
-    while ($size > $min) {
-        $b = imagettfbbox($size, 0, $font, $text);
-        if ($b[2] - $b[0] <= $maxw) { break; }
-        $size -= 1;
-    }
-    return $size;
-}
-
 /** カード画像（1200×630 PNG）。作った画像は手元に置き、2回目からはそれを返す */
 function g_qa_png(string $key, string $sid): void
 {
@@ -263,46 +191,39 @@ function g_qa_png(string $key, string $sid): void
 function g_qa_draw(array $t, ?array $q, ?array $a): string
 {
     $W = 1200; $H = 630;
-    $FB = G_QA_FONT_DIR . '/NotoSansJP-Black-sub.otf';
-    $FM = G_QA_FONT_DIR . '/NotoSansJP-Bold-sub.otf';
-    $FR = G_QA_FONT_DIR . '/NotoSansJP-Regular-sub.otf';
-    $im = imagecreatetruecolor($W, $H);
-    imageantialias($im, true);
-    $c = fn(string $hex) => imagecolorallocate($im, hexdec(substr($hex, 1, 2)), hexdec(substr($hex, 3, 2)), hexdec(substr($hex, 5, 2)));
-    $white = $c('#ffffff'); $ink = $c('#12202f'); $gray = $c('#5d6b7a'); $teal = $c('#0a9a8f'); $tealD = $c('#0a726b');
-    $mint = $c('#e6f4f2'); $mint2 = $c('#f0f6f6'); $line = $c('#bfe3de'); $navy = $c('#1f3a5f'); $navyBg = $c('#eef2f7'); $hi = $c('#c2410c');
-    imagefilledrectangle($im, 0, 0, $W, $H, $white);
-    imagefilledellipse($im, 150, 70, 660, 620, $mint);
-    imagefilledellipse($im, $W - 120, $H - 45, 680, 570, $mint2);
+    [$FB, $FM, $FR] = g_card_fonts();
+    [$im, $C] = g_card_canvas();
+    ['white' => $white, 'ink' => $ink, 'gray' => $gray, 'teal' => $teal, 'tealD' => $tealD, 'mint' => $mint,
+     'mint2' => $mint2, 'navy' => $navy, 'navyBg' => $navyBg, 'hi' => $hi] = $C;
 
     $words = (array)($t['words'] ?? []);
     $X = 56; $IW = $W - 2 * $X;
 
     // 上の帯: ことがら名と、いつ・どこで
     $tag = '国会トラッカー｜' . $t['name'];
-    $ts = g_qa_fit($tag, $FM, 20, 520);
+    $ts = g_card_fit($tag, $FM, 20, 520);
     $b = imagettfbbox($ts, 0, $FM, $tag); $tw = $b[2] - $b[0];
     imagefilledrectangle($im, $X, 34, $X + $tw + 36, 76, $mint);
     imagettftext($im, $ts, 0, $X + 18, 63, $tealD, $FM, $tag);
     $src = $q ?? $a;
     $when = g_date((string)$src['date']) . '　' . $src['house'] . '　' . $src['meeting'];
-    $ws = g_qa_fit($when, $FR, 18, $IW - $tw - 70);
+    $ws = g_card_fit($when, $FR, 18, $IW - $tw - 70);
     $b = imagettfbbox($ws, 0, $FR, $when);
     imagettftext($im, $ws, 0, $W - $X - ($b[2] - $b[0]), 62, $gray, $FR, $when);
 
     $y = 104;
     $block = function (string $label, int $labelBg, int $boxBg, string $who, string $quote, int $lines, float $qsize) use (&$y, $im, $X, $IW, $FB, $FM, $FR, $white, $ink, $hi, $words) {
-        $wrapped = g_qa_wrap('「' . $quote . '」', $FR, $qsize, $IW - 56, $lines);
+        $wrapped = g_card_wrap('「' . $quote . '」', $FR, $qsize, $IW - 56, $lines);
         $lh = (int)round($qsize * 1.62);
         $h = 62 + $lh * count($wrapped) + 14;
         imagefilledrectangle($im, $X, $y, $X + $IW, $y + $h, $boxBg);
         imagefilledrectangle($im, $X, $y, $X + 8, $y + $h, $labelBg);
         imagefilledrectangle($im, $X + 28, $y + 16, $X + 28 + 74, $y + 50, $labelBg);
         imagettftext($im, 19, 0, $X + 46, $y + 41, $white, $FB, $label);
-        $whoSize = g_qa_fit($who, $FM, 24, $IW - 150);
+        $whoSize = g_card_fit($who, $FM, 24, $IW - 150);
         imagettftext($im, $whoSize, 0, $X + 118, $y + 43, $ink, $FM, $who);
         $ly = $y + 62 + (int)round($qsize);
-        foreach ($wrapped as $ln) { g_qa_line($im, $ln, $FR, $qsize, $X + 28, $ly, $ink, $hi, $words); $ly += $lh; }
+        foreach ($wrapped as $ln) { g_card_line($im, $ln, $FR, $qsize, $X + 28, $ly, $ink, $hi, $words); $ly += $lh; }
         $y += $h + 16;
     };
     if ($q && $a) {
@@ -314,14 +235,8 @@ function g_qa_draw(array $t, ?array $q, ?array $a): string
         $block('答弁', $navy, $navyBg, g_qa_who_a($a), g_qa_quote_a((string)$a['body'], $words, 200), 6, 27);
     }
 
-    // 下: URL と出典
-    imagettftext($im, 17, 0, $X, $H - 26, $gray, $FR, 'xb4g.com/giin/tracker/' . $t['key']);
-    $foot = '国会会議録から抜粋（要約していません）';
-    $b = imagettfbbox(17, 0, $FR, $foot);
-    imagettftext($im, 17, 0, $W - $X - ($b[2] - $b[0]), $H - 26, $gray, $FR, $foot);
-
-    ob_start(); imagepng($im, null, 9); imagedestroy($im);
-    return (string)ob_get_clean();
+    g_card_footer($im, $C, 'tracker/' . $t['key'], '国会会議録から抜粋（要約していません）');
+    return g_card_png($im);
 }
 
 /* ---------------- ページ ---------------- */
@@ -355,16 +270,7 @@ function g_page_qa(string $key, string $sid): void
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
     $label = ($q ? $q['speaker'] . '議員の質問と政府の答弁' : $a['speaker'] . 'の答弁')
            . '（' . $t['name'] . '・' . g_date((string)$main['date']) . '）';
-    $share = 'https://x.com/intent/post?text=' . rawurlencode($label) . '&url=' . rawurlencode(g_abs($canon) . '#ref=x-share-qa');
-    // 返信に貼るときは「何の話か」の1行とURLを一緒に貼りたい（URLだけだと文を自分で書くことになる・2026-10-14）
-    $copy = $label . "\n" . g_abs($canon) . '#ref=copy-qa';
-    echo '<p style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px">'
-       . '<a class="btn" href="' . g_e($share) . '" target="_blank" rel="noopener">Xで共有</a>'
-       . '<button class="btn o" type="button" data-copy="' . g_e($copy) . '" onclick="gQaCopy(this)">タイトルとURLをコピー</button></p>'
-       . '<script>function gQaCopy(b){var t=b.getAttribute("data-copy");function ok(){b.textContent="コピーしました"}'
-       . 'if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok)}else{var a=document.createElement("textarea");'
-       . 'a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();ok()}}</script>'
-       . '<p class="note">コピーした1行とURLをXやSlackに貼ると、上のカードが表示されます。</p>';
+    g_share_buttons($label, $canon, 'qa');
 
     foreach ([['質問', $q, 'q'], ['答弁', $a, 'a']] as [$label, $s, $k]) {
         echo '<h2>' . $label . '</h2>';
@@ -378,7 +284,10 @@ function g_page_qa(string $key, string $sid): void
             continue;
         }
         $who = $k === 'q' ? g_qa_who_q($s) : g_qa_who_a($s);
-        if ($k === 'q' && !empty($s['slug'])) { $who = '<a href="' . g_url($s['slug']) . '">' . g_e($who) . '</a>'; } else { $who = g_e($who); }
+        if ($k === 'q') {
+            $who = '<a href="' . g_url('tracker/' . $key . '/m/' . g_tm_id((string)$s['speaker'])) . '" rel="nofollow">' . g_e($who) . '</a>'
+                 . (!empty($s['slug']) ? ' <a class="note" href="' . g_url($s['slug']) . '">議員ページ</a>' : '');
+        } else { $who = g_e($who); }
         $txt = $k === 'q' ? g_qa_quote_q((string)$s['body'], $words, 400) : g_qa_quote_a((string)$s['body'], $words, 400);
         $kw = '';
         foreach ($words as $ww) { if (mb_strpos($txt, $ww) !== false) { $kw = $ww; break; } }

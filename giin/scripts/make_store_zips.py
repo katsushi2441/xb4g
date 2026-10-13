@@ -23,7 +23,9 @@ COMMON = ["lib/db.php", "lib/text.php", "lib/ui.php", "scripts/ndl.py", "scripts
 
 GIIN = COMMON + [
     "index.php", "sitemap.php", "giin_mcp.php", ".htaccess", "giin_config.php.example", "ogp.png",
-    "lib/themes.php", "lib/trackers.php", "lib/bills.php", "lib/senkyoku.php",
+    "lib/themes.php", "lib/trackers.php", "lib/bills.php", "lib/senkyoku.php", "lib/card.php", "lib/bill_card.php",
+    "fonts/NotoSansJP-Black-sub.otf", "fonts/NotoSansJP-Bold-sub.otf", "fonts/NotoSansJP-Regular-sub.otf",
+    "scripts/make_card_fonts.py",
     "data/themes.json", "data/links.json", "data/stats.json",
     "scripts/build_roster.py", "scripts/romaji.py", "scripts/fetch_speeches.py", "scripts/fetch_news.py",
     "scripts/fetch_bills.py", "scripts/fetch_committees.py", "scripts/build_theme_index.py",
@@ -33,7 +35,7 @@ GIIN = COMMON + [
 ]
 
 TRACKER = COMMON + [
-    "lib/trackers.php", "lib/tracker_pages.php", "lib/qa.php",
+    "lib/trackers.php", "lib/tracker_pages.php", "lib/qa.php", "lib/card.php", "lib/tracker_cards.php",
     "fonts/NotoSansJP-Black-sub.otf", "fonts/NotoSansJP-Bold-sub.otf", "fonts/NotoSansJP-Regular-sub.otf",
     "scripts/fetch_tracker.py", "scripts/make_ogp_all.py", "scripts/make_ogp_trackers.py",
     "scripts/make_card_fonts.py", "scripts/tracker_jobs.py",
