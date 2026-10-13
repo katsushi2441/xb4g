@@ -17,7 +17,8 @@
 - 愛知の45人の発言は giin.id を持たせ、画面からその議員のページへ渡せるようにする。
 - 要約はしない。本文はそのまま持ち、画面が語のまわりを抜粋する。
 """
-import argparse, json, os, sqlite3, sys, time
+import argparse
+import datetime, json, os, sqlite3, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -57,6 +58,7 @@ def fetch_word(word, frm):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--key", default="")
+    ap.add_argument("--full", action="store_true", help="増分ではなく from から全部取り直す")
     a = ap.parse_args()
     trackers = json.load(open(CONF, encoding="utf-8"))
     if a.key:
@@ -72,10 +74,23 @@ def main():
                 names[n.replace("　", "").replace(" ", "")] = gid
     for t in trackers:
         t0 = time.time()
+        # **増分で取る（2026-10-14）。** 毎晩すべてのトラッカーを from（2010年など）から取り直していたため、
+        # トラッカーが89に増えて1本30〜70秒×89で30分の制限を超え、毎晩の更新が止まった。
+        # 語と from が前回と同じで、すでに行があるなら、最後の日付の45日前から取り直す
+        # （会議録は開会から1〜2週間おくれて公開され、あとから足されることもあるので、少し戻って重ねる）。
+        # 語や from を変えたとき、--full のとき、初めてのときは全部取り直す。
+        sig = json.dumps({"words": t["words"], "from": t["from"]}, ensure_ascii=False, sort_keys=True)
+        prev_sig = (con.execute("SELECT v FROM meta WHERE k=?", ("tracker_" + t["key"] + "_sig",)).fetchone() or [None])[0]
+        last = con.execute("SELECT MAX(date) FROM tracker_speech WHERE tracker=?", (t["key"],)).fetchone()[0]
+        incremental = (not a.full) and prev_sig == sig and bool(last)
+        frm = t["from"]
+        if incremental:
+            back = (datetime.date.fromisoformat(last) - datetime.timedelta(days=45)).isoformat()
+            frm = max(t["from"], back)
         seen = {}
         for w in t["words"]:
             n = 0
-            for r in fetch_word(w, t["from"]):
+            for r in fetch_word(w, frm):
                 sid = r["speechID"]
                 if sid in seen:
                     seen[sid]["words"].add(w)
@@ -110,15 +125,20 @@ def main():
                          r.get("speechOrder"), r.get("speaker"), r.get("speakerGroup"),
                          r.get("speakerPosition"), r.get("speakerRole"), body,
                          r.get("speechURL"), r.get("meetingURL"), kind, "、".join(hit)))
-        con.execute("DELETE FROM tracker_speech WHERE tracker=?", (t["key"],))
+        if incremental:
+            con.execute("DELETE FROM tracker_speech WHERE tracker=? AND date>=?", (t["key"], frm))
+        else:
+            con.execute("DELETE FROM tracker_speech WHERE tracker=?", (t["key"],))
         con.executemany("INSERT OR REPLACE INTO tracker_speech VALUES (" + ",".join("?" * 18) + ")", rows)
         con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES(?, datetime('now','localtime'))",
                     ("tracker_" + t["key"] + "_at",))
+        con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES(?, ?)", ("tracker_" + t["key"] + "_sig", sig))
         con.commit()
         kinds = dict(con.execute("SELECT kind, COUNT(*) FROM tracker_speech WHERE tracker=? GROUP BY kind",
                                  (t["key"],)).fetchall())
         aichi = con.execute("SELECT COUNT(*) FROM tracker_speech WHERE tracker=? AND giin_id>0", (t["key"],)).fetchone()[0]
-        print(f"  {t['key']}: {len(rows)}件 {kinds} 愛知の議員 {aichi}件 ({time.time()-t0:.0f}秒)")
+        mode = f"増分 {frm}〜" if incremental else "全部"
+        print(f"  {t['key']}: {mode} {len(rows)}件取得 → 合計{sum(kinds.values())}件 {kinds} 愛知の議員 {aichi}件 ({time.time()-t0:.0f}秒)")
 
 
 if __name__ == "__main__":

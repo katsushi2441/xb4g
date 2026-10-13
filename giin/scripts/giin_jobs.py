@@ -164,7 +164,8 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         # 新しい材料が入ったあとに考察を作り直す。**必ず対応表のあと**（ことがらの順位を使うため）
         ("いまの時点でのAI考察", [PY, os.path.join(SCRIPTS, "build_insight.py")]),
     ]:
-        code, out, err = _run(args)
+        # 全国トラッカーは89本×NDLの3秒待ちで、増分でも20分かかる（2026-10-14実測1230秒。全件取り直しで30分を超えて止まった）
+        code, out, err = _run(args, timeout=3600 if name == "全国トラッカー" else 1800)
         steps.append({"step": name, "code": code, "tail": out.strip().splitlines()[-3:],
                       "err": err.strip().splitlines()[-3:] if code else []})
         if code != 0:
