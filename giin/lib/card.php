@@ -44,15 +44,19 @@ function g_card_canvas(int $W = 1200, int $H = 630): array
 function g_card_header($im, array $C, string $tag, string $right = ''): void
 {
     [, $FM, $FR] = g_card_fonts();
-    $X = 56; $W = imagesx($im);
-    $ts = g_card_fit($tag, $FM, 20, 620);
-    $b = imagettfbbox($ts, 0, $FM, $tag); $tw = $b[2] - $b[0];
+    $X = 56; $W = imagesx($im); $IW = $W - 2 * $X;
+    // 左のラベルと右の文字が両方長いと重なる（2026-10-14 若者の選挙運動×こども・子育て・若者活躍に関する特別委員会）。
+    // 右の文字を先に13ptで測り、左はその残りに収める（最大620）。それでも入らなければ右を「…」で切る
+    $rw = $right !== '' ? min(g_card_textw($right, $FR, 13), (int)($IW * 0.5)) : 0;
+    $ts = g_card_fit($tag, $FM, 20, max(300, min(620, $IW - $rw - 70)), 12);
+    $tw = g_card_textw($tag, $FM, $ts);
     imagefilledrectangle($im, $X, 34, $X + $tw + 36, 76, $C['mint']);
     imagettftext($im, $ts, 0, $X + 18, 63, $C['tealD'], $FM, $tag);
     if ($right !== '') {
-        $ws = g_card_fit($right, $FR, 18, $W - 2 * $X - $tw - 70);
-        $b = imagettfbbox($ws, 0, $FR, $right);
-        imagettftext($im, $ws, 0, $W - $X - ($b[2] - $b[0]), 62, $C['gray'], $FR, $right);
+        $room = $IW - $tw - 70;
+        $ws = g_card_fit($right, $FR, 18, $room, 13);
+        while (g_card_textw($right, $FR, $ws) > $room && mb_strlen($right) > 4) { $right = mb_substr($right, 0, mb_strlen($right) - 2) . '…'; }
+        imagettftext($im, $ws, 0, $W - $X - g_card_textw($right, $FR, $ws), 62, $C['gray'], $FR, $right);
     }
 }
 

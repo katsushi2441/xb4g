@@ -201,17 +201,9 @@ function g_qa_draw(array $t, ?array $q, ?array $a): string
     $words = g_term_parts((array)($t['words'] ?? []));
     $X = 56; $IW = $W - 2 * $X;
 
-    // 上の帯: ことがら名と、いつ・どこで
-    $tag = '国会トラッカー｜' . $t['name'];
-    $ts = g_card_fit($tag, $FM, 20, 520);
-    $b = imagettfbbox($ts, 0, $FM, $tag); $tw = $b[2] - $b[0];
-    imagefilledrectangle($im, $X, 34, $X + $tw + 36, 76, $mint);
-    imagettftext($im, $ts, 0, $X + 18, 63, $tealD, $FM, $tag);
+    // 上の帯: ことがら名と、いつ・どこで（重ならないよう共通の部品で描く）
     $src = $q ?? $a;
-    $when = g_date((string)$src['date']) . '　' . $src['house'] . '　' . $src['meeting'];
-    $ws = g_card_fit($when, $FR, 18, $IW - $tw - 70);
-    $b = imagettfbbox($ws, 0, $FR, $when);
-    imagettftext($im, $ws, 0, $W - $X - ($b[2] - $b[0]), 62, $gray, $FR, $when);
+    g_card_header($im, $C, '国会トラッカー｜' . $t['name'], g_date((string)$src['date']) . '　' . $src['house'] . '　' . $src['meeting']);
 
     $y = 104;
     $block = function (string $label, int $labelBg, int $boxBg, string $who, string $quote, int $lines, float $qsize) use (&$y, $im, $X, $IW, $FB, $FM, $FR, $white, $ink, $hi, $words) {
