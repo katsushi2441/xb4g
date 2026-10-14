@@ -93,6 +93,7 @@ function g_qa_sentences(string $body): array
 /** 質問の抜粋: 語を含む文（最大 $max 字ぶん）。語が無ければ先頭から */
 function g_qa_quote_q(string $body, array $words, int $max): string
 {
+    $words = g_term_parts($words);
     $ss = g_qa_sentences($body);
     $out = '';
     foreach ($ss as $i => $s) {
@@ -111,6 +112,7 @@ function g_qa_quote_q(string $body, array $words, int $max): string
 /** 答弁の抜粋: 「お答えいたします」などの前置きを除いた冒頭。語を含む文があれば、そこから */
 function g_qa_quote_a(string $body, array $words, int $max): string
 {
+    $words = g_term_parts($words);
     $ss = array_values(array_filter(g_qa_sentences($body),
         fn($s) => !preg_match('/^(お答え[^。]{0,10}ます|(ただいまの|今の)?御質問[^。]{0,24}|御指摘[^。]{0,12}ございます)。$/u', $s)));
     $start = 0;
@@ -141,7 +143,7 @@ function g_qa_pair(string $key, string $sid): ?array
     // 答弁にも語があるか、質問の後ろ3割で語にふれているときだけ組にする
     $far = false;
     if ($a) {
-        $words = (array)(g_tracker($key)['words'] ?? []);
+        $words = g_term_parts((array)(g_tracker($key)['words'] ?? []));
         $inA = false; $last = -1;
         $qb = implode('', g_qa_sentences((string)$s['body']));
         foreach ($words as $w) {
@@ -196,7 +198,7 @@ function g_qa_draw(array $t, ?array $q, ?array $a): string
     ['white' => $white, 'ink' => $ink, 'gray' => $gray, 'teal' => $teal, 'tealD' => $tealD, 'mint' => $mint,
      'mint2' => $mint2, 'navy' => $navy, 'navyBg' => $navyBg, 'hi' => $hi] = $C;
 
-    $words = (array)($t['words'] ?? []);
+    $words = g_term_parts((array)($t['words'] ?? []));
     $X = 56; $IW = $W - 2 * $X;
 
     // 上の帯: ことがら名と、いつ・どこで
@@ -252,7 +254,7 @@ function g_page_qa(string $key, string $sid): void
     $q = $pair['q']; $a = $pair['a'];
     $main = $q ?? $a;
     $canon = 'tracker/' . $key . '/' . $main['speech_id'];
-    $words = (array)$t['words'];
+    $words = g_term_parts((array)$t['words']);
     $w = $t['seo_word'] ?? $t['name'];
     $title = $q ? $q['speaker'] . '議員の質問と政府の答弁｜' . $w . '（' . g_date((string)$q['date']) . '）'
                 : $a['speaker'] . 'の答弁｜' . $w . '（' . g_date((string)$a['date']) . '）';

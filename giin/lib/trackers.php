@@ -142,8 +142,25 @@ function g_tracker_excerpt(string $body, array $words, int $max = 2): array
 }
 
 /** 全国の発言1件の描画。話者は会議録の表記のまま。愛知の46人なら議員ページへ渡す。 */
+/**
+ * 抜き出しと色付けに使う語。trackers.json の語は空白で「全部を含む」（例「水産物 輸出」）を表すので、
+ * そのままでは本文に一致しない。空白で区切った語に分ける（2026-10-14 小池正昭議員のカードで、
+ * 直近の質問の一文が本題の前のあいさつになっていた）。
+ */
+function g_term_parts(array $words): array
+{
+    $out = [];
+    foreach ($words as $w) {
+        foreach (preg_split('/[\s　]+/u', trim((string)$w)) ?: [] as $p) {
+            if ($p !== '' && !in_array($p, $out, true)) { $out[] = $p; }
+        }
+    }
+    return $out;
+}
+
 function g_tracker_speech(array $s, array $words): void
 {
+    $words = g_term_parts($words);
     $hit = array_values(array_filter($words, fn($w) => mb_strpos((string)$s['body'], $w, 0, 'UTF-8') !== false));
     $kw = $hit[0] ?? ($words[0] ?? '');
     $ex = g_tracker_excerpt((string)$s['body'], $hit ?: $words, 2);

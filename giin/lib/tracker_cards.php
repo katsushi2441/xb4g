@@ -125,7 +125,7 @@ function g_tm_draw(array $t, string $speaker, array $d): string
     imagettftext($im, 16, 0, 80, 458, $C['gray'], $FR, '直近の質問（' . g_date((string)$last['date']) . '　' . $last['meeting'] . '）');
     $ly = 494;
     foreach (g_card_wrap('「' . $q . '」', $FR, 21, 1040, 2) as $ln) {
-        g_card_line($im, $ln, $FR, 21, 80, $ly, $C['ink'], $C['hi'], (array)$t['words']);
+        g_card_line($im, $ln, $FR, 21, 80, $ly, $C['ink'], $C['hi'], g_term_parts((array)$t['words']));
         $ly += 34;
     }
     g_card_footer($im, $C, 'tracker/' . $t['key'], '国会会議録から（要約していません）');
