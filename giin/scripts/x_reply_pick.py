@@ -387,9 +387,9 @@ def match_tracker(field, text):
     """分野が決まったら、その分野のトラッカーのうち語が本文に出るものを規則で選ぶ（判断モデルには選ばせない）"""
     best = []
     for t in trackers():
-        if field and THEME_TO_FIELD.get(t["theme"]) != field:
+        if field and THEME_TO_FIELD.get(t.get("theme", "")) != field:   # theme の無いトラッカーもある（2026-10-14 これで判定が6回止まった）
             continue
-        words = set(t.get("words") or []) | {t["short"], t.get("seo_word") or ""}
+        words = set(t.get("words") or []) | {t.get("short") or "", t.get("seo_word") or ""}
         hit = [w for w in words if w and all(p in text for p in w.split())]
         if hit:
             best.append((len(max(hit, key=len)), t))

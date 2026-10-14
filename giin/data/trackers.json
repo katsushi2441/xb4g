@@ -2658,7 +2658,8 @@
   "links": [],
   "seo_word": "自動車整備士 不足",
   "seo_title": "自動車整備士不足｜国会の質疑と政府の答弁",
-  "added": "2026-10-14"
+  "added": "2026-10-14",
+  "theme": "jidosha"
  },
  {
   "key": "datacenter-denryoku",
@@ -2680,6 +2681,7 @@
   "links": [],
   "seo_word": "データセンター 電力",
   "seo_title": "データセンターと電力｜国会の質疑と政府の答弁",
-  "added": "2026-10-14"
+  "added": "2026-10-14",
+  "theme": "ai"
  }
 ]
