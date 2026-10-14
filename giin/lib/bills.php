@@ -66,6 +66,13 @@ function g_bill_status_pill(string $s): string
     return '<span class="pill' . $cls . '">' . g_e($s) . '</span>';
 }
 
+/** 衆議院から先に審議するか */
+function g_bill_shu_first(array $b): bool
+{
+    $sf = (string)($b['sen_first'] ?? '');
+    return !($sf === '参先議' || $sf === '本院先議' || (mb_strpos($sf, '参') !== false));
+}
+
 /** 審議の経過を日付順の行にする */
 function g_bill_timeline(array $b): array
 {
@@ -74,7 +81,9 @@ function g_bill_timeline(array $b): array
     $who = preg_replace('/が(衆|参)議院に$|が国会に$/u', '', g_bill_submitter($b)) ?? '';
     $where = ['shu' => '（衆議院）', 'san' => '（参議院）'][$b['kind_code']] ?? '';
     $add($b['submitted'], '提出：' . $who . $where);
-    $shuFirst = ($b['sen_first'] ?? '') !== '参先議';
+    // 「本院先議」は参議院の議案情報の書き方で、参議院から先に審議する法案（参法84本・閣法16本）。
+    // 以前は「参先議」だけを見ていて、この100本の経過を衆議院から先の順に並べていた（2026-10-14 直す）
+    $shuFirst = g_bill_shu_first($b);
     $houses = $shuFirst ? ['shu' => '衆議院', 'san' => '参議院'] : ['san' => '参議院', 'shu' => '衆議院'];
     foreach ($houses as $h => $hn) {
         if ($b[$h . '_committee']) {
@@ -226,10 +235,10 @@ function g_page_bill(string $id): void
        . '<div class="c"><b>' . number_format(count($gov)) . '</b><span>政府の答弁<br>（載せた分）</span></div></div></section>';
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px">' . g_e($answer) . '</p>';
     if (function_exists('g_bill_png')) {
-        echo '<details class="panel" style="margin:10px 0"' . ($votes ? ' open' : '') . '><summary><b>' . ($votes ? '賛否のカード（Xに貼れます）' : '審議の経過のカード') . '</b></summary>'
+        echo '<details class="panel" style="margin:10px 0" open><summary><b>' . ($votes ? '賛否のカード（Xに貼れます）' : '「いまここ」のカード（Xに貼れます）') . '</b></summary>'
            . '<img src="' . g_e(g_url('bill/' . $id . '.png')) . '" alt="法案の賛否のカード" width="1200" height="630" loading="lazy" '
            . 'style="width:100%;height:auto;display:block;border-radius:8px;margin-top:8px">';
-        g_share_buttons(mb_strimwidth((string)$b['title'], 0, 70, '…', 'UTF-8') . ($votes ? '｜参議院の会派ごとの賛否' : '｜審議の経過'), 'bill/' . $id, 'bill');
+        g_share_buttons(mb_strimwidth((string)$b['title'], 0, 70, '…', 'UTF-8') . ($votes ? '｜参議院の会派ごとの賛否' : '｜いまここ（' . $b['status'] . '）'), 'bill/' . $id, 'bill');
         echo '</details>';
     }
 
