@@ -48,7 +48,10 @@ function g_card_header($im, array $C, string $tag, string $right = ''): void
     // 左のラベルと右の文字が両方長いと重なる（2026-10-14 若者の選挙運動×こども・子育て・若者活躍に関する特別委員会）。
     // 右の文字を先に13ptで測り、左はその残りに収める（最大620）。それでも入らなければ右を「…」で切る
     $rw = $right !== '' ? min(g_card_textw($right, $FR, 13), (int)($IW * 0.5)) : 0;
-    $ts = g_card_fit($tag, $FM, 20, max(300, min(620, $IW - $rw - 70)), 12);
+    $tmax = max(300, min(620, $IW - $rw - 70));
+    $ts = g_card_fit($tag, $FM, 20, $tmax, 14);
+    // 12ptでも入らない長いラベル（2026-10-15 高知1区は区域の説明が100字超）は「…」で切る
+    while (g_card_textw($tag, $FM, $ts) > $tmax && mb_strlen($tag) > 4) { $tag = mb_substr($tag, 0, mb_strlen($tag) - 2) . '…'; }
     $tw = g_card_textw($tag, $FM, $ts);
     imagefilledrectangle($im, $X, 34, $X + $tw + 36, 76, $C['mint']);
     imagettftext($im, $ts, 0, $X + 18, 63, $C['tealD'], $FM, $tag);
