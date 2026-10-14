@@ -262,7 +262,9 @@ function g_page_senkyoku(string $key): void
                      . ($rr['median'] !== null && (float)$rr['median'] > 0
                         ? '／中央値 ' . number_format((float)$rr['median']) . $unit : '') . '</small>';
             }
-            echo '<tr><td>' . g_e($label) . ($r['partial'] ? '<br><small>市全体の数（選挙区は市の一部）</small>' : '') . '</td>'
+            $card = function_exists('g_skc_png') && !str_ends_with($k, '_gone') && $k !== 'dosha_red'
+                ? '<br><a class="note" href="' . g_url('senkyoku/' . $key . '/' . $k) . '" rel="nofollow">カードにする（Xに貼れます）</a>' : '';
+            echo '<tr><td>' . g_e($label) . ($r['partial'] ? '<br><small>市全体の数（選挙区は市の一部）</small>' : '') . $card . '</td>'
                . '<td class="n">' . $val . '</td><td><small>' . implode('、', $parts) . '</small></td><td><small>' . g_e($src) . '</small></td></tr>';
         }
         echo '</table></div>';

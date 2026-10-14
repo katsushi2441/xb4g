@@ -63,8 +63,11 @@ function g_card_footer($im, array $C, string $path, string $note): void
     $X = 56; $W = imagesx($im); $H = imagesy($im);
     $url = preg_replace('#^https?://#', '', g_abs($path));
     imagettftext($im, 17, 0, $X, $H - 26, $C['gray'], $FR, $url);
-    $b = imagettfbbox(17, 0, $FR, $note);
-    imagettftext($im, 17, 0, $W - $X - ($b[2] - $b[0]), $H - 26, $C['gray'], $FR, $note);
+    // 出典が長いと公開URLに重なる（2026-10-14 地元の数字カード）。空いている幅に収め、入らなければ字を小さく、それでも入らなければ切る
+    $room = $W - 2 * $X - g_card_textw($url, $FR, 17) - 30;
+    $size = g_card_fit($note, $FR, 17, $room, 13);
+    while (g_card_textw($note, $FR, $size) > $room && mb_strlen($note) > 4) { $note = mb_substr($note, 0, mb_strlen($note) - 2) . '…'; }
+    imagettftext($im, $size, 0, $W - $X - g_card_textw($note, $FR, $size), $H - 26, $C['gray'], $FR, $note);
 }
 
 /** 文字列の幅（送り幅。末尾の字の右の余白も含む） */

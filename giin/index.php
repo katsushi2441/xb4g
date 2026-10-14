@@ -23,7 +23,7 @@ define('G_HAS_TRACKER', is_file(__DIR__ . '/lib/tracker_pages.php'));
 define('G_HAS_QA', G_HAS_TRACKER && is_file(__DIR__ . '/lib/qa.php'));
 // 法案の賛否カードはカードの部品（lib/card.php と fonts/）がある設置だけ
 define('G_HAS_CARD', is_file(__DIR__ . '/lib/card.php') && is_dir(__DIR__ . '/fonts'));
-if (G_HAS_CARD) { require __DIR__ . '/lib/bill_card.php'; }
+if (G_HAS_CARD) { require __DIR__ . '/lib/bill_card.php'; if (is_file(__DIR__ . '/lib/senkyoku_card.php')) { require __DIR__ . '/lib/senkyoku_card.php'; } }
 if (G_HAS_TRACKER) { require __DIR__ . '/lib/tracker_pages.php'; }
 if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker_cards.php'; }
 require __DIR__ . '/lib/bills.php';
@@ -69,6 +69,9 @@ function g_route(string $path, int $page): void
     if (G_HAS_CARD && preg_match('#^/bill/(\d+-[a-z]+-\d+)\.png$#', $path, $m)) { g_bill_png($m[1]); return; }
     if (preg_match('#^/bill/(\d+-[a-z]+-\d+)$#', $path, $m)) { g_page_bill($m[1]); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
+    // 地元の数字カード（lib/senkyoku_card.php）
+    if (function_exists('g_skc_png') && preg_match('#^/senkyoku/([a-z]+-\d+)/([A-Za-z_]+)\.png$#', $path, $m)) { g_skc_png($m[1], $m[2]); return; }
+    if (function_exists('g_page_skc') && preg_match('#^/senkyoku/([a-z]+-\d+)/([A-Za-z_]+)$#', $path, $m)) { g_page_skc($m[1], $m[2]); return; }
     if (preg_match('#^/senkyoku/([a-z]+-\d+)$#', $path, $m)) { g_page_senkyoku($m[1]); return; }
     switch ($path) {
         case '/':        g_page_top(); return;
