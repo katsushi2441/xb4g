@@ -12,7 +12,14 @@ declare(strict_types=1);
 /** 指標の定義。順番＝画面の順番。link は「この数字の元の画面」。 */
 function g_sk_metrics(): array
 {
+    // [キー, 分類, ラベル, 単位, 出典（空なら上の行と同じ）, 調べるリンク, 表示の割り算（10なら小数1桁）, 'noratio'＝「真ん中の区の何倍」を出さない]
     return [
+        // 人口（総務省 住民基本台帳。scripts/fetch_muni_stats.py）
+        ['pop',              '人口', '人口（2026年1月）', '人', '総務省 住民基本台帳（2026年1月1日）', ''],
+        ['pop65',            '人口', 'うち65歳以上', '人', '', ''],
+        ['aging_rate',       '人口', '高齢化率（65歳以上の割合）', '%', '', '', 10, 'noratio'],
+        ['births',           '人口', '出生数（2025年）', '人', '総務省 住民基本台帳（2025年の人口動態）', ''],
+        ['pop_change',       '人口', '人口の増減（2025年）', '人', '', '', 1, 'noratio'],
         // 防災
         ['dosha',            '防災', '土砂災害警戒区域', '区域',   '国土数値情報（都道府県の指定）', 'https://kurage.exbridge.jp/khazard.php/'],
         ['dosha_red',        '防災', 'うち特別警戒区域（レッド）', '区域', '', ''],
@@ -34,8 +41,28 @@ function g_sk_metrics(): array
         ['ghome_gone',       '福祉', 'うち2021年11月以降に消えたグループホーム', 'か所', '', ''],
         ['shuroA',           '福祉', '就労継続支援A型', 'か所', 'WAM NET', 'https://kurage.exbridge.jp/kshuro.php/'],
         ['shuroB',           '福祉', '就労継続支援B型', 'か所', '', 'https://kurage.exbridge.jp/kshuro.php/'],
+        ['hoiku_waiting',    '子育て', '保育所の待機児童', '人', 'こども家庭庁 保育所等関連状況取りまとめ（2025年4月1日）', ''],
+        ['hoiku_hidden',     '子育て', 'いわゆる隠れ待機児童（育休中・特定の園のみ希望など）', '人', '', ''],
         ['gakudo_waiting',   '子育て', '学童保育の待機児童', '人', 'こども家庭庁（2025年5月・指定都市/中核市等のみ）', 'https://kurage.exbridge.jp/kgakudo.php/'],
+        // 農業
+        ['seisan_ryokuchi',  '農業', '生産緑地の面積', 'ha', '国土交通省 都市計画現況調査（2024年3月31日）', '', 10],
     ];
+}
+
+/** 指標の値を表示用に（割り算・小数・増減の符号） */
+function g_sk_fmt(string $k, $v): string
+{
+    $div = 1;
+    foreach (g_sk_metrics() as $mt) { if ($mt[0] === $k) { $div = (int)($mt[6] ?? 1); break; } }
+    $s = $div > 1 ? number_format((float)$v / $div, 1) : number_format((float)$v);
+    return ($k === 'pop_change' && (float)$v > 0 ? '+' : '') . $s;
+}
+
+/** 「全国の真ん中の区の何倍」を出してよい指標か（率と増減は倍にしない） */
+function g_sk_ratio_ok(string $k): bool
+{
+    foreach (g_sk_metrics() as $mt) { if ($mt[0] === $k) { return ($mt[7] ?? '') !== 'noratio'; } }
+    return true;
 }
 
 /** 選挙区の表があるか。**選挙区は当社の公開先だけ**（ほかの製品のDBから作るので配布物に入らない） */
@@ -221,17 +248,17 @@ function g_page_senkyoku(string $key): void
         $r = $rk[$k];
         if ((int)$r['total'] < 50) { continue; }
         $pct = (int)$r['rank'] / (int)$r['total'];
-        if ($pct <= 0.10) { $hi[] = [$mt[2], (int)$r['rank'], (int)$r['total'], $st[$k]['value'], $mt[3]]; }
-        elseif ($pct >= 0.90) { $lo[] = [$mt[2], (int)$r['rank'], (int)$r['total'], $st[$k]['value'], $mt[3]]; }
+        if ($pct <= 0.10) { $hi[] = [$mt[2], (int)$r['rank'], (int)$r['total'], g_sk_fmt($k, $st[$k]['value']), $mt[3]]; }
+        elseif ($pct >= 0.90) { $lo[] = [$mt[2], (int)$r['rank'], (int)$r['total'], g_sk_fmt($k, $st[$k]['value']), $mt[3]]; }
     }
     if ($hi || $lo) {
         echo '<div class="panel"><h3>全国の中でどこに位置するか</h3><ul class="plain">';
         foreach (array_slice($hi, 0, 4) as $x) {
-            echo '<li><b>' . g_e($x[0]) . '</b> は ' . number_format($x[3]) . g_e($x[4])
+            echo '<li><b>' . g_e($x[0]) . '</b> は ' . g_e($x[3]) . g_e($x[4])
                . ' で、収録' . number_format($x[2]) . '区のうち<b>' . number_format($x[1]) . '位</b>（多いほう）</li>';
         }
         foreach (array_slice($lo, 0, 3) as $x) {
-            echo '<li><b>' . g_e($x[0]) . '</b> は ' . number_format($x[3]) . g_e($x[4])
+            echo '<li><b>' . g_e($x[0]) . '</b> は ' . g_e($x[3]) . g_e($x[4])
                . ' で、収録' . number_format($x[2]) . '区のうち<b>' . number_format($x[1]) . '位</b>（少ないほう）</li>';
         }
         echo '</ul><p class="src">同じ指標を全国の選挙区で並べ替えただけの順位です。'
@@ -252,17 +279,17 @@ function g_page_senkyoku(string $key): void
             $det = json_decode($r['detail'] ?: '[]', true) ?: [];
             $parts = [];
             foreach ($det as $x) {
-                $parts[] = g_e($x[0]) . ' ' . number_format((int)$x[1]) . (isset($x[2]) && $x[2] !== '' && !is_int($x[2]) ? '（最大 ' . g_e((string)$x[2]) . '）' : '');
+                $parts[] = g_e($x[0]) . ' ' . g_sk_fmt($k, (int)$x[1]) . (isset($x[2]) && $x[2] !== '' && !is_int($x[2]) ? '（最大 ' . g_e((string)$x[2]) . '）' : '');
             }
-            $val = number_format((int)$r['value']) . $unit;
+            $val = g_sk_fmt($k, (int)$r['value']) . $unit;
             if ($link) { $val = '<a href="' . g_e($link . '?ref=senkyoku-' . $key) . '" target="_blank" rel="noopener">' . $val . '</a>'; }
             if (isset($rk[$k]) && (int)$rk[$k]['total'] >= 50) {
                 $rr = $rk[$k];
                 $val .= '<br><small>全国' . number_format((int)$rr['total']) . '区中 ' . number_format((int)$rr['rank']) . '位'
                      . ($rr['median'] !== null && (float)$rr['median'] > 0
-                        ? '／中央値 ' . number_format((float)$rr['median']) . $unit : '') . '</small>';
+                        ? '／中央値 ' . g_sk_fmt($k, (float)$rr['median']) . $unit : '') . '</small>';
             }
-            $card = function_exists('g_skc_png') && !str_ends_with($k, '_gone') && $k !== 'dosha_red'
+            $card = function_exists('g_skc_png') && !str_ends_with($k, '_gone') && !in_array($k, ['dosha_red', 'pop65'], true)
                 ? '<br><a class="note" href="' . g_url('senkyoku/' . $key . '/' . $k) . '" rel="nofollow">カードにする（Xに貼れます）</a>' : '';
             echo '<tr><td>' . g_e($label) . ($r['partial'] ? '<br><small>市全体の数（選挙区は市の一部）</small>' : '') . $card . '</td>'
                . '<td class="n">' . $val . '</td><td><small>' . implode('、', $parts) . '</small></td><td><small>' . g_e($src) . '</small></td></tr>';

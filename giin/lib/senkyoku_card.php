@@ -27,7 +27,8 @@ function g_skc_metric(string $metric): ?array
 function g_skc_sub(string $metric): ?string
 {
     $m = ['houmon' => 'houmon_gone', 'caremane' => 'caremane_gone', 'houdei' => 'houdei_gone', 'ghome' => 'ghome_gone',
-          'shuroA' => 'shuroA_gone', 'shuroB' => 'shuroB_gone', 'jihatsu' => 'jihatsu_gone', 'dosha' => 'dosha_red'];
+          'shuroA' => 'shuroA_gone', 'shuroB' => 'shuroB_gone', 'jihatsu' => 'jihatsu_gone', 'dosha' => 'dosha_red',
+          'pop' => 'pop65'];
     return $m[$metric] ?? null;
 }
 
@@ -81,19 +82,23 @@ function g_skc_draw(string $key, string $metric, array $x): string
     imagettftext($im, g_card_fit($label, $FM, 30, 1080), 0, $X, 140, $C['tealD'], $FM, $label);
 
     // 大きな数字と単位
-    $num = number_format($x['v']);
+    $num = g_sk_fmt($metric, $x['v']);
     imagettftext($im, 110, 0, $X - 4, 290, $C['ink'], $FB, $num);
     $nw = g_card_textw($num, $FB, 110);
     imagettftext($im, 36, 0, $X + $nw + 8, 290, $C['ink'], $FM, $mt['unit']);
 
     // 右: 全国の真ん中の区との比較
     $rx = 660;
-    if ($rk && $rk['median'] !== null && (float)$rk['median'] > 0) {
+    if ($rk && $rk['median'] !== null && !g_sk_ratio_ok($metric)) {
+        // 率と増減は「何倍」にしない。真ん中の区の値だけ並べる
+        $rs = '全国の真ん中の区は ' . g_sk_fmt($metric, (float)$rk['median']) . $mt['unit'];
+        imagettftext($im, g_card_fit($rs, $FB, 30, 1144 - $rx), 0, $rx, 210, $C['ink'], $FB, $rs);
+    } elseif ($rk && $rk['median'] !== null && (float)$rk['median'] > 0) {
         $ratio = $x['v'] / (float)$rk['median'];
         $rs = $ratio >= 0.95 && $ratio <= 1.05 ? '全国の真ん中の区とほぼ同じ'
             : '全国の真ん中の区の ' . ($ratio >= 10 ? number_format($ratio, 0) : number_format($ratio, 1)) . '倍';
         imagettftext($im, g_card_fit($rs, $FB, 32, 1144 - $rx), 0, $rx, 210, $C['ink'], $FB, $rs);
-        $ms = '真ん中の区は ' . number_format((float)$rk['median']) . $mt['unit'];
+        $ms = '真ん中の区は ' . g_sk_fmt($metric, (float)$rk['median']) . $mt['unit'];
         imagettftext($im, 20, 0, $rx, 250, $C['gray'], $FR, $ms);
     }
     if ($x['sub']) {
@@ -101,7 +106,8 @@ function g_skc_draw(string $key, string $metric, array $x): string
         $pct = $x['v'] > 0 ? round($sv / $x['v'] * 100) : 0;
         $sl = preg_replace('/^うち/u', '', (string)($smt['label'] ?? ''));
         $s1 = 'うち' . $sl;
-        $s2 = number_format($sv) . $mt['unit'] . ($sk !== 'dosha_red' ? '（いまの数の' . $pct . '%）' : '');
+        $s2 = number_format($sv) . $mt['unit'] . ($sk === 'pop65' ? '（' . number_format($sv / max(1, $x['v']) * 100, 1) . '%）'
+              : ($sk !== 'dosha_red' ? '（いまの数の' . $pct . '%）' : ''));
         imagettftext($im, g_card_fit($s1, $FR, 20, 1144 - $rx), 0, $rx, 296, $C['gray'], $FR, $s1);
         imagettftext($im, g_card_fit($s2, $FB, 30, 1144 - $rx), 0, $rx, 336, $C['hi'], $FB, $s2);
     }
@@ -138,14 +144,14 @@ function g_page_skc(string $key, string $metric): void
     $d = $x['d']; $mt = $x['mt']; $rk = $x['rk'];
     $path = 'senkyoku/' . $key . '/' . $metric;
     $rank = $rk && (int)$rk['total'] >= 50 ? '全国' . (int)$rk['total'] . '区中' . (int)$rk['rank'] . '位' : '';
-    $label = $d['name'] . '（' . $d['area'] . '）の' . $mt['label'] . ' ' . number_format($x['v']) . $mt['unit'] . ($rank ? '・' . $rank : '');
+    $label = $d['name'] . '（' . $d['area'] . '）の' . $mt['label'] . ' ' . g_sk_fmt($metric, $x['v']) . $mt['unit'] . ($rank ? '・' . $rank : '');
     g_head($label, $label . '。国と都道府県の公開データを足した数字です。', '/' . $path,
            ['noindex' => true, 'nosuffix' => true, 'image' => g_abs($path . '.png')]);
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('senkyoku') . '">選挙区ダッシュボード</a> › '
        . '<a href="' . g_url('senkyoku/' . $key) . '">' . g_e($d['name']) . '</a> › ' . g_e($mt['label']) . '</nav>'
        . '<p class="kick">地元の数字</p><h1>' . g_e($d['name'] . 'の' . $mt['label']) . '</h1>'
-       . '<p class="lead">' . g_e($d['area']) . '。' . g_e(number_format($x['v']) . $mt['unit']) . ($rank ? '（' . g_e($rank) . '）' : '') . '。</p></section>';
+       . '<p class="lead">' . g_e($d['area']) . '。' . g_e(g_sk_fmt($metric, $x['v']) . $mt['unit']) . ($rank ? '（' . g_e($rank) . '）' : '') . '。</p></section>';
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($path . '.png')) . '" alt="' . g_e($label) . '" '
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
     g_share_buttons($label, $path, 'sk');
@@ -160,8 +166,8 @@ function g_page_skc(string $key, string $metric): void
     $st = g_sk_stats($key);
     echo '<h2>' . g_e($d['name']) . 'のほかの数字</h2><div class="panel"><ul>';
     foreach (g_sk_metrics() as [$k, , $l, $u]) {
-        if ($k === $metric || !isset($st[$k]) || str_ends_with($k, '_gone') || $k === 'dosha_red') { continue; }
-        echo '<li><a href="' . g_url('senkyoku/' . $key . '/' . $k) . '" rel="nofollow">' . g_e($l) . '</a> ' . number_format((int)$st[$k]['value']) . g_e($u) . '</li>';
+        if ($k === $metric || !isset($st[$k]) || str_ends_with($k, '_gone') || in_array($k, ['dosha_red', 'pop65'], true)) { continue; }
+        echo '<li><a href="' . g_url('senkyoku/' . $key . '/' . $k) . '" rel="nofollow">' . g_e($l) . '</a> ' . g_sk_fmt($k, (int)$st[$k]['value']) . g_e($u) . '</li>';
     }
     echo '</ul></div><p class="more"><a class="btn o" href="' . g_url('senkyoku/' . $key) . '">' . g_e($d['name']) . 'の公開データをすべて見る</a></p>';
     g_foot();

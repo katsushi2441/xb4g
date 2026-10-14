@@ -198,6 +198,12 @@ def main():
         'shuroB': office_counts('kshuro', ['就労継続支援B型']),
     }
 
+    # 市区町村ごとの公的な統計（scripts/fetch_muni_stats.py）。人口は区まで・生産緑地と保育は市区町村まで
+    xs = json.load(open(os.path.join(DATA, "muni_extra_stats.json"), encoding="utf-8"))
+    JUM, SEI, HOI = xs["jumin"], xs["seisan"], xs["hoiku"]
+    # コードの表（krefuge の muni_stats）に無い市区町村がある（江東区・葛飾区。避難所のデータが無いため）。名前でも引けるようにする
+    JUM_BY_NAME = {v.get("name"): k for k, v in JUM.items() if v.get("name")}
+
     def muni_keys(pref, m):
         """その市区町村（区つきなら区ごと）の (表示名, 5桁コード or None, 事業所用の city名) の一覧。"""
         if m['wards']:
@@ -219,7 +225,7 @@ def main():
         unk_all += [(key, u) for u in unknown]
         v = voters.get((pref, r['no']), (None, None))
         stats = defaultdict(lambda: {"value": 0, "partial": 0, "detail": []})
-        seen_city = set()
+        seen_city = set(); seen_name = set()
         for m in munis:
             # 事業所系（区で数えられる）
             for disp, code, cty in muni_keys(pref, m):
@@ -231,6 +237,27 @@ def main():
                         stats[k + "_gone"]["detail"].append([disp, gone.get((pref, cty), 0)])
                         if m['partial'] and not m['wards']:
                             stats[k]["partial"] = 1; stats[k + "_gone"]["partial"] = 1
+            # 人口（住民基本台帳）。政令市は区の行があるので区で足す。町丁で割れている市は市全体を partial で
+            for disp, code, cty in muni_keys(pref, m):
+                z = JUM.get(code or "") or JUM.get(JUM_BY_NAME.get(pref + disp, ""))
+                if not z:
+                    continue
+                for k2, col in (('pop', 'pop'), ('pop65', 'pop65'), ('births', 'births'), ('pop_change', 'change')):
+                    stats[k2]["value"] += int(z.get(col) or 0); stats[k2]["detail"].append([disp, int(z.get(col) or 0)])
+                    if m['partial'] and not m['wards']:
+                        stats[k2]["partial"] = 1
+            # 生産緑地と保育は市区町村名で引く（コードの表に無い市区町村も足せる）。市全体を1回・区が入っていれば partial
+            if (pref, m['name']) not in seen_name:
+                seen_name.add((pref, m['name']))
+                part = 1 if (m['wards'] or m['partial']) else 0
+                z = SEI.get(f"{pref}|{m['name']}")
+                if z:
+                    stats['seisan_ryokuchi']["value"] += z['ha10']; stats['seisan_ryokuchi']["partial"] |= part
+                    stats['seisan_ryokuchi']["detail"].append([m['name'], z['ha10'], z['districts']])
+                z = HOI.get(f"{pref}|{m['name']}")
+                if z:
+                    for k2, col in (('hoiku_waiting', 'waiting'), ('hoiku_hidden', 'hidden')):
+                        stats[k2]["value"] += z[col]; stats[k2]["partial"] |= part; stats[k2]["detail"].append([m['name'], z[col]])
             # 市までしか無いデータ（区が入っていれば市全体を1回・partial）
             ccode = city_code.get((pref, m['name']))
             if not ccode or (pref, m['name']) in seen_city: continue
@@ -255,6 +282,10 @@ def main():
                 z = gak[m['name']]
                 stats['gakudo_waiting']["value"] += int(z.get('waiting') or 0); stats['gakudo_waiting']["partial"] |= part
                 stats['gakudo_waiting']["detail"].append([m['name'], int(z.get('waiting') or 0), int(z.get('registered') or 0)])
+        # 高齢化率は足した人数から出す（率を足さない）。表は整数なので 0.1% 単位（312 = 31.2%）
+        if 'pop' in stats and stats['pop']["value"] > 0 and 'pop65' in stats:
+            stats['aging_rate']["value"] = round(stats['pop65']["value"] / stats['pop']["value"] * 1000)
+            stats['aging_rate']["partial"] = stats['pop']["partial"]
         db.execute("INSERT INTO senkyoku VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                    (key, pref, PREF_SLUG[pref], r['no'], f"{SHORT[pref]}{r['no']}区", r['area'], r['note'], v[0], v[1],
                     json.dumps(munis, ensure_ascii=False), json.dumps(unknown, ensure_ascii=False)))
