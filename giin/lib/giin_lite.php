@@ -163,11 +163,17 @@ function g_page_giin_lite(int $id, int $page): void
        . '　<span class="note">会派: ' . g_e($g['kaiha']) . '</span>'
        . ($g['wins'] ? '　<span class="note">当選' . g_e($g['wins']) . '回</span>' : '')
        . (empty($g['current']) ? '　<span class="pill gray">いまの議員名簿にはいません</span>' : '')
-       . '</p><div class="kv">'
-       . '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言</span></div>'
-       . '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>'
-       . '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>'
-       . '</div></section>';
+       . '</p>';
+    // 件数の期間をすぐ下に書く。ページの一番下にしか無く、「高市早苗は質問・討論たった2回」と読まれた（2026-10-16 Xの引用）
+    $kq = '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言</span></div>';
+    $kg = '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>';
+    $kc = '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>';
+    $isgov = g_giin_is_gov($g);
+    echo '<div class="kv">' . ($isgov ? $kg . $kq : $kq . $kg) . $kc . '</div>'
+       . '<p class="note" style="margin:8px 0 0">件数は ' . g_e(g_date((string)g_meta('range_from'))) . '〜'
+       . g_e(g_date((string)($g['last_date'] ?: g_meta('range_from')))) . ' の国会会議録から数えています。それより前の発言は入っていません。'
+       . ($isgov ? 'この期間の多くを大臣・副大臣・政務官（総理大臣を含む）として務めているため、国会での発言の大半は政府の側の答弁で、議員としての質問・討論は少なくなります。' : '')
+       . '</p></section>';
 
     $links = [];
     if (!empty($g['profile'])) { $links[] = '<a href="' . g_e($g['profile']) . '" rel="nofollow noopener" target="_blank">議院の公式プロフィール</a>'; }
@@ -196,6 +202,7 @@ function g_page_giin_lite(int $id, int $page): void
         usort($trs, fn($a, $b) => $b[0]['days'] <=> $a[0]['days'] ?: $b[0]['n'] <=> $a[0]['n']);
         echo '<h2 data-en="Tracker">国会トラッカー：' . g_e($g['plain']) . '議員が取り上げたことがら</h2>'
            . '<div class="panel"><p>ことがらごとに、全国の国会議員の質疑と政府の答弁を会議録から集めています。'
+           . 'ここは上の件数（' . g_e(g_date((string)g_meta('range_from'))) . '〜）と違い、ことがらごとに、それより前の会議録も含めています。'
            . '件数は' . g_e($g['plain']) . '議員の質疑の数と日数、その下が国会全体の規模です。カードを開くと、この議員の質疑だけを並べたページに行けます。</p><div class="grid">';
         foreach (array_slice($trs, 0, 12) as [$tr, $st]) {
             $tm = 'tracker/' . $tr['key'] . '/m/' . sprintf('%08x', crc32((string)$g['name']));

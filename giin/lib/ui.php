@@ -153,7 +153,7 @@ function g_foot(): void
        . '<a class="mk-logo" href="https://exbridge.jp/?ref=giin">'
        . '<img src="https://xb4g.com/images/logo-mark-64.png" alt="" width="40" height="40">'
        . '<span><b>株式会社エクスブリッジ</b><small>名古屋のAIシステム開発会社。'
-       . 'この道具を作っています</small></span></a>'
+       . 'このシステムを作っています</small></span></a>'
        . '<div class="mk-links">'
        // 国会トラッカーのページからは、国会トラッカーの商品へ（別の商品・2026-10-14）
        . (strpos((string)($_SERVER['REQUEST_URI'] ?? ''), '/tracker') !== false
