@@ -22,6 +22,10 @@ function g_qa_cache_dir(): string { return g_card_cache_dir('qa'); }
 /** 発言の立場（scripts/classify.py の kind_of と同じ規則） */
 function g_qa_kind(string $body): string
 {
+    // 本会議での委員長報告は冒頭が「○◯◯君」でも委員長の発言（classify.py の REPORT と同じ）
+    if (preg_match('/(委員会|審査会|調査会)における(審査|調査)の経過/u', mb_substr($body, 0, 250))
+        && mb_strpos(mb_substr($body, 0, 400), '報告') !== false) { return 'chair'; }
+    if (mb_strpos(mb_substr($body, 0, 200), '永年在職議員表彰') !== false) { return 'other'; }
     $head = preg_match('/^[○◯●]\s*([^\s　]{1,40})/u', $body, $m) ? $m[1] : mb_substr($body, 0, 24);
     $rules = [
         'chair' => ['委員長代理', '委員長', '主査代理', '主査', '副議長', '議長', '分科会長'],

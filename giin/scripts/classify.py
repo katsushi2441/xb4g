@@ -30,7 +30,16 @@ RULES = [
 ]
 
 
+# 本会議での委員長報告（「○辻元清美君　ただいま議題となりました…国土交通委員会における審査の経過と結果を御報告…」）。
+# 冒頭は「○辻元清美君」で質疑と同じ形なので、肩書きでは分けられない。本文の書き出しで委員長の発言として数える（2026-10-15）
+REPORT = re.compile(r"(委員会|審査会|調査会)における(審査|調査)の経過")
+
+
 def kind_of(body: str) -> str:
+    if REPORT.search((body or "")[:250]) and "報告" in (body or "")[:400]:
+        return "chair"
+    if "永年在職議員表彰" in (body or "")[:200]:   # 表彰のあいさつは質疑ではない
+        return "other"
     m = re.match(r"^[○◯●]\s*([^\s　]{1,40})", body or "")
     head = m.group(1) if m else (body or "")[:24]
     for kind, words in RULES:
