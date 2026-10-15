@@ -57,11 +57,13 @@ function g_lite_years(int $id): array
 /** カード画像（1200×630）: 名前・院と選挙区・質疑と答弁の件数・年ごとの質疑・直近の質問 */
 function g_giin_png(string $slug): void
 {
-    $f = g_card_cache_dir('giin') . '/' . preg_replace('/[^a-z0-9-]/', '', $slug) . '.png';
-    g_card_serve($f, function () use ($slug) {
-        $g = g_one('SELECT * FROM ' . g_gall() . ' WHERE slug=?', [$slug]);
-        return $g ? g_giin_draw($g) : null;
-    }, g_abs('ogp.png'), 86400);
+    // **作り置きの名前に件数と最後の日付を入れる。** 名前だけで1日使い回していたら、発言を取り込む前に描いた
+    // 「0件」の画像が出続けた（2026-10-15 蓮舫議員。ページは417件なのにカードは0件）。数字が変われば別の画像になる
+    $g = g_one('SELECT * FROM ' . g_gall() . ' WHERE slug=?', [$slug]);
+    if (!$g) { header('Location: ' . g_abs('ogp.png'), true, 302); return; }
+    $ver = 'v3-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+    $f = g_card_cache_dir('giin') . '/' . preg_replace('/[^a-z0-9-]/', '', $slug) . '_' . $ver . '.png';
+    g_card_serve($f, fn() => g_giin_draw($g), g_abs('ogp.png'), 0);
 }
 
 function g_giin_draw(array $g): string
@@ -85,10 +87,13 @@ function g_giin_draw(array $g): string
     for ($y = $y0; $y <= (int)date('Y'); $y++) { $rows[] = [(string)$y, (int)($by[(string)$y]['q'] ?? 0)]; }
     imagettftext($im, 16, 0, 440, 196, $C['gray'], $FR, '年ごとの質疑の件数（最後の年は途中まで）');
     g_card_bars($im, $C, $rows, 440, 204, 704, 200, $C['teal'], $C['tealD']);
-    $last = g_one('SELECT * FROM ' . g_sall() . " WHERE giin_id=? AND kind='q' ORDER BY date DESC, speech_order DESC LIMIT 1", [(int)$g['id']]);
+    // 締めのあいさつ（「ありがとうございました。」）を拾わないよう、中身のある長さの発言から選ぶ（2026-10-15 蓮舫議員のカード）
+    $last = g_one('SELECT * FROM ' . g_sall() . " WHERE giin_id=? AND kind='q' AND LENGTH(body)>=120 ORDER BY date DESC, speech_order DESC LIMIT 1", [(int)$g['id']]);
     if ($last) {
         $q = g_excerpt((string)$last['body']);
         $q = preg_replace('/^○\S+\s*/u', '', $q) ?? $q;
+        // 冒頭のあいさつ（「ありがとうございます。」「御答弁ありがとうございました。」など）は落として本題から
+        $q = preg_replace('/^(?:[^。]{0,12}(?:ありがとうございま(?:す|した)|お願いいたします|お願いします)。\s*)+/u', '', $q) ?? $q;
         imagefilledrectangle($im, 56, 430, 1144, 560, $C['mint2']);
         imagefilledrectangle($im, 56, 430, 62, 560, $C['teal']);
         imagettftext($im, 16, 0, 80, 458, $C['gray'], $FR, '直近の質問（' . g_date((string)$last['date']) . '　' . $last['house'] . ' ' . $last['meeting'] . '）');
