@@ -10,7 +10,7 @@ if (!defined('G_APP')) { define('G_APP', 'giin'); }
 $__cfg = __DIR__ . '/../' . (G_APP === 'tracker' ? 'tracker_config.php' : 'giin_config.php');
 if (is_file($__cfg)) { require $__cfg; }
 if (!defined('G_BASE')) { define('G_BASE', G_APP === 'tracker' ? '' : '/giin'); }
-if (!defined('G_SITE')) { define('G_SITE', G_APP === 'tracker' ? '国会トラッカー' : '愛知の国会議員 発言ログ'); }
+if (!defined('G_SITE')) { define('G_SITE', G_APP === 'tracker' ? '国会トラッカー' : '国会議員 発言ログ'); }
 // 単体の配布物では、設定が無ければ開かれたホストをそのまま使う（当社のドメインを焼き込まない）
 if (!defined('G_HOST')) { define('G_HOST', G_APP === 'tracker'
     ? ((($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'))
@@ -121,9 +121,9 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
           ? '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">国</span><span>' . g_e(G_SITE)
             . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>'
           : '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
-            . '<small>愛知の有権者が選んだ46人が、国会で何を話したか</small></span></a>'
+            . '<small>全国の国会議員が、国会で何を話したか</small></span></a>'
             . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
-            . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）">'
+            . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 玉木雄一郎、年収の壁）">'
             . '<button>探す</button></form>')
        . '<nav class="gnav" aria-label="サイト内">' . $navh . '</nav>'
        . '</div></header><main class="wrap">';
@@ -140,8 +140,9 @@ function g_foot(): void
        . '<p><b>このサイトについて</b>：要約・論評・賛否の判定は行いません。'
        . '機械的な抜粋と一次情報へのリンクだけを並べています。特定の政党・候補者を'
        . '支援する目的のサイトではありません。'
-       . '収録の範囲は「愛知の有権者の一票が当落に効く議員」＝'
-       . '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区です。</p>'
+       . '収録の範囲は、いまの衆議院・参議院の議員全員（711人）です。'
+       . '愛知の有権者の一票が当落に効く46人（衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区ほか）は、'
+       . '本人の発信・ことがら・AIの考察までくわしく載せています。</p>'
        . '<p>収録期間 ' . g_e($f ?: '—') . ' 以降／最終更新 ' . g_e($u ?: '—')
        . '　<a href="' . g_url('about') . '">このサイトについて</a></p>'
 
@@ -170,7 +171,7 @@ function g_foot(): void
        . '当社は「政治活動の事務を安くする」範囲に限って支援します。'
        . '特定の政党・候補者を支援することはありません。'
        . '<b>発言の収録は、収録対象や取引先に左右されません</b>'
-       . '（46人全員を同じ処理で取り込み、同じ規則で分類しています）。'
+       . '（711人全員を同じ処理で取り込み、同じ規則で分類しています）。'
        . 'ただし公式サイトやSNSのリンクは手作業で足しているため、'
        . '<b>いまは' . (int)g_links_count() . '人ぶんしか入っていません。</b>'
        . '<a href="' . g_url('about') . '#links">なぜそうなっているか</a></p>'

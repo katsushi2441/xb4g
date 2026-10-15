@@ -142,6 +142,10 @@ def backfill(con, roster, frm, limit=None, only=None):
                 if g and g["id"] == r["id"]:
                     _put(con, s, r["id"])
                     n += 1
+                    # 100件ごとに確定する。議員1人ぶん（数分）書き込みの錠を持ったままだと、
+                    # 画面の作り直しや X監視など同じDBを読むほかの仕事が「database is locked」で止まる
+                    if n % 100 == 0:
+                        con.commit()
         except Exception as e:  # noqa: BLE001
             print(f"  ! {r['name']} 取得中に失敗: {e}", file=sys.stderr)
             con.commit()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""愛知の国会議員 発言ログ を毎日更新する rqdb4ai ジョブ。
+"""国会議員 発言ログ（xb4g.com/giin/）を毎日更新する rqdb4ai ジョブ。
 
 **なぜ要るか。** この道具は「議員が国会でいつ何を言ったか」を出す。
 更新が止まった瞬間、出している内容が古いまま正しく見えてしまう。
@@ -57,10 +57,12 @@ def _counts():
     con = sqlite3.connect(DB)
     con.execute("PRAGMA busy_timeout=5000")
     g = lambda q: con.execute(q).fetchone()[0]  # noqa: E731
+    # トップの件数は全国（2026-10-15〜 speech_all）。speech は愛知の46人だけのビュー
+    SP = "speech_all" if g("SELECT COUNT(*) FROM sqlite_master WHERE name='speech_all'") else "speech"
     out = {
-        "speech": g("SELECT COUNT(*) FROM speech"),
-        "speech_q": g("SELECT COUNT(*) FROM speech WHERE kind='q'"),
-        "last_speech": g("SELECT MAX(date) FROM speech"),
+        "speech": g(f"SELECT COUNT(*) FROM {SP}"),
+        "speech_q": g(f"SELECT COUNT(*) FROM {SP} WHERE kind='q'"),
+        "last_speech": g(f"SELECT MAX(date) FROM {SP}"),
         "news": g("SELECT COUNT(*) FROM news"),
         "video": g("SELECT COUNT(*) FROM video") if g(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='video'") else 0,

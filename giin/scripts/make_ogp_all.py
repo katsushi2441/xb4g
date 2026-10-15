@@ -98,7 +98,7 @@ def main():
              f"議員としての質疑 {q:,}件を、日付と会議名で引けます。" if q
                  else "この期間、会議録に発言が載っていません。",
              "要約しません。抜粋と会議録へのリンクだけ。",
-             "愛知の国会議員 発言ログ",
+             "国会議員 発言ログ",
              f"xb4g.com/giin/{g['slug']}")
         n += 1
 
@@ -113,7 +113,7 @@ def main():
              "だれが何と言ったか。",
              f"該当する質疑 {c:,}件。だれが何件ふれたかも出します。",
              "語で機械的に集めたもので、賛否の判定はしていません。",
-             "愛知の国会議員 発言ログ",
+             "国会議員 発言ログ",
              f"xb4g.com/giin/theme/{t['slug']}")
         n += 1
 
@@ -131,7 +131,7 @@ def main():
          "だれが論じているか。",
          f"AIに触れた質疑 {ai_q:,}件、{ai_g}人。何日・いくつの会議で持ち出したかで並べます。",
          "件数より「続けて取り上げたか」を見ます。",
-         "愛知の国会議員 発言ログ",
+         "国会議員 発言ログ",
          "xb4g.com/giin/ai")
     n += 1
 
@@ -156,24 +156,26 @@ def main():
              f"質疑は{pq}%。",
              "件数の差は熱心さではなく、与党か野党かという立場で決まります。",
              "このサイトは件数を数えるだけで、良し悪しの判定はしません。",
-             "愛知の国会議員 発言ログ", f"xb4g.com/giin/party/{sl}")
+             "国会議員 発言ログ", f"xb4g.com/giin/party/{sl}")
         n += 1
     card(os.path.join(OUT, "party.png"), "会派ごとの人数と質疑・答弁・議事整理",
          "人数の割合と、", "質疑の割合のずれ。",
          "ずれは立場の差です。与党は答弁と議事整理に回ります。",
          "同じ立場の議員どうしで比べてください。",
-         "愛知の国会議員 発言ログ", "xb4g.com/giin/party")
+         "国会議員 発言ログ", "xb4g.com/giin/party")
     n += 1
 
-    tot = con.execute("SELECT COUNT(*) FROM giin").fetchone()[0]
-    card(os.path.join(OUT, "list.png"), "衆院 愛知1〜16区・比例東海／参院 愛知県選挙区",
-         f"愛知の国会議員 {tot}人を、", "ひとつの表で。",
-         "質疑・答弁・議事整理を分けて数えています。",
-         "党派では選んでいません。", "愛知の国会議員 発言ログ", "xb4g.com/giin/list")
+    # 一覧は全国（2026-10-15〜。giin_all）
+    has_all = con.execute("SELECT COUNT(*) FROM sqlite_master WHERE name='giin_all'").fetchone()[0]
+    tot = con.execute("SELECT COUNT(*) FROM giin_all WHERE current=1" if has_all else "SELECT COUNT(*) FROM giin").fetchone()[0]
+    card(os.path.join(OUT, "list.png"), "衆議院・参議院の議員全員",
+         f"国会議員 {tot}人を、", "都道府県ごとに。",
+         "質疑と答弁を分けて数えています。",
+         "党派では選んでいません。", "国会議員 発言ログ", "xb4g.com/giin/list")
     card(os.path.join(OUT, "theme.png"), "年収の壁・南海トラフ・自動車産業ほか",
          "ことがらから、", "国会の発言を引く。",
          f"{len(themes)}のことがらで、だれが何件ふれたかを並べます。",
-         "要約も論評もしません。", "愛知の国会議員 発言ログ", "xb4g.com/giin/theme")
+         "要約も論評もしません。", "国会議員 発言ログ", "xb4g.com/giin/theme")
     n += 2
 
     print(f"{n}枚  → {OUT}")

@@ -7,7 +7,7 @@
  *
  * **くわしいページ（愛知の46人・g_page_giin）との違い。** 本人の発信（公式サイト・YouTube）、AIの考察、その人だけの語、
  * ことがらの集計は作らない（1人ずつ手で確かめる・ローカルAIを何万回も回すので711人には回らない）。
- * 出すのは、会議録から取った発言（2023年〜）・出た会議・国会トラッカーのことがら・公式プロフィール・本人と確かめたXだけ。
+ * 出すのは、会議録から取った発言（2023年〜）・出た会議・国会トラッカーのことがら・議院の公式プロフィールだけ。
  *
  * 表は giin_all / speech_all（全国）。giin / speech は愛知だけのビューなので、ここでは使わない。
  */
@@ -120,8 +120,7 @@ function g_page_giin_lite(int $id, int $page): void
          'isPartOf' => ['@type' => 'WebSite', 'name' => G_SITE, 'url' => g_abs('')],
          'mainEntity' => array_filter(['@type' => 'Person', 'name' => $g['plain'], 'alternateName' => $g['kana'],
              'jobTitle' => $g['house'] . '議員', 'affiliation' => ['@type' => 'Organization', 'name' => $g['kaiha']],
-             'url' => $g['profile'] ?: null,
-             'sameAs' => !empty($g['x']) ? ['https://x.com/' . $g['x']] : null])],
+             'url' => $g['profile'] ?: null])],
     ]);
     g_head($title, $desc, '/' . $g['slug'], ['jsonld' => $ld, 'image' => g_abs($g['slug'] . '.png'), 'nosuffix' => true]);
 
@@ -142,7 +141,8 @@ function g_page_giin_lite(int $id, int $page): void
 
     $links = [];
     if (!empty($g['profile'])) { $links[] = '<a href="' . g_e($g['profile']) . '" rel="nofollow noopener" target="_blank">議院の公式プロフィール</a>'; }
-    if (!empty($g['x'])) { $links[] = '<a href="https://x.com/' . g_e($g['x']) . '" rel="nofollow noopener" target="_blank">公式X（@' . g_e($g['x']) . '）</a>'; }
+    // X は出さない。このサイトは「本人の公式サイトに載っているリンクだけ」を本人の発信として出す決まり（このサイトについて）。
+    // giin_all.x は X監視の名簿（Wikidata・投稿の照合）由来で、公式サイトで確かめたものではない
     if ($links) { echo '<p>' . implode('　', $links) . '</p>'; }
 
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($g['slug'] . '.png')) . '" alt="' . g_e($g['plain']) . '議員の国会での発言のカード" '

@@ -1,6 +1,6 @@
 <?php
 /**
- * 愛知の国会議員 発言ログ — https://xb4g.com/giin/
+ * 国会議員 発言ログ — https://xb4g.com/giin/（2026-10-15 に全国の議員へ。愛知の46人はくわしいページ）
  *
  * **この道具がしないこと**：要約・論評・賛否の判定・議員の序列づけ。
  * 出すのは「いつ・どの会議で・何と言ったかの機械的な抜粋」と「会議録へのリンク」だけ。
@@ -138,15 +138,17 @@ function g_speech(array $s, string $kw = '', bool $show_name = true): void
 
 function g_page_top(): void
 {
-    $n  = (int)g_val("SELECT COUNT(*) FROM speech WHERE kind='q'");
-    $ng = (int)g_val('SELECT COUNT(*) FROM giin');
-    g_head('', '愛知の有権者が選んだ国会議員46人（衆議院 愛知1〜16区・比例東海・参議院 愛知県選挙区ほか）が、'
+    // 2026-10-15 から全国（giin_all / speech_all）。giin / speech は愛知の46人だけのビュー
+    $GA = function_exists('g_gall') ? g_gall() : 'giin'; $SA = function_exists('g_sall') ? g_sall() : 'speech';
+    $n  = (int)g_val("SELECT COUNT(*) FROM $SA WHERE kind='q'");
+    $ng = (int)g_val("SELECT COUNT(*) FROM $GA WHERE current=1");
+    $na = (int)g_val('SELECT COUNT(*) FROM giin');
+    g_head('', 'いまの衆議院・参議院の国会議員' . $ng . '人が、'
         . '国会で何を質問したかを ' . number_format($n) . '件の質疑から引けます。要約はしません。', '/',
         ['jsonld' => g_jsonld([
             ['@type' => 'WebSite', '@id' => g_abs(''), 'url' => g_abs(''), 'name' => G_SITE,
              'inLanguage' => 'ja',
-             'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
-                 . '国会議員46人が、国会でいつ・どの会議で何を質問したかを引ける道具。',
+             'description' => 'いまの衆議院・参議院の国会議員' . $ng . '人が、国会でいつ・どの会議で何を質問したかを引けるシステム。',
              'publisher' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ',
                              'url' => 'https://xb4g.com/'],
              'potentialAction' => ['@type' => 'SearchAction',
@@ -155,16 +157,15 @@ function g_page_top(): void
                  'query-input' => 'required name=search_term_string']],
             // AI検索に「これは何のデータか」を機械可読で渡す
             ['@type' => 'Dataset', '@id' => g_abs('') . '#dataset',
-             'name' => '愛知の国会議員46人の国会発言',
-             'description' => '衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
-                 . '国会議員46人について、国会会議録から取得した発言 '
-                 . number_format((int)g_val('SELECT COUNT(*) FROM speech')) . '件。'
+             'name' => '国会議員' . $ng . '人の国会発言',
+             'description' => 'いまの衆議院・参議院の国会議員' . $ng . '人について、国会会議録から取得した発言 '
+                 . number_format((int)g_val("SELECT COUNT(*) FROM $SA")) . '件。'
                  . '議員としての質疑・大臣としての答弁・委員長としての議事整理を分けて数えている。'
                  . '要約や論評は含まない。',
              'url' => g_abs(''), 'inLanguage' => 'ja',
              'license' => 'https://www.digital.go.jp/resources/open_data/public_data_license_v1.0',
              'temporalCoverage' => g_meta('range_from') . '/..',
-             'spatialCoverage' => ['@type' => 'Place', 'name' => '愛知県'],
+             'spatialCoverage' => ['@type' => 'Place', 'name' => '日本'],
              'creator' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ',
                            'url' => 'https://xb4g.com/'],
              'isBasedOn' => [
@@ -179,14 +180,15 @@ function g_page_top(): void
     $ntr = count(g_trackers());
     $from = (string)g_meta('range_from');
     echo g_side_open('giin-top');   // 右の列（CM枠と災害系デモ）。閉じるのは g_foot() の直前
-    echo '<section class="hero"><p class="kick">Aichi &times; Diet &middot; Speech Log</p>'
-       . '<h1>愛知の国会議員が、<br>国会で何を話したか</h1>'
-       . '<p class="lead">衆議院 愛知1〜16区・比例東海ブロック・参議院 愛知県選挙区の'
+    echo '<section class="hero"><p class="kick">Diet &middot; Speech Log</p>'
+       . '<h1>国会議員が、<br>国会で何を話したか</h1>'
+       . '<p class="lead">いまの衆議院・参議院の議員'
        . '<b>' . $ng . '人</b>について、'
        . '<b>' . number_format($n) . '件</b>の質疑を、日付と会議名と一次情報リンクつきで並べています。'
-       . '党派では選んでいません。要約も論評もしません。</p>'
+       . '党派では選んでいません。要約も論評もしません。'
+       . '愛知の有権者の一票が当落に効く' . $na . '人は、本人の発信・ことがら・AIの考察までくわしく載せています。</p>'
        . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
-       . 'placeholder="議員名、またはことばで探す（例: 福田徹、年収の壁）"><button>探す</button></form>'
+       . 'placeholder="議員名、またはことばで探す（例: 玉木雄一郎、年収の壁）"><button>探す</button></form>'
        . '<div class="facts">'
        . '<div class="f"><b>' . $ng . '<i>人</i></b><span>収録している国会議員</span></div>'
        . '<div class="f"><b>' . number_format($n) . '<i>件</i></b><span>議員としての質疑</span></div>'
@@ -205,7 +207,8 @@ function g_page_top(): void
     if ($hot) {
         echo '<h2 data-en="Now">いま動いていることがら</h2>'
            . '<p class="note">国会に出された議案と、省庁の報道発表から、'
-           . 'ことがらの語で機械的に拾ったものです。当サイトが選んだ話題ではありません。</p>';
+           . 'ことがらの語で機械的に拾ったものです。当サイトが選んだ話題ではありません。'
+           . '「よく質問しているのは」は愛知の' . $na . '人の中での件数です。</p>';
         foreach ($hot as $t) {
             echo '<div class="panel">'
                . '<h3 style="margin:0 0 6px;font-size:16px">'
@@ -232,7 +235,7 @@ function g_page_top(): void
     $ai_n = (int)g_val("SELECT COUNT(DISTINCT s.giin_id) FROM speech s
         JOIN speech_theme st ON st.speech_id=s.speech_id AND st.theme='ai' WHERE s.kind='q'");
     if ($ai_q > 0) {
-        echo '<h2 data-en="Feature">特集：AIを国会でどう論じているか</h2>'
+        echo '<h2 data-en="Feature">特集：愛知の国会議員はAIを国会でどう論じているか</h2>'
            . '<div class="panel"><p>AIに触れた質疑は<b>' . number_format($ai_q) . '件</b>、'
            . '持ち出した議員は<b>' . $ai_n . '人</b>です。'
            . 'いちばん多く一緒に語られているのは<b>学校と教育</b>で、'
@@ -248,7 +251,7 @@ function g_page_top(): void
     }
     if ($trs) {
         echo '<h2 data-en="Tracker">国会トラッカー：法整備はどこまで来たか</h2>'
-           . '<div class="panel"><p>これらのことがらだけは、愛知の46人に限らず<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
+           . '<div class="panel"><p>ことがらごとに、<b>全国の国会議員の質疑と政府の答弁</b>を会議録から集め、'
            . 'だれが取り上げ、政府が何と答えてきたかを日付順に並べています。</p><div class="grid">';
         foreach ($trs as [$tr, $st]) {
             echo '<a class="card" href="' . g_url('tracker/' . $tr['key']) . '">'
@@ -259,7 +262,8 @@ function g_page_top(): void
         echo '</div><p class="more"><a class="btn o" href="' . g_url('tracker') . '">国会トラッカーの一覧</a></p></div>';
     }
 
-    echo '<h2 data-en="Topics">ことがらから探す</h2><div class="grid">';
+    echo '<h2 data-en="Topics">ことがらから探す（愛知の' . $na . '人）</h2>'
+       . '<p class="note">年収の壁・南海トラフ・自動車産業など、愛知の議員がよく取り上げることがらで、愛知の' . $na . '人の質疑を数えています。全国の質疑は上の国会トラッカーで追っています。</p><div class="grid">';
     foreach (g_themes() as $t) {
         $c = g_theme_n($t['slug']);
         echo '<a class="card" href="' . g_url('theme/' . $t['slug']) . '">'
@@ -269,11 +273,11 @@ function g_page_top(): void
     echo '</div>';
 
     echo '<h2 data-en="Latest">最近の発言</h2>';
-    foreach (g_all('SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id'
+    foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM $SA s JOIN $GA g ON g.id=s.giin_id"
                  . " WHERE s.kind='q' ORDER BY s.date DESC, s.speech_order DESC LIMIT 10") as $s) { g_speech($s); }
     echo '<p class="more"><a class="btn o" href="' . g_url('search') . '">もっと探す</a></p>';
 
-    echo '<h2 data-en="Parties">会派から見る</h2>'
+    echo '<h2 data-en="Parties">会派から見る（愛知の' . $na . '人）</h2>'
        . '<p class="note">人数の割合と質疑の割合のずれが分かります。'
        . '<b>ずれは熱心さではなく、与党か野党かという立場で決まります。</b></p><div class="grid">';
     $tot = (int)g_val('SELECT COUNT(*) FROM giin');
@@ -288,7 +292,9 @@ function g_page_top(): void
     }
     echo '</div><p class="more"><a class="btn o" href="' . g_url('party') . '">会派の一覧を見る</a></p>';
 
-    echo '<h2 data-en="Members">議員から探す</h2>';
+    echo '<h2 data-en="Members">議員から探す</h2>'
+       . '<p>全国の' . $ng . '人は<a href="' . g_url('list') . '">議員一覧</a>から、都道府県・比例ブロックごとに引けます。'
+       . '名前でも上の検索窓から探せます。下は、くわしく載せている愛知の' . $na . '人です。</p>';
     g_giin_grid();
     echo '<p class="note">' . g_e(g_meta('range_from')) . ' 以降の発言を収録しています。'
        . '発言が0件の議員は、この期間に会議録へ発言が載っていない方です。</p>';
@@ -742,25 +748,32 @@ function g_page_search(int $page): void
     $per = 20; $off = ($page - 1) * $per;
 
     $kind = g_kind();
+    // 2026-10-15 から全国の議員（giin_all / speech_all）。本文の LIKE は全件を読むので、立場ごとの件数は1回でまとめて数える
+    $GA = function_exists('g_gall') ? g_gall() : 'giin'; $SA = function_exists('g_sall') ? g_sall() : 'speech';
     $where = ['s.kind = ?']; $args = [$kind];
-    if ($q !== '')     { $where[] = 's.body LIKE ?'; $args[] = '%' . $q . '%'; }
-    if ($party !== '') { $where[] = 'g.party = ?';   $args[] = $party; }
+    $cw = []; $cargs = [];
+    if ($q !== '')     { $where[] = 's.body LIKE ?'; $args[] = '%' . $q . '%'; $cw[] = 's.body LIKE ?'; $cargs[] = '%' . $q . '%'; }
+    if ($party !== '') { $where[] = 'g.party = ?';   $args[] = $party; $cw[] = 'g.party = ?'; $cargs[] = $party; }
     $w = implode(' AND ', $where);
-
-    $total = $q === '' && $party === '' ? 0
-        : (int)g_val("SELECT COUNT(*) FROM speech s JOIN giin g ON g.id=s.giin_id WHERE $w", $args);
+    $counts = array_fill_keys(array_keys(G_KINDS), 0);
+    if ($q !== '' || $party !== '') {
+        foreach (g_all("SELECT s.kind, COUNT(*) c FROM $SA s JOIN $GA g ON g.id=s.giin_id WHERE " . implode(' AND ', $cw) . ' GROUP BY s.kind', $cargs) as $r) {
+            if (isset($counts[$r['kind']])) { $counts[$r['kind']] = (int)$r['c']; }
+        }
+    }
+    $total = $counts[$kind] ?? 0;
 
     // 議員名でも探せる。漢字・かな・一部・ローマ字slug（空白は無視）
     $nq = preg_replace('/[\s　]+/u', '', $q);
-    $members = $nq === '' ? [] : g_all("SELECT plain, slug, party, house, district, n_q FROM giin
+    $members = $nq === '' ? [] : g_all("SELECT plain, slug, party, house, district, n_q FROM $GA
         WHERE REPLACE(REPLACE(plain,'　',''),' ','') LIKE ? OR REPLACE(REPLACE(display,'　',''),' ','') LIKE ?
            OR REPLACE(REPLACE(kana,'　',''),' ','') LIKE ? OR slug LIKE ?
         ORDER BY n_q DESC LIMIT 12", ['%' . $nq . '%', '%' . $nq . '%', '%' . $nq . '%', '%' . strtolower($nq) . '%']);
 
     g_head($q !== '' ? '「' . $q . '」の発言' : '議員名、またはことばで探す',
-        $q !== '' ? '愛知の国会議員46人の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
+        $q !== '' ? '国会議員の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
                   . ($members ? '名前に一致する議員は' . count($members) . '人です。' : '')
-                  : '愛知の国会議員46人を名前で、国会発言をことばで検索できます。', '/search',
+                  : '国会議員を名前で、国会発言をことばで検索できます。', '/search',
         ['q' => $q, 'noindex' => $q === '']);
 
     echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
@@ -769,14 +782,14 @@ function g_page_search(int $page): void
         foreach ($members as $m) {
             echo '<a class="card" href="' . g_url($m['slug']) . '"><div class="nm">' . g_e($m['plain'])
                . ' <span class="pill">' . g_e($m['party']) . '</span></div>'
-               . '<div class="n">' . g_e($m['house']) . ' ' . g_e(g_ku($m['district'])) . '　質疑 ' . number_format((int)$m['n_q']) . '件</div></a>';
+               . '<div class="n">' . g_e($m['house']) . ' ' . g_e(function_exists('g_ku_all') ? g_ku_all((string)$m['house'], (string)$m['district']) : g_ku($m['district'])) . '　質疑 ' . number_format((int)$m['n_q']) . '件</div></a>';
         }
         echo '</div>';
     }
 
     // 会派でしぼる
     echo '<p class="lead">';
-    $ps = g_all('SELECT party, COUNT(*) c FROM giin GROUP BY party ORDER BY c DESC');
+    $ps = g_all("SELECT party, COUNT(*) c FROM $GA GROUP BY party ORDER BY c DESC");
     $base = g_url('search') . '?q=' . rawurlencode($q) . '&k=' . $kind;
     echo '<a class="pill' . ($party === '' ? '' : ' gray') . '" href="' . g_e($base) . '">すべて</a> ';
     foreach ($ps as $p) {
@@ -787,7 +800,7 @@ function g_page_search(int $page): void
 
     if ($q === '' && $party === '') {
         echo '<div class="panel"><p>上の窓に<b>議員の名前</b>か<b>ことば</b>を入れてください。'
-           . '例：<a href="' . g_url('search') . '?q=' . rawurlencode('福田徹') . '">福田徹</a>、'
+           . '例：<a href="' . g_url('search') . '?q=' . rawurlencode('玉木雄一郎') . '">玉木雄一郎</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('南海トラフ') . '">南海トラフ</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('年収の壁') . '">年収の壁</a>、'
            . '<a href="' . g_url('search') . '?q=' . rawurlencode('リニア') . '">リニア</a></p>'
@@ -797,25 +810,17 @@ function g_page_search(int $page): void
         g_foot(); return;
     }
 
-    $counts = [];
-    foreach (array_keys(G_KINDS) as $k) {
-        $a = [$k]; $ws = ['s.kind = ?'];
-        if ($q !== '')     { $ws[] = 's.body LIKE ?'; $a[] = '%' . $q . '%'; }
-        if ($party !== '') { $ws[] = 'g.party = ?';   $a[] = $party; }
-        $counts[$k] = (int)g_val('SELECT COUNT(*) FROM speech s JOIN giin g ON g.id=s.giin_id WHERE '
-                                 . implode(' AND ', $ws), $a);
-    }
     g_kind_tabs($kind, $counts, g_url('search') . '?q=' . rawurlencode($q)
                 . ($party !== '' ? '&party=' . rawurlencode($party) : ''));
     echo '<h2>「' . g_e($q) . '」をふくむ発言</h2><p class="lead">該当 <b>' . number_format($total) . '件</b></p>';
-    // 検索語が全国トラッカーの語なら、愛知の46人の外へも案内する
+    // 検索語が国会トラッカーの語なら、2010年代からの全国の質疑と答弁へも案内する（議員発言ログは2023年〜）
     $tr = G_HAS_TRACKER ? g_tracker_for_query($q) : null;
     if ($tr && g_tracker_stats($tr['key'])) {
         echo '<div class="panel note">「' . g_e($q) . '」は<a href="' . g_url('tracker/' . $tr['key']) . '">国会トラッカー：'
-           . g_e($tr['name']) . '</a>で、愛知の46人に限らず全国の国会議員の質疑と政府の答弁を追っています。</div>';
+           . g_e($tr['name']) . '</a>で、いまの議員に限らず、以前の議員の質疑と政府の答弁までさかのぼって追っています。</div>';
     }
     $lArgs = $args; $lArgs[] = $per; $lArgs[] = $off;
-    foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM speech s JOIN giin g ON g.id=s.giin_id
+    foreach (g_all("SELECT s.*,g.plain,g.slug,g.party FROM $SA s JOIN $GA g ON g.id=s.giin_id
                     WHERE $w ORDER BY s.date DESC LIMIT ? OFFSET ?", $lArgs) as $s) {
         g_speech($s, $q);
     }
@@ -829,40 +834,74 @@ function g_page_search(int $page): void
 
 function g_page_list(): void
 {
-    $n = (int)g_val('SELECT COUNT(*) FROM giin');
-    $gsAll = g_all('SELECT plain,slug FROM giin ORDER BY id');
-    g_head('議員一覧', '愛知の有権者が選んだ国会議員' . $n . '人（衆議院 愛知1〜16区・比例東海・'
-        . '参議院 愛知県選挙区）の一覧です。', '/list',
+    // 2026-10-15 から全国の議員（giin_all）。都道府県ごと（衆議院の小選挙区＋参議院の選挙区）→ 衆議院の比例ブロック → 参議院の比例
+    $GA = function_exists('g_gall') ? g_gall() : 'giin';
+    $rows = g_all("SELECT * FROM $GA WHERE " . ($GA === 'giin_all' ? 'current=1' : '1') . ' ORDER BY id');
+    $n = count($rows);
+    $PREF = ['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井',
+             '山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山','鳥取','島根','岡山','広島','山口','徳島',
+             '香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'];
+    $BLOCK = ['北海道','東北','北関東','南関東','東京','北陸信越','東海','近畿','中国','四国','九州'];
+    $byPref = []; $byBlock = []; $sanHirei = [];
+    foreach ($rows as $g) {
+        $d = (string)$g['district'];
+        if ($g['house'] === '衆議院' && preg_match('/^(\D+?)(\d+)$/u', $d, $m)) { $byPref[$m[1]][] = $g + ['_o' => (int)$m[2]]; }
+        elseif ($g['house'] === '衆議院' && preg_match('/^（比）(.+)$/u', $d, $m)) { $byBlock[$m[1]][] = $g; }
+        elseif ($g['house'] === '参議院' && $d === '比例') { $sanHirei[] = $g; }
+        else {   // 参議院の選挙区（合区は「鳥取・島根」「徳島・高知」→ 前の県に入れる）
+            $p0 = explode('・', $d)[0];
+            $byPref[$p0][] = $g + ['_o' => 100];
+        }
+    }
+    g_head('国会議員一覧（衆議院・参議院 ' . $n . '人）', 'いまの衆議院・参議院の国会議員' . $n . '人を、都道府県・比例ブロックごとに並べました。'
+        . '名前から、その議員が国会で何を質問したかを日付と会議名で引けます。', '/list',
         ['image' => g_abs('img/og/list.png'), 'jsonld' => g_jsonld([
             g_crumbs([['ホーム', '/'], ['議員一覧', '/list']]),
-            ['@type' => 'ItemList', 'name' => '愛知の国会議員 ' . $n . '人',
-             'numberOfItems' => $n,
-             'itemListElement' => array_map(
-                 fn($i, $g) => ['@type' => 'ListItem', 'position' => $i + 1,
-                                'name' => $g['plain'], 'url' => g_abs($g['slug'])],
-                 array_keys($gsAll), $gsAll)],
+            ['@type' => 'ItemList', 'name' => '国会議員 ' . $n . '人', 'numberOfItems' => $n],
         ])]);
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › 議員一覧</nav>';
-    echo '<h1>愛知の国会議員 ' . $n . '人</h1>'
-       . '<p class="lead">衆議院 愛知1〜16区、衆議院 比例東海ブロック、参議院 愛知県選挙区。'
-       . '党派では選んでいません。</p>';
-    g_giin_grid();
-
-    echo '<h2>選挙区でみる</h2><div class="scroll"><table>'
-       . '<tr><th>選挙区</th><th>議員</th><th>会派</th><th class="n">質疑</th>'
-       . '<th class="n">答弁</th><th class="n">議事整理</th></tr>';
-    foreach (g_all("SELECT * FROM giin ORDER BY
-                    CASE WHEN district LIKE '愛知%' AND district GLOB '愛知[0-9]*' THEN 1
-                         WHEN district LIKE '%東海%' THEN 2 ELSE 3 END,
-                    CAST(REPLACE(district,'愛知','') AS INTEGER), display") as $g) {
-        echo '<tr><td>' . g_e(g_ku($g['district'])) . '</td>'
-           . '<td><a href="' . g_url($g['slug']) . '">' . g_e($g['display']) . '</a></td>'
-           . '<td><span class="pill">' . g_e($g['party']) . '</span></td>'
-           . '<td class="n">' . number_format((int)$g['n_q']) . '</td>'
-           . '<td class="n">' . number_format((int)$g['n_gov']) . '</td>'
-           . '<td class="n">' . number_format((int)$g['n_chair']) . '</td></tr>';
+    echo '<h1>国会議員 ' . $n . '人</h1>'
+       . '<p class="lead">いまの衆議院・参議院の議員全員です。党派では選んでいません。'
+       . '数字は' . g_e(g_date((string)g_meta('range_from'))) . '以降の、議員としての質疑と、大臣などとしての答弁の件数です。'
+       . '<span class="pill">愛知</span>の印の議員は、本人の発信やことがらまでくわしく載せています。</p>';
+    $chips = [];
+    foreach ($PREF as $p) { if (!empty($byPref[$p])) { $chips[] = '<a href="#p-' . rawurlencode($p) . '">' . g_e($p) . '</a>'; } }
+    echo '<div class="panel"><p style="margin:0;line-height:2.1">' . implode('　', $chips)
+       . '　<a href="#hirei-shu">衆議院 比例</a>　<a href="#hirei-san">参議院 比例</a></p></div>';
+    $table = function (array $gs, bool $showKu) {
+        echo '<div class="scroll"><table><tr>' . ($showKu ? '<th>選挙区</th>' : '') . '<th>議員</th><th>会派</th>'
+           . '<th class="n">質疑</th><th class="n">答弁</th></tr>';
+        foreach ($gs as $g) {
+            $ku = function_exists('g_ku_all') ? g_ku_all((string)$g['house'], (string)$g['district']) : (string)$g['district'];
+            echo '<tr>' . ($showKu ? '<td>' . g_e(($g['house'] === '参議院' ? '参 ' : '') . $ku) . '</td>' : '')
+               . '<td><a href="' . g_url($g['slug']) . '">' . g_e($g['plain']) . '</a>'
+               . (!empty($g['detail']) ? ' <span class="pill">愛知</span>' : '') . '</td>'
+               . '<td><span class="note">' . g_e($g['party']) . '</span></td>'
+               . '<td class="n">' . number_format((int)$g['n_q']) . '</td>'
+               . '<td class="n">' . number_format((int)$g['n_gov']) . '</td></tr>';
+        }
+        echo '</table></div>';
+    };
+    foreach ($PREF as $p) {
+        if (empty($byPref[$p])) { continue; }
+        $gs = $byPref[$p];
+        usort($gs, fn($a, $b) => [$a['house'] !== '衆議院', $a['_o'], $a['kana']] <=> [$b['house'] !== '衆議院', $b['_o'], $b['kana']]);
+        echo '<h2 id="p-' . g_e($p) . '">' . g_e($p) . '（' . count($gs) . '人）</h2>';
+        $table($gs, true);
     }
-    echo '</table></div>';
+    echo '<h2 id="hirei-shu">衆議院 比例代表</h2>';
+    foreach ($BLOCK as $bk) {
+        if (empty($byBlock[$bk])) { continue; }
+        $gs = $byBlock[$bk];
+        usort($gs, fn($a, $b) => [$a['party'], $a['kana']] <=> [$b['party'], $b['kana']]);
+        echo '<h3>' . g_e($bk) . 'ブロック（' . count($gs) . '人）</h3>';
+        $table($gs, false);
+    }
+    echo '<h2 id="hirei-san">参議院 比例代表（' . count($sanHirei) . '人）</h2>';
+    usort($sanHirei, fn($a, $b) => [$a['party'], $a['kana']] <=> [$b['party'], $b['kana']]);
+    $table($sanHirei, false);
+    echo '<p class="note">名簿：衆議院 会派別議員一覧／参議院議員情報（smartnews-smri/house-of-councillors, MIT）。'
+       . '発言：国立国会図書館 国会会議録検索システム。発言が0件の議員は、この期間に会議録へ発言が載っていない方か、まだ取り込みの途中の方です。</p>';
     g_foot();
 }
 
@@ -1078,13 +1117,12 @@ function g_page_about(): void
 {
     $faq = [
         ['このサイトは何をするものですか？',
-         '愛知の国会議員が、国会でいつ・どの会議で何を質問したかを引くための道具です。'
+         '国会議員が、国会でいつ・どの会議で何を質問したかを引くためのシステムです。'
          . '発言の抜粋と、国会会議録へのリンクを並べています。要約や論評はしません。'],
         ['だれを収録していますか？',
-         '愛知の有権者の一票が当落に効く議員を収録しています。衆議院 愛知1区〜16区、'
-         . '衆議院 比例代表 東海ブロック、参議院 愛知県選挙区の45人に、'
-         . '参議院 比例代表のうち愛知の地方議会の議員を務めた1人を加えた46人です。'
-         . '参議院の比例代表は全国共通なので、愛知の地方議員を務めた人のほかは入れていません。党派では選んでいません。'],
+         'いまの衆議院・参議院の議員全員（' . (int)g_val("SELECT COUNT(*) FROM " . (function_exists('g_gall') ? g_gall() . ' WHERE current=1' : 'giin')) . '人）を収録しています。党派では選んでいません。'
+         . 'このうち愛知の有権者の一票が当落に効く46人（衆議院 愛知1区〜16区・比例代表 東海ブロック・参議院 愛知県選挙区と、'
+         . '参議院 比例代表のうち愛知の地方議会の議員を務めた1人）は、本人の発信・ことがら・活動の要約までくわしく載せています。'],
         ['発言の件数はどう数えていますか？',
          '議員として質問・討論した発言だけを既定で数えています。委員長としての議事整理'
          . '（「次に、○○君。」）や、大臣・副大臣としての答弁は別に数えています。'
@@ -1101,8 +1139,9 @@ function g_page_about(): void
          . '載せません。なりすましのアカウントを本人のものとして出さないためです。'
          . 'どこで確認したかは各ページに書いています。'],
         ['なぜ議員によってページの中身に差があるのですか？',
-         '発言の収録は46人全員が同じです。同じAPIから同じ処理で取り込み、同じ規則で'
-         . '分類しています。差が出ているのは公式サイト・SNSのリンクで、これは人が1人ずつ'
+         '発言の収録は全員が同じです。同じAPIから同じ処理で取り込み、同じ規則で'
+         . '分類しています。愛知の46人だけは、本人の発信・ことがら・活動の要約までくわしく載せています（作った会社が名古屋にあり、地元から始めたためです）。'
+         . 'その46人の中でも差が出ているのは公式サイト・SNSのリンクで、これは人が1人ずつ'
          . '調べて確認する手作業のため、まだ全員ぶん揃っていません。'
          . '取引の有無で選んだものではありませんが、偏っているのは事実です。'
          . '質疑の件数が多い順に埋めていきます。'],
@@ -1110,7 +1149,7 @@ function g_page_about(): void
          '使っていません。発言の立場の分類も、ことがらへの割り当ても、'
          . '決めた語による機械的な判定です。要約も論評も生成していません。'],
         ['特定の政党を応援するサイトですか？',
-         'いいえ。党派を問わず、愛知の有権者が投票できる国会議員を全員収録しています。'
+         'いいえ。党派を問わず、いまの国会議員を全員収録しています。'
          . '選挙運動を目的としたサイトではありません。'],
     ];
     g_head('このサイトについて', '収録の範囲・出典・しないことを書いています。', '/about',
@@ -1123,7 +1162,7 @@ function g_page_about(): void
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › このサイトについて</nav>';
     echo '<h1>このサイトについて</h1><div class="panel">'
        . '<h2 style="margin-top:0">何をするサイトか</h2>'
-       . '<p>愛知の国会議員が、国会でいつ・どの会議で・何と言ったかを引くための道具です。'
+       . '<p>国会議員が、国会でいつ・どの会議で・何と言ったかを引くためのシステムです。'
        . '発言の抜粋と、会議録へのリンクを並べています。</p>'
 
        . '<h2>しないこと</h2><ul>'
@@ -1147,17 +1186,15 @@ function g_page_about(): void
        . '機械的に判定しています。AIは使っていません。</p>'
 
        . '<h2>だれを収録しているか</h2>'
-       . '<p><b>愛知の有権者の一票が当落に効く議員</b>を収録しています。</p><ul>'
+       . '<p><b>いまの衆議院・参議院の議員全員</b>を収録しています（2026年10月15日から。それまでは愛知の46人だけでした）。'
+       . '発言は国会会議録から同じ処理で取り込み、同じ規則で分類しています。</p>'
+       . '<p>このうち<b>愛知の有権者の一票が当落に効く46人</b>は、本人の発信・ことがら・活動の要約までくわしく載せています。</p><ul>'
        . '<li>衆議院 愛知1区〜16区</li>'
        . '<li>衆議院 比例代表 東海ブロック</li>'
-       . '<li>参議院 愛知県選挙区</li></ul>'
-       . '<p>参議院の比例代表は全国共通なので入れていません。'
-       . 'この線引きなら党派や住所で人を選り分ける必要がなく、'
-       . '「なぜこの人が入っていて、あの人が入っていないのか」に一言で答えられます。</p>'
-       . '<p class="note">衆議院の比例代表は政党名で投票する仕組みなので、'
-       . '比例東海の議員の名前を投票用紙に書くわけではありません。'
-       . 'それでも愛知の有権者が投じた票が東海ブロックの議席配分に効くので、'
-       . '「一票が当落に効く議員」として収録しています。</p>'
+       . '<li>参議院 愛知県選挙区</li>'
+       . '<li>参議院 比例代表のうち、愛知の地方議会の議員を務めた人</li></ul>'
+       . '<p class="note">くわしいページを愛知から始めたのは、作っている会社が名古屋にあるためです。'
+       . 'ほかの議員のページには、発言・出た会議・国会トラッカーのことがら・議院の公式プロフィールを載せています。</p>'
        . '<p class="note">現職のみを収録しています。選挙の候補者は扱いません。</p>'
 
        . '<h2>「最近の動き」について</h2>'
@@ -1184,7 +1221,7 @@ function g_page_about(): void
 
        . '<h2 id="links">本人の発信について</h2>'
        . '<div class="alert"><b>いま、ここは全員ぶん揃っていません。</b><br>'
-       . '公式サイト・X・YouTube のリンクが入っているのは、46人中 '
+       . '公式サイト・X・YouTube のリンクが入っているのは、くわしく載せている愛知の46人のうち '
        . '<b>' . (int)g_links_count() . '人</b>です。'
        . '公式サイトのURLを人が1人ずつ調べて確認する作業なので、必ず誰かが最初になります。'
        . '最初の1人は、この機能を作るときの見本にした議員です。'
@@ -1250,7 +1287,7 @@ function g_page_about(): void
        . '特定の政党・候補者を支援することはありません。</p>'
        . '<p class="note">念のため書いておきます。'
        . '<b>収録する議員を党派で選んでいませんし、取引の有無でも選んでいません。</b>'
-       . '収録の線引きは「愛知の有権者の一票が当落に効く議員」という機械的なもの一本で、'
+       . '収録の線引きは「いまの国会議員全員」という機械的なもの一本で、'
        . '誰かと取引があってもなくても、<b>発言の件数も中身も変わりません</b>。'
        . 'もし「うちの発言を消してほしい」「もっと目立たせてほしい」と言われても、'
        . 'お金の有無にかかわらずお断りします（明らかな誤りの訂正は別です）。</p>'

@@ -32,7 +32,7 @@ f_h2 = ImageFont.truetype(FB, 46)
 f_s = ImageFont.truetype(FR, 27)
 f_brand = ImageFont.truetype(FM, 29)
 
-badge = "衆院 愛知1〜16区・比例東海／参院 愛知県選挙区"
+badge = "衆議院・参議院の議員全員"
 bw = dr.textlength(badge, font=f_badge) + 40
 dr.rounded_rectangle([cx - bw / 2, 92, cx + bw / 2, 140], radius=24, fill="#e6f4f2", outline="#bfe3de")
 dr.text((cx, 116), badge, font=f_badge, fill="#0a726b", anchor="mm")
@@ -40,11 +40,11 @@ dr.text((cx, 116), badge, font=f_badge, fill="#0a726b", anchor="mm")
 dr.text((cx, 218), "その議員は国会で、", font=f_h, fill="#12202f", anchor="mm")
 dr.text((cx, 296), "何と言いましたか。", font=f_h2, fill="#0a9a8f", anchor="mm")
 
-dr.text((cx, 370), "愛知の有権者が選んだ46人の発言を、日付と会議名で引く。", font=f_s, fill="#5d6b7a", anchor="mm")
+dr.text((cx, 370), "国会議員の発言を、日付と会議名で引く。", font=f_s, fill="#5d6b7a", anchor="mm")
 dr.text((cx, 410), "要約しません。抜粋と会議録へのリンクだけ。", font=f_s, fill="#5d6b7a", anchor="mm")
 
 dr.rounded_rectangle([cx - 240, 468, cx + 240, 528], radius=16, fill="#0a9a8f")
-dr.text((cx, 498), "愛知の国会議員 発言ログ", font=f_brand, fill="#ffffff", anchor="mm")
+dr.text((cx, 498), "国会議員 発言ログ", font=f_brand, fill="#ffffff", anchor="mm")
 
 if mascot:
     img.paste(mascot, (W - mascot.width - 40, H - mascot.height - 30), mascot)
