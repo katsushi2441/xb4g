@@ -96,6 +96,15 @@ def main() -> int:
         local = os.path.join(ROOT, rel)
         remote_dir, name = os.path.split(rel)
         _ensure(f, remote_dir)
+        if name == "giin.sqlite":
+            # 書きかけを画面に見せないよう、別名で送ってから入れ替える（scripts/ftp_db.py）
+            sys.path.insert(0, os.path.join(ROOT, "scripts"))
+            from ftp_db import upload_db
+            size = upload_db(f, local, REMOTE + "/" + remote_dir)
+            sent += 1
+            total += size
+            print(f"  {rel}  {size/1024:.0f}KB（入れ替え）")
+            continue
         with open(local, "rb") as fp:
             f.storbinary("STOR " + name, fp, blocksize=65536)
         size = os.path.getsize(local)

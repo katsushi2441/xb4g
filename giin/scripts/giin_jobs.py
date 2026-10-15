@@ -83,15 +83,11 @@ def _upload():
     if not (host and user and pw):
         return False, "FTPの資格情報が環境にない（aixec/.env を読んでいるか）"
     try:
+        sys.path.insert(0, SCRIPTS)
+        from ftp_db import upload_db   # 書きかけを画面に見せないよう、別名で送ってから入れ替える
         f = ftplib.FTP(host, timeout=300)
         f.login(user, pw)
-        f.cwd(REMOTE_DIR)
-        with open(DB, "rb") as fp:
-            f.storbinary("STOR giin.sqlite", fp, blocksize=65536)
-        try:
-            f.sendcmd("SITE CHMOD 666 giin.sqlite")
-        except Exception:  # noqa: BLE001
-            pass
+        upload_db(f, DB, REMOTE_DIR)
         f.quit()
         return True, ""
     except Exception as e:  # noqa: BLE001
