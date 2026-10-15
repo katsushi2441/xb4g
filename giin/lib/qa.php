@@ -138,7 +138,9 @@ function g_qa_pair(string $key, string $sid): ?array
                     LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id WHERE t.tracker=? AND t.meeting_url=? AND t.kind='q' AND t.speech_order BETWEEN ? AND ?
                     ORDER BY t.speech_order DESC LIMIT 1",
                    [$key, $s['meeting_url'], (int)$s['speech_order'] - 3, (int)$s['speech_order'] - 1]);
-        return $q ? ['q' => $q, 'a' => g_qa_answer($q)] : ['q' => null, 'a' => $s];
+        // 指定されたのは答弁そのもの。質問の「直後の答弁」を探し直すと、局長→大臣のように答弁が続いたとき
+        // 1つ目（局長）が出てしまう（2026-10-16 高額療養費・上野大臣の答弁のカードに局長の答弁が出た）
+        return ['q' => $q ?: null, 'a' => $s];
     }
     if ($s['kind'] !== 'q') { return null; }
     $a = g_qa_answer($s);
