@@ -23,6 +23,7 @@ import re
 import secrets
 import sqlite3
 import sys
+import urllib.parse
 import zlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -166,11 +167,22 @@ h2{font-size:19px;margin:30px 0 8px}.lead{font-size:15.5px}.note{color:var(--sub
 .a{border-left-color:#1f3a5f;background:#f2f5f9}.who{font-weight:800;font-size:13px;color:var(--sub);display:block}
 .x{background:#f7f7f7;border:1px dashed #c9d3dc;border-radius:10px;padding:8px 12px;font-size:14px;margin-top:10px;white-space:pre-wrap}
 .src a{color:var(--tealD)}
+.xb{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}.bx,.bc{display:inline-block;border-radius:999px;padding:7px 16px;font-weight:800;font-size:14px;text-decoration:none;cursor:pointer;font-family:inherit}
+.bx{background:#0f1419;color:#fff;border:0}.bc{background:#fff;color:var(--tealD);border:2px solid var(--teal)}
 .eye{margin:10px 0}.eye img,.coll img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line)}
 .eye figcaption{font-size:12.5px;color:var(--sub);margin-top:4px}
 .coll{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.coll a{color:var(--ink);text-decoration:none;font-size:13.5px;font-weight:700}
 .coll span{display:block;margin-top:4px}footer{max-width:880px;margin:0 auto;padding:18px 16px 40px;color:var(--sub);font-size:13px}
 """
+
+
+def xbox(text: str, url: str) -> str:
+    """Xの告知文と、Xに投稿・コピーのボタン。見本では公式サイトの記事がまだ無いので、URLはカードのページで代える"""
+    intent = "https://x.com/intent/post?" + urllib.parse.urlencode({"text": text, "url": url})
+    return (f'<div class="x"><b>Xの告知文の下書き</b>\n{e(text)}\n{e(url)}'
+            f'<div class="xb"><a class="bx" href="{e(intent)}" target="_blank" rel="noopener">Xに投稿</a>'
+            f'<button class="bc" type="button" data-copy="{e(text + chr(10) + url)}" onclick="cp(this)">コピー</button></div>'
+            f'<span class="note">本番では、URLは公式サイトのこの記事になります（見本ではカードのページで代えています）。</span></div>')
 
 
 def page(g, drafts, shu, frm, who, coll) -> str:
@@ -186,7 +198,8 @@ def page(g, drafts, shu, frm, who, coll) -> str:
                      f'<div class="a"><span class="who">答弁　{e("　".join(x for x in ((a.get("speakerPosition") or "").strip(), a.get("speaker") or "") if x))}</span>「{e(aa)}」</div>')
         x = (f"{jdate(d['date'])}の{d['house']}{d['meeting']}で質問しました。"
              + (f"{'・'.join(d['tags'])}について、" if d["tags"] else "")
-             + "政府とのやりとりを会議録から載せています。\n（公式サイトの記事のURL）")
+             + "政府とのやりとりを会議録から載せています。")
+        xurl = d["card"]["page"]
         parts.append(f'''<article class="draft"><div class="bar"><span>下書き（事務所の確認待ち）・会議録の公開を受けて自動で作成</span>
 <span class="btns"><span>直す</span><span class="pub">公開する</span></span></div><div class="body">
 <h3>{e(title)}</h3><div class="tags">{"".join(f"<span>{e(t)}</span>" for t in d["tags"])}</div>
@@ -194,18 +207,19 @@ def page(g, drafts, shu, frm, who, coll) -> str:
 <figcaption>アイキャッチ（OGP画像）：{e(d["card"]["label"])}。この記事を公式サイトからXでシェアすると、この画像が出ます。</figcaption></figure>
 <p class="note">ここに事務所のコメントを書き足せます（例：この質問で伝えたかったこと）。</p>{body}
 <p class="src note">出典：<a href="{e(d["url"])}" rel="nofollow noopener" target="_blank">国会会議録（{e(d["house"])} {e(d["meeting"])} {e(jdate(d["date"]))}）</a>　抜粋はそのままで、要約していません。</p>
-<div class="x"><b>Xの告知文の下書き</b>\n{e(x)}</div></div></article>''')
+{xbox(x, xurl)}</div></article>''')
     for r in shu:
         title = f"質問主意書「{r['title']}」と政府の答弁書"
         q = cut(re.sub(r"\s+", " ", r["q_text"]), 240)
         a = cut(re.sub(r"\s+", " ", r["a_text"]), 300)
-        x = f"{jdate(r['submit_date'])}に提出した質問主意書「{r['title']}」に、{jdate(r['answer_date'])}、政府から答弁書が届きました。質問と答弁を並べて載せています。\n（公式サイトの記事のURL）"
+        x = f"{jdate(r['submit_date'])}に提出した質問主意書「{r['title']}」に、{jdate(r['answer_date'])}、政府から答弁書が届きました。質問と答弁を並べて載せています。"
+        xurl = f"https://kurage.exbridge.jp/kshuisho.php/q/{r['id']}"
         parts.append(f'''<article class="draft"><div class="bar"><span>下書き（事務所の確認待ち）・答弁書の受領を受けて自動で作成</span>
 <span class="btns"><span>直す</span><span class="pub">公開する</span></span></div><div class="body">
 <h3>{e(title)}</h3><p class="note">提出 {e(jdate(r["submit_date"]))}　答弁書の受領 {e(jdate(r["answer_date"]))}</p>
 <div class="q"><span class="who">質問主意書（冒頭）</span>「{e(q)}」</div><div class="a"><span class="who">政府の答弁書（冒頭）</span>「{e(a)}」</div>
 <p class="src note">出典：<a href="{e(r["q_url"])}" rel="nofollow noopener" target="_blank">質問主意書</a>・<a href="{e(r["a_url"] or "")}" rel="nofollow noopener" target="_blank">答弁書</a>（参議院）</p>
-<div class="x"><b>Xの告知文の下書き</b>\n{e(x)}</div></div></article>''')
+{xbox(x, xurl)}</div></article>''')
     n = len(drafts)
     return f'''<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>国会活動の下書き 見本｜{e(who)}議員</title><meta name="robots" content="noindex,nofollow">
@@ -227,7 +241,8 @@ def page(g, drafts, shu, frm, who, coll) -> str:
 <p class="note">国会トラッカーで、{e(who)}議員がそのテーマを国会で何日・いつから取り上げてきたかを1枚にしたカードです。
 政策紹介のページや、テーマごとの記事のアイキャッチに使えます。数字は会議録が増えるたびに自動で新しくなります。</p>
 <div class="coll">{"".join(f'<a href="{e(c["page"])}" target="_blank" rel="noopener"><img src="{e(c["img"])}" alt="{e(c["name"])}のカード" width="1200" height="630" loading="lazy"><span>{e(c["name"])}（{c["days"]}日）</span></a>' for c in coll)}</div>
-</main><footer>作成：<a href="https://exbridge.jp/#ref=giin-hp-demo">株式会社エクスブリッジ</a>（名古屋のAIシステム開発会社）。
+</main><script>function cp(b){{var t=b.getAttribute("data-copy");function ok(){{b.textContent="コピーしました"}}
+if(navigator.clipboard&&window.isSecureContext){{navigator.clipboard.writeText(t).then(ok)}}else{{var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();ok()}}}}</script><footer>作成：<a href="https://exbridge.jp/#ref=giin-hp-demo">株式会社エクスブリッジ</a>（名古屋のAIシステム開発会社）。
 会議録の出典は国立国会図書館 国会会議録検索システム、質問主意書は参議院・衆議院の公開ページです。</footer></body></html>'''
 
 
