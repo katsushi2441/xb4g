@@ -70,11 +70,19 @@ function g_giin_png(string $slug): void
  *  URLが同じだと、ブラウザもXも前に取った画像（取り込み前の0件）を使い続ける（2026-10-15） */
 function g_giin_card_ver(array $g): string
 {
-    return 'v4-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+    // 答弁が質疑より多い議員（大臣・総理）は答弁を主にしたカード。版の名前も分ける（2026-10-15）
+    return (g_giin_is_gov($g) ? 'v5g-' : 'v4-') . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+}
+
+/** 答弁が質疑より多い議員（大臣・副大臣・政務官、総理）。カードは答弁を主に出す */
+function g_giin_is_gov(array $g): bool
+{
+    return (int)$g['n_gov'] > (int)$g['n_q'];
 }
 
 function g_giin_draw(array $g): string
 {
+    $gov = g_giin_is_gov($g);
     [$FB, $FM, $FR] = g_card_fonts();
     [$im, $C] = g_card_canvas();
     $ku = g_ku_all((string)$g['house'], (string)$g['district']);
@@ -86,18 +94,25 @@ function g_giin_draw(array $g): string
         imagettftext($im, 22, 0, 66 + g_card_textw($num, $FB, 46), $y, $C['ink'], $FM, $unit);
         imagettftext($im, 16, 0, 62, $y + 28, $C['gray'], $FR, $label);
     };
+    if ($gov) {
+        // 総理・大臣は質疑がほとんど無く、「質疑2件」を大きく出すと国会で話していないように見える（2026-10-15 高市総理のカード）
+        $box(240, number_format((int)$g['n_gov']), '件', '大臣・副大臣・政務官としての答弁');
+        $box(336, number_format((int)$g['n_q']), '件', '議員として質問・討論した発言');
+    } else {
     $box(240, number_format((int)$g['n_q']), '件', '議員として質問・討論した発言');
     // 2つ目の数字は、答弁があれば答弁、なければ委員長・議長としての議事整理。0件を大きく出すと「発言が0件」に見える（2026-10-15）
     if ((int)$g['n_gov'] > 0) { $box(336, number_format((int)$g['n_gov']), '件', '大臣・副大臣・政務官としての答弁'); }
     elseif ((int)$g['n_chair'] > 0) { $box(336, number_format((int)$g['n_chair']), '件', '委員長・議長としての議事整理'); }
+    }
+    $kd = $gov ? 'gov' : 'q';
     $by = g_lite_years((int)$g['id']);
     $rows = [];
     $y0 = (int)substr((string)g_meta('range_from') ?: '2023', 0, 4);
-    for ($y = $y0; $y <= (int)date('Y'); $y++) { $rows[] = [(string)$y, (int)($by[(string)$y]['q'] ?? 0)]; }
-    imagettftext($im, 16, 0, 440, 196, $C['gray'], $FR, '年ごとの質疑の件数（最後の年は途中まで）');
+    for ($y = $y0; $y <= (int)date('Y'); $y++) { $rows[] = [(string)$y, (int)($by[(string)$y][$kd] ?? 0)]; }
+    imagettftext($im, 16, 0, 440, 196, $C['gray'], $FR, ($gov ? '年ごとの答弁の件数' : '年ごとの質疑の件数') . '（最後の年は途中まで）');
     g_card_bars($im, $C, $rows, 440, 204, 704, 200, $C['teal'], $C['tealD']);
     // 締めのあいさつ（「ありがとうございました。」）を拾わないよう、中身のある長さの発言から選ぶ（2026-10-15 蓮舫議員のカード）
-    $last = g_one('SELECT * FROM ' . g_sall() . " WHERE giin_id=? AND kind='q' AND LENGTH(body)>=120 ORDER BY date DESC, speech_order DESC LIMIT 1", [(int)$g['id']]);
+    $last = g_one('SELECT * FROM ' . g_sall() . " WHERE giin_id=? AND kind=? AND LENGTH(body)>=120 ORDER BY date DESC, speech_order DESC LIMIT 1", [(int)$g['id'], $kd]);
     if ($last) {
         $q = g_excerpt((string)$last['body']);
         $q = preg_replace('/^○\S+\s*/u', '', $q) ?? $q;
@@ -105,7 +120,7 @@ function g_giin_draw(array $g): string
         $q = preg_replace('/^(?:[^。]{0,12}(?:ありがとうございま(?:す|した)|お願いいたします|お願いします)。\s*)+/u', '', $q) ?? $q;
         imagefilledrectangle($im, 56, 430, 1144, 560, $C['mint2']);
         imagefilledrectangle($im, 56, 430, 62, 560, $C['teal']);
-        imagettftext($im, 16, 0, 80, 458, $C['gray'], $FR, '直近の質問（' . g_date((string)$last['date']) . '　' . $last['house'] . ' ' . $last['meeting'] . '）');
+        imagettftext($im, 16, 0, 80, 458, $C['gray'], $FR, ($gov ? '直近の答弁（' : '直近の質問（') . g_date((string)$last['date']) . '　' . $last['house'] . ' ' . $last['meeting'] . '）');
         $ly = 494;
         foreach (g_card_wrap('「' . $q . '」', $FR, 21, 1040, 2) as $ln) {
             imagettftext($im, 21, 0, 80, $ly, $C['ink'], $FR, $ln);
