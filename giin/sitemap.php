@@ -47,6 +47,10 @@ if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE type='table' AND name='bill'"
     foreach (g_all('SELECT id, last_date FROM bill ORDER BY id') as $b) { $urls[] = ['bill/' . $b['id'], '0.7', 'monthly', (string)$b['last_date']]; }
 }
 foreach (g_all('SELECT slug, last_date FROM giin ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.8', 'weekly', substr((string)($g['last_date'] ?: $speechLast), 0, 10)]; }
+// 全国の議員の軽いページ（2026-10-15〜）。発言が1件以上ある人だけ（中身の無いページを索引に出さない）
+if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE name='giin_all'")) {
+    foreach (g_all('SELECT slug, last_date FROM giin_all WHERE detail=0 AND n_speech>0 ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.6', 'weekly', substr((string)$g['last_date'], 0, 10)]; }
+}
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
    . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

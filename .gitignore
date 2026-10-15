@@ -3,6 +3,7 @@ deploy-config.php
 google*.html
 giin/data/*.sqlite
 giin/data/*.sqlite-journal
+giin/data/*.sqlite.upload
 giin/data/fetch.log
 giin/outputs/
 __pycache__/

@@ -28,7 +28,7 @@ SAN_KAIHA = "https://raw.githubusercontent.com/smartnews-smri/house-of-councillo
 # 会派名は衆参で表記が違う（衆「国民民主党・無所属クラブ」／参「国民民主党・新緑風会」）。
 # 並べて比べるための短い名前をここで1つに寄せる。会派≠政党なので、あくまで表示用。
 PARTY = [
-    ("国民民主", "国民民主"), ("自由民主", "自民"), ("自民", "自民"),
+    ("国民民主", "国民民主"), ("中道", "中道改革連合"), ("志士の会", "志士の会"), ("自由民主", "自民"), ("自民", "自民"),
     ("立憲", "立憲"), ("公明", "公明"), ("維新", "維新"), ("共産", "共産"),
     ("参政", "参政"), ("チームみらい", "チームみらい"), ("中道改革", "中道改革連合"),
     ("社会民主", "社民"), ("保守", "日本保守党"), ("いのち", "いのちの党"),
@@ -96,7 +96,7 @@ def fetch_shugiin():
 AICHI_LOCAL_HIREI = {"伊藤　辰夫": "元愛知県議会議員"}
 
 
-def fetch_sangiin():
+def fetch_sangiin(all_districts=False):
     # 参議院CSVの会派欄は略称（「民主」など）なので、kaiha.csv で正式名に戻す
     full = {}
     for r in csv.DictReader(io.StringIO(get(SAN_KAIHA))):
@@ -106,7 +106,7 @@ def fetch_sangiin():
     for r in csv.DictReader(io.StringIO(body)):
         disp = r["議員氏名"].strip()
         ku = r.get("選挙区", "").strip()
-        if ku != "愛知" and not (ku == "比例" and disp in AICHI_LOCAL_HIREI):
+        if not all_districts and ku != "愛知" and not (ku == "比例" and disp in AICHI_LOCAL_HIREI):
             continue
         rows.append({
             "house": "参議院",
@@ -123,24 +123,67 @@ def fetch_sangiin():
     return rows
 
 
+def _is_aichi(r):
+    """くわしいページ（YouTube・本人の発信・AIの考察）を作る「愛知の有権者の一票が当落に効く議員」か"""
+    if r["house"] == "衆議院":
+        return bool(re.match(r"^愛知\d+$", r["district"])) or "東海" in r["district"]
+    return r["district"] == "愛知" or (r["district"] == "比例" and r["display"] in AICHI_LOCAL_HIREI)
+
+
 def main():
+    """全国の国会議員の名簿（2026-10-15〜。それまでは愛知の46人だけ）。
+
+    **id と slug は動かさない。** 議員ページのURL（/giin/<slug>）と発言の giin_id がこれに乗っている。
+    前回の roster.json にいる人（院と名前が同じ）は id・slug をそのまま使い、新しい人だけ末尾に足す。
+    名簿から外れた人（引退・落選）も消さずに残し current=False にする（過去の発言のページは残す）。
+    detail=True が愛知の議員（くわしいページ）。それ以外は発言・ことがら・トラッカーだけの軽いページ。
+    """
+    sys_path_romaji()
+    from romaji import slug_of
+    old = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else []
+    by_key = {(r["house"], r["name"]): r for r in old}
     shu = fetch_shugiin()
-    target = [r for r in shu if re.match(r"^愛知\d+$", r["district"]) or "東海" in r["district"]]
-    san_all = fetch_sangiin()
-    san = [r for r in san_all if r["district"] == "愛知"]
-    extra = [r for r in san_all if r["district"] != "愛知"]   # 末尾に足す（既存の id を動かさない）
-    rows = target + san + extra
-    for i, r in enumerate(rows, 1):
-        r["id"] = i
+    san = fetch_sangiin(all_districts=True)
+    # 愛知を先に並べる（初めて作るときに id 1〜46 が愛知になるように。2回目以降は既存の id を使う）
+    cur = sorted(shu + san, key=lambda r: (not _is_aichi(r), r["house"] != "衆議院"))
+    rows = [dict(r) for r in old]
+    for r in rows:
+        r["current"] = False
+    idx = {(r["house"], r["name"]): i for i, r in enumerate(rows)}
+    used = {r.get("slug") for r in rows}
+    nid = max([r["id"] for r in rows] or [0])
+    added = 0
+    for r in cur:
         r["party"] = party_of(r["kaiha"])
+        r["detail"] = _is_aichi(r)
+        r["current"] = True
+        k = (r["house"], r["name"])
+        if k in idx:
+            o = rows[idx[k]]
+            o.update({x: r[x] for x in r if x not in ("id", "slug")})
+            continue
+        nid += 1
+        slug = slug_of(r.get("kana", "")) or f"giin-{nid}"
+        if slug in used:   # 同じ読みの人（院や選挙区で分ける）
+            alt = slug + ("-shu" if r["house"] == "衆議院" else "-san")
+            slug = alt if alt not in used else f"{slug}-{nid}"
+        used.add(slug)
+        r["id"], r["slug"] = nid, slug
+        rows.append(r)
+        idx[k] = len(rows) - 1
+        added += 1
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     json.dump(rows, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(f"衆議院 全体 {len(shu)}人 → 対象 {len(target)}人")
-    print(f"参議院 愛知選挙区 {len(san)}人")
-    print(f"合計 {len(rows)}人 → {OUT}")
     from collections import Counter
-    for k, v in Counter(r["party"] for r in rows).most_common():
+    print(f"衆議院 {len(shu)}人・参議院 {len(san)}人 → 名簿 {len(rows)}人（新しく {added}人・"
+          f"愛知 {sum(1 for r in rows if r.get('detail'))}人・名簿から外れた {sum(1 for r in rows if not r['current'])}人）")
+    for k, v in Counter(r["party"] for r in rows if r["current"]).most_common():
         print(f"  {k:<26} {v:>3}人")
+
+
+def sys_path_romaji():
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 if __name__ == "__main__":

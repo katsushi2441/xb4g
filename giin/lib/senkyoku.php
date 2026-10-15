@@ -224,13 +224,18 @@ function g_page_senkyoku(string $key): void
         echo '<div class="panel"><h3>この選挙区の衆議院議員</h3><ul class="plain">';
         foreach ($gs as $g) { echo '<li><a href="' . g_url($g['slug']) . '">' . g_e($g['plain']) . '</a>（' . g_e($g['party']) . '）— 国会での質疑を日付と会議名で引けます</li>'; }
         if (!$gs) {
+            // 2026-10-15 から全国の議員にも議員ページ（軽いページ）がある。名簿の名前（空白を除く）で引く
+            $hasAll = (bool)g_val("SELECT COUNT(*) FROM sqlite_master WHERE name='giin_all'");
             foreach ($ms as $mm) {
                 $nm = preg_replace('/\s+/u', ' ', $mm['display']);
-                echo '<li>' . ($mm['profile'] ? '<a href="' . g_e($mm['profile']) . '" rel="noopener">' . g_e($nm) . '</a>' : g_e($nm))
-                   . '（' . g_e($mm['kaiha']) . '・当選' . g_e($mm['wins']) . '回）</li>';
+                $gp = $hasAll ? g_one("SELECT slug FROM giin_all WHERE house='衆議院' AND name=?", [preg_replace('/[\s　]+/u', '', $mm['display'])]) : null;
+                echo '<li>' . ($gp ? '<a href="' . g_url($gp['slug']) . '">' . g_e($nm) . '</a>'
+                              : ($mm['profile'] ? '<a href="' . g_e($mm['profile']) . '" rel="noopener">' . g_e($nm) . '</a>' : g_e($nm)))
+                   . '（' . g_e($mm['kaiha']) . '・当選' . g_e($mm['wins']) . '回）'
+                   . ($gp ? ' — 国会での質疑を日付と会議名で引けます' : '') . '</li>';
             }
         }
-        echo '</ul><p class="src">衆議院の会派別議員名簿から。氏名・会派・当選回数・公式プロフィールへのリンクだけを出しています。</p></div>';
+        echo '</ul><p class="src">衆議院の会派別議員名簿から。名前から、その議員の国会での発言のページへ行けます。</p></div>';
     }
 
     // **全国での位置を出す。** 289枚が同じ型の数字の表だと、Google は

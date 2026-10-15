@@ -6,11 +6,16 @@
   数秒空ける」と要請があるので、**直列＋待ち時間**で叩く。並列にしない。
 - 検索条件部は全体 2000 バイトまで。
 """
-import json, time, urllib.parse, urllib.request
+import fcntl, json, os, time, urllib.parse, urllib.request
 
 BASE = "https://kokkai.ndl.go.jp/api/"
 UA = {"User-Agent": "xb4g-giin/1.0 (+https://xb4g.com/giin/)"}
 WAIT = 3.0          # 1リクエストごとの待ち（秒）
+
+
+# **この機械の中で1本ずつ。** 全国の議員の初回取得（数時間）と毎晩の更新・トラッカーが同時に動くと、
+# 別々のプロセスから同時に叩くことになる（2026-10-15 全国化）。ファイルロックで順番待ちにする
+LOCK = os.environ.get("GIIN_NDL_LOCK", "/tmp/xb4g-giin-ndl.lock")
 
 
 def call(kind, **params):
@@ -19,9 +24,14 @@ def call(kind, **params):
     req = urllib.request.Request(url, headers=UA)
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=120) as r:
-                d = json.loads(r.read())
-            time.sleep(WAIT)
+            with open(LOCK, "a") as lk:
+                fcntl.flock(lk, fcntl.LOCK_EX)
+                try:
+                    with urllib.request.urlopen(req, timeout=120) as r:
+                        d = json.loads(r.read())
+                    time.sleep(WAIT)
+                finally:
+                    fcntl.flock(lk, fcntl.LOCK_UN)
             return d
         except Exception as e:
             if attempt == 2:

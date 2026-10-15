@@ -6,7 +6,7 @@
 出典を示す製品でそれをやると、根拠を示しているという前提ごと崩れる。
 
 何をするか（この順でないと意味がない）:
-  1. 国会会議録から、議員45人の新しい発言を取り込む（増分）
+  1. 国会会議録から、名簿の議員（全国711人。くわしいページは愛知の46人）の新しい発言を取り込む（増分）
   2. 立場（質疑／答弁／議事整理）を分類し直す
   3. 議案と省庁の報道発表を取り込み、ことがらに割り当てる
   3.5 議員の公式YouTube・公式Xの新着（どちらもAPIキー不要）
@@ -123,7 +123,9 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
     steps = []
 
     for name, args in [
-        ("発言の増分", [PY, os.path.join(SCRIPTS, "fetch_speeches.py"), "--since-last"]),
+        # 全国の議員（2026-10-15〜711人）。増分は会議ごとに読む（議員ごとだと711人×3秒で36分）。
+        # まだ取っていない議員（新しく当選した人など）は、1回15人まで議員ごとに取る
+        ("発言の増分", [PY, os.path.join(SCRIPTS, "fetch_speeches.py"), "--since-last", "--backfill", "--limit", "15"]),
         ("立場の分類", [PY, os.path.join(SCRIPTS, "classify.py")]),
         ("議案と報道発表", [PY, os.path.join(SCRIPTS, "fetch_news.py"), "--days", str(days_news)]),
         ("公式YouTubeの新着", [PY, os.path.join(SCRIPTS, "fetch_youtube.py")]),

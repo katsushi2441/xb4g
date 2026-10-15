@@ -126,12 +126,12 @@ function g_qa_quote_a(string $body, array $words, int $max): string
 function g_qa_pair(string $key, string $sid): ?array
 {
     if (!g_tracker_ready()) { return null; }
-    $s = g_one("SELECT t.*, g.slug, g.plain FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
-                WHERE t.tracker=? AND t.speech_id=?", [$key, $sid]);
+    $s = g_one("SELECT t.*, g.slug, g.plain, ga.slug gslug FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
+                LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id WHERE t.tracker=? AND t.speech_id=?", [$key, $sid]);
     if (!$s) { return null; }
     if ($s['kind'] === 'gov') {
-        $q = g_one("SELECT t.*, g.slug, g.plain FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
-                    WHERE t.tracker=? AND t.meeting_url=? AND t.kind='q' AND t.speech_order BETWEEN ? AND ?
+        $q = g_one("SELECT t.*, g.slug, g.plain, ga.slug gslug FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
+                    LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id WHERE t.tracker=? AND t.meeting_url=? AND t.kind='q' AND t.speech_order BETWEEN ? AND ?
                     ORDER BY t.speech_order DESC LIMIT 1",
                    [$key, $s['meeting_url'], (int)$s['speech_order'] - 3, (int)$s['speech_order'] - 1]);
         return $q ? ['q' => $q, 'a' => g_qa_answer($q)] : ['q' => null, 'a' => $s];
@@ -280,7 +280,7 @@ function g_page_qa(string $key, string $sid): void
         $who = $k === 'q' ? g_qa_who_q($s) : g_qa_who_a($s);
         if ($k === 'q') {
             $who = '<a href="' . g_url('tracker/' . $key . '/m/' . g_tm_id((string)$s['speaker'])) . '" rel="nofollow">' . g_e($who) . '</a>'
-                 . (!empty($s['slug']) ? ' <a class="note" href="' . g_url($s['slug']) . '">議員ページ</a>' : '');
+                 . ((!empty($s['slug']) || !empty($s['gslug'])) ? ' <a class="note" href="' . g_url($s['slug'] ?: $s['gslug']) . '">議員ページ</a>' : '');
         } else { $who = g_e($who); }
         $txt = $k === 'q' ? g_qa_quote_q((string)$s['body'], $words, 400) : g_qa_quote_a((string)$s['body'], $words, 400);
         $kw = '';

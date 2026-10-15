@@ -29,6 +29,8 @@ if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker
 require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/senkyoku.php';
+// 全国の議員の軽いページ（2026-10-15）。製品版で無いときは読まない
+if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 if (strpos($path, G_BASE) === 0) { $path = substr($path, strlen(G_BASE)); }
@@ -48,7 +50,7 @@ function g_route(string $path, int $page): void
 {
     // ---- 古いURLは 302 で新URLへ送る（公開当日なので検索インデックスの積み上げは無い）----
     if (preg_match('#^/g/(\d+)$#', $path, $m)) {
-        $g = g_one('SELECT slug FROM giin WHERE id=?', [(int)$m[1]]);
+        $g = g_one('SELECT slug FROM ' . (function_exists('g_gall') ? g_gall() : 'giin') . ' WHERE id=?', [(int)$m[1]]);
         if ($g) { g_redirect(g_url($g['slug'])); return; }
     }
     if (preg_match('#^/t/([a-z0-9-]+)$#', $path, $m)) { g_redirect(g_url('theme/' . $m[1])); return; }
@@ -89,10 +91,18 @@ function g_route(string $path, int $page): void
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
     // 検索結果でも共有先でも「誰のページか」が伝わらない。
+    // 2026-10-15 から全国の議員（giin_all）。愛知の46人（detail=1）はくわしいページ、ほかは軽いページ（lib/giin_lite.php）
     if (preg_match('#^/([a-z0-9-]+)$#', $path, $m) && !in_array($m[1], G_RESERVED, true)) {
-        $g = g_one('SELECT id FROM giin WHERE slug=?', [$m[1]]);
-        if ($g) { g_page_giin((int)$g['id'], $page); return; }
+        $GA = function_exists('g_gall') ? g_gall() : 'giin';
+        $g = g_one("SELECT id, " . ($GA === 'giin_all' ? 'detail' : '1') . " AS detail FROM $GA WHERE slug=?", [$m[1]]);
+        if ($g) {
+            if ((int)$g['detail'] === 1 || !function_exists('g_page_giin_lite')) { g_page_giin((int)$g['id'], $page); }
+            else { g_page_giin_lite((int)$g['id'], $page); }
+            return;
+        }
     }
+    // 議員ページのカード画像（Xに貼ると出る。全国の議員の軽いページの og:image）
+    if (function_exists('g_giin_png') && preg_match('#^/([a-z0-9-]+)\.png$#', $path, $m)) { g_giin_png($m[1]); return; }
     http_response_code(404);
     g_head('ページが見つかりません', '', $path, ['noindex' => true]);
     echo '<h1>ページが見つかりません</h1><p><a href="' . g_url('') . '">トップへ</a></p>';

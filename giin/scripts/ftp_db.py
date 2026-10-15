@@ -8,15 +8,36 @@
 """
 import ftplib
 import os
+import sqlite3
+
+
+def snapshot(local: str) -> str:
+    """**書き込み中のDBをそのまま送らない。** 全国の発言の取り込み・X監視・トラッカーが同じファイルに書くので、
+    コピーの途中でコミットが入ると壊れたファイルが届く。SQLite のバックアップ機能で、ある時点の一貫した写しを作って送る"""
+    snap = local + ".upload"
+    if os.path.exists(snap):
+        os.remove(snap)
+    src = sqlite3.connect(local, timeout=120)
+    src.execute("PRAGMA busy_timeout=120000")
+    dst = sqlite3.connect(snap)
+    src.backup(dst)
+    dst.execute("PRAGMA journal_mode=DELETE")
+    dst.close()
+    src.close()
+    return snap
 
 
 def upload_db(f: ftplib.FTP, local: str, remote_dir: str, name: str = "giin.sqlite") -> int:
-    """local を remote_dir/name へ入れ替えで置く。送った大きさを返す。"""
+    """local の一貫した写しを remote_dir/name へ入れ替えで置く。送った大きさを返す。"""
     tmp = name + ".uploading"
     f.cwd(remote_dir)
-    with open(local, "rb") as fp:
-        f.storbinary("STOR " + tmp, fp, blocksize=262144)
-    size = os.path.getsize(local)
+    snap = snapshot(local)
+    try:
+        with open(snap, "rb") as fp:
+            f.storbinary("STOR " + tmp, fp, blocksize=262144)
+        size = os.path.getsize(snap)
+    finally:
+        os.remove(snap)
     try:
         f.voidcmd("TYPE I")
         got = f.size(tmp)

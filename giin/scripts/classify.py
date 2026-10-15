@@ -47,25 +47,30 @@ def main():
         con.execute("PRAGMA journal_mode=DELETE")
     except sqlite3.Error:
         pass
-    cols = [r[1] for r in con.execute("PRAGMA table_info(speech)")]
+    # 全国化（2026-10-15）から実体は speech_all / giin_all（giin・speech は愛知だけのビュー。ビューには書けない）
+    has_all = con.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='speech_all'").fetchone()[0]
+    SP, GI = ("speech_all", "giin_all") if has_all else ("speech", "giin")
+    cols = [r[1] for r in con.execute(f"PRAGMA table_info({SP})")]
     if "kind" not in cols:
-        con.execute("ALTER TABLE speech ADD COLUMN kind TEXT")
-        con.execute("CREATE INDEX IF NOT EXISTS ix_sp_kind ON speech(giin_id, kind, date DESC)")
+        con.execute(f"ALTER TABLE {SP} ADD COLUMN kind TEXT")
+        con.execute(f"CREATE INDEX IF NOT EXISTS ix_sp_kind ON {SP}(giin_id, kind, date DESC)")
     n = 0
-    for sid, body in con.execute("SELECT speech_id, body FROM speech").fetchall():
-        con.execute("UPDATE speech SET kind=? WHERE speech_id=?", (kind_of(body), sid))
+    for sid, body, kind in con.execute(f"SELECT speech_id, body, kind FROM {SP}").fetchall():
+        k = kind_of(body)
+        if k != kind:
+            con.execute(f"UPDATE {SP} SET kind=? WHERE speech_id=?", (k, sid))
         n += 1
     # 議員ごとの内訳を持たせる（画面で毎回数えないため）
     for c in ("n_q", "n_gov", "n_chair"):
-        if c not in [r[1] for r in con.execute("PRAGMA table_info(giin)")]:
-            con.execute(f"ALTER TABLE giin ADD COLUMN {c} INTEGER DEFAULT 0")
-    con.execute("""UPDATE giin SET
-        n_q     = (SELECT COUNT(*) FROM speech s WHERE s.giin_id=giin.id AND s.kind='q'),
-        n_gov   = (SELECT COUNT(*) FROM speech s WHERE s.giin_id=giin.id AND s.kind='gov'),
-        n_chair = (SELECT COUNT(*) FROM speech s WHERE s.giin_id=giin.id AND s.kind='chair')""")
+        if c not in [r[1] for r in con.execute(f"PRAGMA table_info({GI})")]:
+            con.execute(f"ALTER TABLE {GI} ADD COLUMN {c} INTEGER DEFAULT 0")
+    con.execute(f"""UPDATE {GI} SET
+        n_q     = (SELECT COUNT(*) FROM {SP} s WHERE s.giin_id={GI}.id AND s.kind='q'),
+        n_gov   = (SELECT COUNT(*) FROM {SP} s WHERE s.giin_id={GI}.id AND s.kind='gov'),
+        n_chair = (SELECT COUNT(*) FROM {SP} s WHERE s.giin_id={GI}.id AND s.kind='chair')""")
     con.commit()
     print(f"{n}件を分類しました")
-    for k, c in con.execute("SELECT kind, COUNT(*) FROM speech GROUP BY kind ORDER BY 2 DESC"):
+    for k, c in con.execute(f"SELECT kind, COUNT(*) FROM {SP} GROUP BY kind ORDER BY 2 DESC"):
         print(f"  {k:<6} {c:>6}件")
 
 

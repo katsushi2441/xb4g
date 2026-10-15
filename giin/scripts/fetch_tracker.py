@@ -71,12 +71,23 @@ def main():
     con = sqlite3.connect(DB, timeout=120)
     con.execute("PRAGMA busy_timeout=120000")
     con.executescript(SCHEMA)
-    # 愛知の45人: 会議録の話者表記（姓名つづき）→ giin.id
-    names = {}
-    for gid, name, plain in con.execute("SELECT id, name, plain FROM giin"):
-        for n in (name, plain):
+    # 名簿の議員: 会議録の話者表記（姓名つづき）→ giin.id。全国化（2026-10-15）からは全国711人（giin_all）。
+    # 同姓同名（鬼木誠が衆参に1人ずつ）は、どちらか決められないので付けない
+    GI = "giin_all" if con.execute("SELECT COUNT(*) FROM sqlite_master WHERE name='giin_all'").fetchone()[0] else "giin"
+    names, dup = {}, set()
+    for gid, name, plain in con.execute(f"SELECT id, name, plain FROM {GI}"):
+        for n in {name, plain}:
             if n:
-                names[n.replace("　", "").replace(" ", "")] = gid
+                k = n.replace("　", "").replace(" ", "")
+                if k in names and names[k] != gid:
+                    dup.add(k)
+                names[k] = gid
+    for k in dup:
+        names.pop(k, None)
+    # すでに入っている発言にも付け直す（全国化の前に入った行は愛知の人にしか付いていない）
+    con.executemany("UPDATE tracker_speech SET giin_id=? WHERE speaker=? AND COALESCE(giin_id,0)<>?",
+                    [(g, n, g) for n, g in names.items()])
+    con.commit()
     for t in trackers:
         t0 = time.time()
         # **増分で取る（2026-10-14）。** 毎晩すべてのトラッカーを from（2010年など）から取り直していたため、

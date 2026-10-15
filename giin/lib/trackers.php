@@ -62,7 +62,7 @@ function g_tracker_years(string $key): array
 function g_tracker_speakers(string $key, string $kind = 'q'): array
 {
     if (!g_tracker_ready()) { return []; }
-    return g_all("SELECT t.speaker, t.giin_id, g.slug, g.plain,
+    return g_all("SELECT t.speaker, t.giin_id, g.slug, g.plain, ga.slug gslug,
                          COUNT(DISTINCT t.date) days, COUNT(*) n,
                          COUNT(DISTINCT t.meeting) meetings, MAX(t.date) last, MIN(t.date) first,
                          (SELECT kaiha_at FROM tracker_speech x WHERE x.tracker=t.tracker AND x.speaker=t.speaker
@@ -71,9 +71,17 @@ function g_tracker_speakers(string $key, string $kind = 'q'): array
                             AND x.kind=t.kind ORDER BY x.date DESC LIMIT 1) position,
                          (SELECT house FROM tracker_speech x WHERE x.tracker=t.tracker AND x.speaker=t.speaker
                             AND x.kind=t.kind ORDER BY x.date DESC LIMIT 1) house
-                  FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
+                  FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id
                   WHERE t.tracker=? AND t.kind=? GROUP BY t.speaker
                   ORDER BY days DESC, n DESC, last DESC", [$key, $kind]);
+}
+
+/** 全国の議員ページへの結合（2026-10-15〜 giin_all）。名簿の無い設置（国会トラッカー単体）は愛知の giin のまま */
+function g_ga_table(): string
+{
+    static $t = null;
+    if ($t === null) { $t = g_val("SELECT COUNT(*) FROM sqlite_master WHERE name='giin_all'") ? 'giin_all' : 'giin'; }
+    return $t;
 }
 
 function g_tracker_count(string $key, string $kind = ''): int
@@ -90,7 +98,8 @@ function g_tracker_list(string $key, string $kind, int $limit, int $offset = 0):
     $w = $kind === '' ? '' : ' AND t.kind=?';
     $a = [$key]; if ($kind !== '') { $a[] = $kind; }
     $a[] = $limit; $a[] = $offset;
-    return g_all("SELECT t.*, g.slug, g.plain FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
+    return g_all("SELECT t.*, g.slug, g.plain, ga.slug gslug FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
+                  LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id
                   WHERE t.tracker=?$w ORDER BY t.date DESC, t.speech_order DESC LIMIT ? OFFSET ?", $a);
 }
 
@@ -165,9 +174,11 @@ function g_tracker_speech(array $s, array $words): void
     $kw = $hit[0] ?? ($words[0] ?? '');
     $ex = g_tracker_excerpt((string)$s['body'], $hit ?: $words, 2);
     $txt = $ex ? implode(' ', $ex) : g_kwic($s['body'], $kw);
+    // 愛知の46人はくわしい議員ページ、ほかの議員も2026-10-15から軽い議員ページへ（名前のリンク）
     $who = !empty($s['slug'])
         ? '<a href="' . g_url($s['slug']) . '">' . g_e($s['plain']) . '</a><span class="pill">愛知</span>'
-        : '<b>' . g_e($s['speaker']) . '</b>';
+        : (!empty($s['gslug']) ? '<a href="' . g_url($s['gslug']) . '"><b>' . g_e($s['speaker']) . '</b></a>'
+                               : '<b>' . g_e($s['speaker']) . '</b>');
     echo '<div class="sp"><div class="m">'
        . '<b>' . g_e(g_date($s['date'])) . '</b>'
        . '<span class="pill gray">' . g_e($s['house']) . ' ' . g_e($s['meeting']) . '</span>'

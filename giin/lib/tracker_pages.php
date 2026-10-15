@@ -207,7 +207,8 @@ function g_page_tracker(string $key, int $page): void
             echo '<tr><td>' . (function_exists('g_tm_id')
                     ? '<a href="' . g_url('tracker/' . $key . '/m/' . g_tm_id((string)$r['speaker'])) . '" rel="nofollow">' . g_e($r['speaker']) . '</a>'
                     : g_e($r['speaker']))
-               . (!empty($r['slug']) ? ' <a class="pill" href="' . g_url($r['slug']) . '">愛知</a>' : '')
+               . (!empty($r['slug']) ? ' <a class="pill" href="' . g_url($r['slug']) . '">愛知</a>'
+                  : (!empty($r['gslug']) ? ' <a class="pill gray" href="' . g_url($r['gslug']) . '">議員ページ</a>' : ''))
                . '<br><span class="note">' . g_e($r['house']) . '</span></td>'
                . '<td><span class="note">' . g_e($r['kaiha'] ?? '') . '</span></td>'
                . '<td class="n"><b>' . (int)$r['days'] . '</b></td><td class="n">' . (int)$r['n'] . '</td>'
