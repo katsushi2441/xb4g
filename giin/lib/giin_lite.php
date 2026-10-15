@@ -61,9 +61,16 @@ function g_giin_png(string $slug): void
     // 「0件」の画像が出続けた（2026-10-15 蓮舫議員。ページは417件なのにカードは0件）。数字が変われば別の画像になる
     $g = g_one('SELECT * FROM ' . g_gall() . ' WHERE slug=?', [$slug]);
     if (!$g) { header('Location: ' . g_abs('ogp.png'), true, 302); return; }
-    $ver = 'v3-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+    $ver = g_giin_card_ver($g);
     $f = g_card_cache_dir('giin') . '/' . preg_replace('/[^a-z0-9-]/', '', $slug) . '_' . $ver . '.png';
     g_card_serve($f, fn() => g_giin_draw($g), g_abs('ogp.png'), 0);
+}
+
+/** カードの版（件数と最後の日付）。作り置きの名前と、ページに埋める画像URLの ?v= に使う。
+ *  URLが同じだと、ブラウザもXも前に取った画像（取り込み前の0件）を使い続ける（2026-10-15） */
+function g_giin_card_ver(array $g): string
+{
+    return 'v4-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
 }
 
 function g_giin_draw(array $g): string
@@ -80,7 +87,9 @@ function g_giin_draw(array $g): string
         imagettftext($im, 16, 0, 62, $y + 28, $C['gray'], $FR, $label);
     };
     $box(240, number_format((int)$g['n_q']), '件', '議員として質問・討論した発言');
-    $box(336, number_format((int)$g['n_gov']), '件', '大臣・副大臣・政務官としての答弁');
+    // 2つ目の数字は、答弁があれば答弁、なければ委員長・議長としての議事整理。0件を大きく出すと「発言が0件」に見える（2026-10-15）
+    if ((int)$g['n_gov'] > 0) { $box(336, number_format((int)$g['n_gov']), '件', '大臣・副大臣・政務官としての答弁'); }
+    elseif ((int)$g['n_chair'] > 0) { $box(336, number_format((int)$g['n_chair']), '件', '委員長・議長としての議事整理'); }
     $by = g_lite_years((int)$g['id']);
     $rows = [];
     $y0 = (int)substr((string)g_meta('range_from') ?: '2023', 0, 4);
@@ -127,7 +136,8 @@ function g_page_giin_lite(int $id, int $page): void
              'jobTitle' => $g['house'] . '議員', 'affiliation' => ['@type' => 'Organization', 'name' => $g['kaiha']],
              'url' => $g['profile'] ?: null])],
     ]);
-    g_head($title, $desc, '/' . $g['slug'], ['jsonld' => $ld, 'image' => g_abs($g['slug'] . '.png'), 'nosuffix' => true]);
+    $cv = '?v=' . g_giin_card_ver($g);
+    g_head($title, $desc, '/' . $g['slug'], ['jsonld' => $ld, 'image' => g_abs($g['slug'] . '.png') . $cv, 'nosuffix' => true]);
 
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › ' . g_e($g['plain']) . '</nav>';
     $skk = g_sk_key_any((string)$g['house'], (string)$g['district']);
@@ -150,7 +160,7 @@ function g_page_giin_lite(int $id, int $page): void
     // giin_all.x は X監視の名簿（Wikidata・投稿の照合）由来で、公式サイトで確かめたものではない
     if ($links) { echo '<p>' . implode('　', $links) . '</p>'; }
 
-    echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($g['slug'] . '.png')) . '" alt="' . g_e($g['plain']) . '議員の国会での発言のカード" '
+    echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($g['slug'] . '.png') . $cv) . '" alt="' . g_e($g['plain']) . '議員の国会での発言のカード" '
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
     g_share_buttons($title, $g['slug'], 'giin');
 
