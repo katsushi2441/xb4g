@@ -154,7 +154,8 @@ function g_qa_pair(string $key, string $sid): ?array
             if (mb_strpos((string)$a['body'], $w) !== false) { $inA = true; }
             $p = mb_strrpos($qb, $w); if ($p !== false) { $last = max($last, $p); }
         }
-        $far = !$inA && $last >= 0 && $last < mb_strlen($qb) * 0.7;
+        // 1文だけの短い更問（「いや、ＴＭ文書全体が誤りですか。」）は話題を移しようがないので、この判定をしない（2026-10-15）
+        $far = !$inA && $last >= 0 && mb_strlen($qb) > 120 && $last < mb_strlen($qb) * 0.7;
     }
     return ['q' => $s, 'a' => $far ? null : $a, 'a_far' => $far ? $a : null];
 }
