@@ -23,6 +23,7 @@ import re
 import secrets
 import sqlite3
 import sys
+import zlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ndl  # noqa: E402
@@ -31,6 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "giin.sqlite")
 KS = "/home/kojima/work/kshuisho/php/kshuisho_data/kshuisho.sqlite"
 OUT = os.path.join(ROOT, "outputs", "hp_draft_demo")
+XB = "https://xb4g.com/giin"
 GREET = re.compile(r"^(?:[^。]{0,14}(?:ありがとうございま(?:す|した)|お願いいたします|お願いします|よろしくお願いします)。\s*)+")
 e = html.escape
 
@@ -114,8 +116,19 @@ def build(member: str, frm: str, display: str | None = None) -> str:
             continue
         text = " ".join(clean(q.get("speech")) for q, _ in ps)
         tg = tags_for(" ".join(clean(s.get("speech")) for s in sp if s.get("speaker") == member), trackers)
+        # アイキャッチ（OGP画像）：その日の質疑が国会トラッカーにあれば質疑カード。テーマは本人が長く取り組んでいる順
+        card = None
+        for r in con.execute("""SELECT t.tracker, t.speech_id FROM tracker_speech t
+                                JOIN (SELECT tracker, COUNT(DISTINCT date) d, COUNT(*) n FROM tracker_speech
+                                      WHERE giin_id=? AND kind='q' GROUP BY tracker) w ON w.tracker=t.tracker
+                                WHERE t.giin_id=? AND t.kind='q' AND t.meeting_url=?
+                                ORDER BY w.d DESC, w.n DESC, t.speech_order LIMIT 1""", (g["id"], g["id"], m["meeting_url"])):
+            card = dict(img=f"{XB}/tracker/{r['tracker']}/{r['speech_id']}.png", page=f"{XB}/tracker/{r['tracker']}/{r['speech_id']}",
+                        label="質疑カード（質問と答弁）")
+        if not card:
+            card = dict(img=f"{XB}/{g['slug']}.png", page=f"{XB}/{g['slug']}", label="議員カード（国会での発言の記録）")
         drafts.append(dict(kind="会議録", date=m["date"], house=m["house"], meeting=m["meeting"], url=m["meeting_url"],
-                           pairs=ps, tags=tg, text=text))
+                           pairs=ps, tags=tg, text=text, card=card))
     # 質問主意書（答弁書が届いたもの）
     shu = []
     if os.path.exists(KS):
@@ -125,7 +138,13 @@ def build(member: str, frm: str, display: str | None = None) -> str:
         for r in k.execute("""SELECT * FROM q WHERE REPLACE(REPLACE(submitter,' ',''),'　','')=? AND a_text<>''
                               ORDER BY submit_date DESC LIMIT 2""", (member,)):
             shu.append(r)
-    return page(g, drafts, shu, frm, display or g["plain"])
+    tid = "%08x" % zlib.crc32(member.encode())
+    tmap = {t["key"]: t for t in trackers}
+    coll = [dict(img=f"{XB}/tracker/{r['tracker']}/m/{tid}.png", page=f"{XB}/tracker/{r['tracker']}/m/{tid}",
+                 name=(tmap.get(r["tracker"]) or {}).get("short") or r["tracker"], days=r["d"])
+            for r in con.execute("""SELECT tracker, COUNT(DISTINCT date) d FROM tracker_speech WHERE giin_id=? AND kind='q'
+                                    GROUP BY tracker ORDER BY d DESC, COUNT(*) DESC LIMIT 6""", (g["id"],))]
+    return page(g, drafts, shu, frm, display or g["plain"], coll)
 
 
 CSS = """
@@ -146,11 +165,15 @@ h2{font-size:19px;margin:30px 0 8px}.lead{font-size:15.5px}.note{color:var(--sub
 .q,.a{border-left:4px solid var(--teal);background:#f3faf9;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:14.5px}
 .a{border-left-color:#1f3a5f;background:#f2f5f9}.who{font-weight:800;font-size:13px;color:var(--sub);display:block}
 .x{background:#f7f7f7;border:1px dashed #c9d3dc;border-radius:10px;padding:8px 12px;font-size:14px;margin-top:10px;white-space:pre-wrap}
-.src a{color:var(--tealD)}footer{max-width:880px;margin:0 auto;padding:18px 16px 40px;color:var(--sub);font-size:13px}
+.src a{color:var(--tealD)}
+.eye{margin:10px 0}.eye img,.coll img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line)}
+.eye figcaption{font-size:12.5px;color:var(--sub);margin-top:4px}
+.coll{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.coll a{color:var(--ink);text-decoration:none;font-size:13.5px;font-weight:700}
+.coll span{display:block;margin-top:4px}footer{max-width:880px;margin:0 auto;padding:18px 16px 40px;color:var(--sub);font-size:13px}
 """
 
 
-def page(g, drafts, shu, frm, who) -> str:
+def page(g, drafts, shu, frm, who, coll) -> str:
     now = datetime.datetime.now().strftime("%Y年%-m月%-d日")
     parts = []
     for d in drafts:
@@ -167,6 +190,8 @@ def page(g, drafts, shu, frm, who) -> str:
         parts.append(f'''<article class="draft"><div class="bar"><span>下書き（事務所の確認待ち）・会議録の公開を受けて自動で作成</span>
 <span class="btns"><span>直す</span><span class="pub">公開する</span></span></div><div class="body">
 <h3>{e(title)}</h3><div class="tags">{"".join(f"<span>{e(t)}</span>" for t in d["tags"])}</div>
+<figure class="eye"><img src="{e(d["card"]["img"])}" alt="{e(d["card"]["label"])}" width="1200" height="630" loading="lazy">
+<figcaption>アイキャッチ（OGP画像）：{e(d["card"]["label"])}。この記事を公式サイトからXでシェアすると、この画像が出ます。</figcaption></figure>
 <p class="note">ここに事務所のコメントを書き足せます（例：この質問で伝えたかったこと）。</p>{body}
 <p class="src note">出典：<a href="{e(d["url"])}" rel="nofollow noopener" target="_blank">国会会議録（{e(d["house"])} {e(d["meeting"])} {e(jdate(d["date"]))}）</a>　抜粋はそのままで、要約していません。</p>
 <div class="x"><b>Xの告知文の下書き</b>\n{e(x)}</div></div></article>''')
@@ -192,12 +217,16 @@ def page(g, drafts, shu, frm, who) -> str:
 <h1>{e(who)}議員の国会活動を、公式サイトの投稿の下書きにしました</h1>
 <p class="lead">国会会議録に質疑が載ったら、その夜のうちに、公式サイトに載せる投稿の下書きができている。事務所の方は中身を確かめて「公開する」を押すだけ、という仕組みの見本です。
 下の下書きは、{e(who)}議員の{e(frm[:4])}年{e(jdate(frm))}以降の質疑{n}回と、質問主意書から、実際に自動で組んだものです。</p>
-<div class="flow"><div><b>1. 会議録の公開</b>質疑の1〜2週間後、国会会議録に載る</div><div><b>2. 下書きを自動で作成</b>質問と答弁を会議録からそのまま抜き出し、取り上げたテーマを付ける</div>
+<div class="flow"><div><b>1. 会議録の公開</b>質疑の1〜2週間後、国会会議録に載る</div><div><b>2. 下書きを自動で作成</b>質問と答弁を会議録からそのまま抜き出し、取り上げたテーマと、Xでシェアしたときに出る画像（質疑カード）を付ける</div>
 <div><b>3. 事務所が確認</b>コメントを書き足し、「公開する」を押す（公式サイトとXの告知文）</div></div>
 <p class="note">質問と答弁は会議録・答弁書のまま抜き出していて、要約や言い換えはしていません。勝手に公開はせず、必ず事務所の確認を通します。
 公式サイトが WordPress なら、投稿の下書きとして直接入れられます。</p>
 <h2>下書き（{n + len(shu)}件）</h2>
 {"".join(parts)}
+<h2>公式サイトに貼れるカード（取り上げてきたテーマ）</h2>
+<p class="note">国会トラッカーで、{e(who)}議員がそのテーマを国会で何日・いつから取り上げてきたかを1枚にしたカードです。
+政策紹介のページや、テーマごとの記事のアイキャッチに使えます。数字は会議録が増えるたびに自動で新しくなります。</p>
+<div class="coll">{"".join(f'<a href="{e(c["page"])}" target="_blank" rel="noopener"><img src="{e(c["img"])}" alt="{e(c["name"])}のカード" width="1200" height="630" loading="lazy"><span>{e(c["name"])}（{c["days"]}日）</span></a>' for c in coll)}</div>
 </main><footer>作成：<a href="https://exbridge.jp/#ref=giin-hp-demo">株式会社エクスブリッジ</a>（名古屋のAIシステム開発会社）。
 会議録の出典は国立国会図書館 国会会議録検索システム、質問主意書は参議院・衆議院の公開ページです。</footer></body></html>'''
 
