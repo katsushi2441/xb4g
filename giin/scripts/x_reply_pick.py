@@ -36,6 +36,7 @@ FIELDS = {
     "josei": "女性の人権・男女共同参画（更年期、性暴力、選択的夫婦別姓）",
     "chiho": "地方自治・都市計画（特別市、自治体、用途地域、まちづくり）",
     "shiho": "司法・治安（誹謗中傷、刑事手続、犯罪）",
+    "keizai": "景気・物価・為替・金利（円安、物価高、値上げ、仕入れ値、利上げ、借入金利、景気、短観）",
     "none": "上のどれでもない（芸能、スポーツ、日常、商品の宣伝、政策と関係ない話）",
 }
 THEME_TO_FIELD = {
@@ -276,6 +277,8 @@ def queries(since_ts, min_faves):
         w = t.get("seo_word") or (t.get("words") or [t["short"]])[0]
         qs.add(w.split()[0])
     qs |= {"国会", "法案", "政府", "大臣", "災害", "被災", "補助金", "制度"}
+    # 経営者の時事の投稿（経済指標のカード exbridge.jp/keizai/ を添える。2026-10-19）
+    qs |= {"円安", "物価高", "利上げ", "値上げ", "短観"}
     # since_time: は Unix 時刻（X の検索演算子。fxtwitter の検索でも効く）。返信は投稿から早いほど読まれるので、
     # 既定は直近60分。60分では「いいね」がまだ少ないので min_faves も小さく（既定5）
     return [f"{w} since_time:{since_ts} min_faves:{min_faves} lang:ja -filter:replies" for w in sorted(qs)]

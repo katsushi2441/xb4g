@@ -315,6 +315,7 @@ def codex_batch(items, workdir):
 - 「付けるトラッカー」が無く「リンク候補」がある候補は、投稿の中身にいちばん近いもの（デモ・紹介ページを優先）を1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）。「投稿者」に本人の質疑や質問主意書の件数があれば、それに触れてよい
 - 「カードに出る答弁」があれば、その答弁を文の中心にする（付けるカードと文が合う）
+- 「経済指標」があり、投稿が為替・金利・物価・景気の話なら、経済指標のカードを link に選んでよい（経営者の投稿には特に合う）。数字は「経済指標」に書いてある値と時点だけを使い、「〜月時点で」と時点を必ず添える。値の良し悪しや先行きの予想は書かない
 - 「関連する質問主意書」を使うときは、件名と提出者・提出日だけを事実として書く（答弁書の中身は書かない）
 
 {STYLE}
@@ -431,6 +432,26 @@ def shuisho_links(hits):
              "url": f"{KSHUISHO}/q/{h['id']}"} for h in hits]
 
 
+KEIZAI_JSON = os.path.join(WORK, "exbridge_jp", "keizai", "keizai.json")   # exbridge_jp/scripts/keizai_build.py が毎日作る
+
+
+def keizai_hits(text, k=2):
+    """投稿が為替・金利・物価・景気に触れていれば、経済指標のカード（exbridge.jp/keizai/<key>/）を候補にする"""
+    try:
+        items = json.load(open(KEIZAI_JSON, encoding="utf-8"))["items"]
+    except (OSError, ValueError, KeyError):
+        return []
+    hit = [x for x in items if re.search(x["words"], text)]
+    return hit[:k]
+
+
+def keizai_fact(x):
+    t, v = x["latest"]
+    u = x["unit"]
+    s = f"{x['name']}（{x['sub']}）は{x['label']}に{v}{u}" + ("（前年同月比）" if x["kind"] == "yoy" else "")
+    return s + "".join(f"、{n}（{lab}）は{pv}{u}" for n, lab, pv in x["compare"]) + "（日本銀行の統計）"
+
+
 def make_item(p, field, mmdd, r=None):
     """投稿1件に、付けるリンク・codex に渡す事実を用意する。付けられるものが無ければ None"""
     tr = X.match_tracker(field, p["text"])
@@ -504,6 +525,12 @@ def make_item(p, field, mmdd, r=None):
         if not (tr or sy) or (not tr and not links):
             links = links + [{"種類": "議員ページ（投稿者本人の国会での質疑と質問主意書の件数のカード）", "題名": f"{mem['plain']}議員の国会発言",
                               "説明": "国会での質疑・答弁の件数、年ごとの推移、直近の質問、提出した質問主意書の件数", "url": f"https://xb4g.com/giin/{mem['slug']}"}]
+    # 経済指標のカード（経営者の投稿で、円安・物価・金利・景気に触れているとき）
+    kz = keizai_hits(p["text"])
+    if kz:
+        links = [{"種類": "経済指標のカード（当社のページ。最新の値と2年の推移のグラフが1枚。日本銀行の統計）", "題名": x["name"],
+                  "説明": keizai_fact(x), "url": x["url"]} for x in kz] + links
+        facts = dict(facts, 経済指標=[keizai_fact(x) for x in kz])
     if not url and not links:
         return None
     for a in facts.get("発言", []) if isinstance(facts, dict) else []:
