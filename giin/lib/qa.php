@@ -27,6 +27,9 @@ function g_qa_kind(string $body): string
         && mb_strpos(mb_substr($body, 0, 400), '報告') !== false) { return 'chair'; }
     if (mb_strpos(mb_substr($body, 0, 200), '永年在職議員表彰') !== false) { return 'other'; }
     $head = preg_match('/^[○◯●]\s*([^\s　]{1,40})/u', $body, $m) ? $m[1] : mb_substr($body, 0, 24);
+    // 参考人（日銀総裁・有識者など）は質問への答え。'q' に入れると組にならず、答弁の欄が空のカードになった（2026-10-18）。
+    // tracker_speech の kind も 'ref'（fetch_tracker.py）。「政府参考人」は頭が「政府」なのでここには来ない
+    if (mb_strpos($head, '参考人') === 0) { return 'ref'; }
     $rules = [
         'chair' => ['委員長代理', '委員長', '主査代理', '主査', '副議長', '議長', '分科会長'],
         'gov'   => ['国務大臣', '大臣政務官', '副大臣', '政府参考人', '政府特別補佐人', '大臣', '長官', '本部長', '副本部長'],
@@ -51,10 +54,10 @@ function g_qa_ndl(string $issue, int $no): ?array
             'speech_url' => (string)($r['speechURL'] ?? ''), 'kind' => g_qa_kind($body), 'speech_order' => $no];
 }
 
-/** 質問の直後の政府答弁。表にあればそれ、無ければ会議録APIを読んで手元に置く */
+/** 質問の直後の政府答弁（参考人の答えも含む）。表にあればそれ、無ければ会議録APIを読んで手元に置く */
 function g_qa_answer(array $q): ?array
 {
-    $a = g_one("SELECT * FROM tracker_speech WHERE tracker=? AND meeting_url=? AND kind='gov'
+    $a = g_one("SELECT * FROM tracker_speech WHERE tracker=? AND meeting_url=? AND kind IN ('gov', 'ref')
                 AND speech_order BETWEEN ? AND ? ORDER BY speech_order LIMIT 1",
                [$q['tracker'], $q['meeting_url'], (int)$q['speech_order'] + 1, (int)$q['speech_order'] + 3]);
     if ($a) {
@@ -64,7 +67,7 @@ function g_qa_answer(array $q): ?array
                           [$q['tracker'], $q['meeting_url'], (int)$q['speech_order'], (int)$a['speech_order']]);
         return $mid ? null : $a;
     }
-    $f = g_qa_cache_dir() . '/ans_' . preg_replace('/[^0-9A-Za-z_]/', '', (string)$q['speech_id']) . '.json';
+    $f = g_qa_cache_dir() . '/ans2_' . preg_replace('/[^0-9A-Za-z_]/', '', (string)$q['speech_id']) . '.json';
     if (is_file($f)) {
         $c = json_decode((string)@file_get_contents($f), true);
         if (is_array($c)) { return $c['none'] ?? false ? null : $c; }
@@ -78,7 +81,7 @@ function g_qa_answer(array $q): ?array
         $s = g_qa_ndl($m[1], (int)$m[2] + $i);
         if ($s === null) { $ok = $i > 1; break; }          // 会議の終わり（2件目以降）か、読めなかった
         if ($s['kind'] === 'chair') { continue; }           // 「○○局長。」の指名は飛ばす
-        if ($s['kind'] === 'gov') { $found = $s; }
+        if ($s['kind'] === 'gov' || $s['kind'] === 'ref') { $found = $s; }
         break;
     }
     flock($lock, LOCK_UN); fclose($lock);
@@ -133,7 +136,7 @@ function g_qa_pair(string $key, string $sid): ?array
     $s = g_one("SELECT t.*, g.slug, g.plain, ga.slug gslug FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
                 LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id WHERE t.tracker=? AND t.speech_id=?", [$key, $sid]);
     if (!$s) { return null; }
-    if ($s['kind'] === 'gov') {
+    if ($s['kind'] === 'gov' || $s['kind'] === 'ref') {
         $q = g_one("SELECT t.*, g.slug, g.plain, ga.slug gslug FROM tracker_speech t LEFT JOIN giin g ON g.id=t.giin_id
                     LEFT JOIN " . g_ga_table() . " ga ON ga.id=t.giin_id WHERE t.tracker=? AND t.meeting_url=? AND t.kind='q' AND t.speech_order BETWEEN ? AND ?
                     ORDER BY t.speech_order DESC LIMIT 1",
@@ -171,6 +174,9 @@ function g_qa_who_q(array $q): string
 function g_qa_who_a(array $a): string
 {
     $pos = trim((string)($a['position'] ?? ''));
+    // 兼務の多い大臣は肩書きが60字を超え、カードの右端から名前がはみ出した（2026-10-18 黄川田・小野田大臣）。
+    // 長ければ括弧の中（担当の列挙）を内側から落とす。名前は必ず残す
+    while (mb_strlen($pos) > 22 && preg_match('/（[^（）]*）/u', $pos)) { $pos = (string)preg_replace('/（[^（）]*）/u', '', $pos, 1); }
     return trim(($pos !== '' ? $pos . '　' : '') . $a['speaker']);
 }
 
@@ -180,7 +186,7 @@ function g_qa_who_a(array $a): string
 function g_qa_png(string $key, string $sid): void
 {
     $t = g_tracker($key);
-    $f = g_qa_cache_dir() . '/card_' . preg_replace('/[^0-9a-z-]/', '', $key) . '_' . preg_replace('/[^0-9A-Za-z_]/', '', $sid) . '.png';
+    $f = g_qa_cache_dir() . '/card2_' . preg_replace('/[^0-9a-z-]/', '', $key) . '_' . preg_replace('/[^0-9A-Za-z_]/', '', $sid) . '.png';
     if (!is_file($f)) {
         $pair = $t ? g_qa_pair($key, $sid) : null;
         if (!$pair || !function_exists('imagettftext')) {
@@ -221,7 +227,9 @@ function g_qa_draw(array $t, ?array $q, ?array $a): string
         imagefilledrectangle($im, $X, $y, $X + 8, $y + $h, $labelBg);
         imagefilledrectangle($im, $X + 28, $y + 16, $X + 28 + 74, $y + 50, $labelBg);
         imagettftext($im, 19, 0, $X + 46, $y + 41, $white, $FB, $label);
-        $whoSize = g_card_fit($who, $FM, 24, $IW - 150);
+        $whoSize = g_card_fit($who, $FM, 24, $IW - 150, 16);
+        // 16ptでも入らなければ、頭（肩書き）を「…」で詰めて名前を残す
+        while (g_card_textw($who, $FM, $whoSize) > $IW - 150 && mb_strlen($who) > 8) { $who = '…' . mb_substr($who, 2); }
         imagettftext($im, $whoSize, 0, $X + 118, $y + 43, $ink, $FM, $who);
         $ly = $y + 62 + (int)round($qsize);
         foreach ($wrapped as $ln) { g_card_line($im, $ln, $FR, $qsize, $X + 28, $ly, $ink, $hi, $words); $ly += $lh; }
