@@ -366,6 +366,7 @@ function g_page_giin(int $id, int $page): void
        . '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言</span></div>'
        . '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>'
        . '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>'
+       . ((function_exists('g_giin_shuisho') && ($__s = g_giin_shuisho((string)$g['slug']))) ? '<a class="c" href="' . g_e(g_giin_shuisho_url($__s, 'giin-' . $g['slug'])) . '" style="text-decoration:none;color:inherit"><b>' . number_format((int)$__s['n']) . '</b><span>提出した質問主意書（' . g_e(substr((string)$__s['first'], 0, 4)) . '年〜）→ 本文と答弁書</span></a>' : '')
        . '</div></section>';
 
     $L = g_links($g['slug']);
