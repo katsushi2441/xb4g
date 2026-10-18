@@ -292,6 +292,8 @@ def codex_batch(items, workdir):
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
         if it.get("url", "").startswith("https://xb4g.com/giin/tracker/"):
             cases[-1]["付けるトラッカー"] = it["label"]
+        if it.get("url", "").startswith("https://exbridge.jp/keizai/"):
+            cases[-1]["付ける経済指標のカード"] = it["label"]
         if it["links"]:
             cases[-1]["リンク候補"] = [dict(番号=i + 1, 種類=l["種類"], 題名=l["題名"], 説明=l["説明"]) for i, l in enumerate(it["links"])]
     prompt = f"""名古屋のシステム開発会社（株式会社エクスブリッジ）の担当者として、X の投稿への返信文を、下の候補それぞれに2つ書いてください（その投稿に合う型を2つ選び、どちらもそのまま投稿できる出来にする）。ファイルの読み書きやコマンドの実行はしないでください。
@@ -315,6 +317,7 @@ def codex_batch(items, workdir):
 - 「付けるトラッカー」が無く「リンク候補」がある候補は、投稿の中身にいちばん近いもの（デモ・紹介ページを優先）を1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）。「投稿者」に本人の質疑や質問主意書の件数があれば、それに触れてよい
 - 「カードに出る答弁」があれば、その答弁を文の中心にする（付けるカードと文が合う）
+- 候補に「付ける経済指標のカード」がある場合（カードは必ず付く）、link は 0 にする。文は「カードに出る指標」の値と時点を中心にし、投稿の出来事と数字をつなぐ
 - 「経済指標」があり、投稿が為替・金利・物価・景気の話なら、経済指標のカードを link に選んでよい（経営者の投稿には特に合う）。数字は「経済指標」に書いてある値と時点だけを使い、「〜月時点で」と時点を必ず添える。値の良し悪しや先行きの予想は書かない
 - 「関連する質問主意書」を使うときは、件名と提出者・提出日だけを事実として書く（答弁書の中身は書かない）
 
@@ -441,7 +444,11 @@ def keizai_hits(text, k=2):
         items = json.load(open(KEIZAI_JSON, encoding="utf-8"))["items"]
     except (OSError, ValueError, KeyError):
         return []
-    hit = [x for x in items if re.search(x["words"], text)]
+    # 当たった語の種類が多い指標を先に（同じなら keizai.json の並び）。「日銀の利上げで借入金利が…」は
+    # コールレートと貸出金利が2語ずつ当たるので、会社に近い貸出金利を先にする
+    sc = [(len(set(re.findall(x["words"], text))) + (1 if x["key"] == "kashidashi-kinri" and re.search(r"借入|借り入れ|融資", text) else 0), -i, x)
+          for i, x in enumerate(items)]
+    hit = [x for n, _, x in sorted(sc, key=lambda t: (-t[0], -t[1])) if n > 0]
     return hit[:k]
 
 
@@ -527,7 +534,18 @@ def make_item(p, field, mmdd, r=None):
                               "説明": "国会での質疑・答弁の件数、年ごとの推移、直近の質問、提出した質問主意書の件数", "url": f"https://xb4g.com/giin/{mem['slug']}"}]
     # 経済指標のカード（経営者の投稿で、円安・物価・金利・景気に触れているとき）
     kz = keizai_hits(p["text"])
-    if kz:
+    if kz and not (tr or sy):
+        # 経済のニュース・投稿（トラッカーもシステムも当たらない）は、経済指標のカード1枚を必ず付ける（2026-10-19 ユーザー指示）。
+        # ほかのリンク候補は付けない（URLを1本にして、Xの数え方の280に本文の余裕を残し、カードを確実に出す）
+        x = kz[0]
+        url = with_ref(x["url"], ref)
+        label = f"経済指標のカード: {x['name']}"
+        what = f"経済指標のカード「{x['name']}」: 日本銀行の統計から、最新の値と1年前との差、2年分の推移を1枚にした当社のページ"
+        facts = dict(facts or {}, 経済指標=[keizai_fact(y) for y in kz], カードに出る指標=keizai_fact(x))
+        t, v = x["latest"]
+        fb = f"{x['name']}は{x['label']}時点で{v}{x['unit']}" + (f"、1年前は{x['compare'][-1][2]}{x['unit']}でした。" if x["compare"] else "でした。")
+        links = []
+    elif kz:
         links = [{"種類": "経済指標のカード（当社のページ。最新の値と2年の推移のグラフが1枚。日本銀行の統計）", "題名": x["name"],
                   "説明": keizai_fact(x), "url": x["url"]} for x in kz] + links
         facts = dict(facts, 経済指標=[keizai_fact(x) for x in kz])
