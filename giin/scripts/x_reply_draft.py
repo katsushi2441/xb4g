@@ -131,15 +131,15 @@ def bigrams(t):
     return {t[i:i + 2] for i in range(len(t) - 1)}
 
 
-def closest_answers(key, post_text, words, k=8):
+def closest_answers(key, post_text, words, k=8, kinds=("gov", "q", "ref")):
     """投稿に近い発言（政府の答弁と議員の質問）を、文字の2つ組の重なり＋新しさで上位k件選ぶ（規則）。
     抜粋は語を含む1文。どれを使うか・使わないかは文案の側で決める"""
     c = sqlite3.connect(os.path.join(X.ROOT, "data", "giin.sqlite"))
     pb = bigrams(post_text)
     this_year = datetime.date.today().year
     found = []
-    for date, speaker, pos, kind, body, house, meeting in c.execute(
-            "select date, speaker, position, kind, body, house, meeting from tracker_speech where tracker=? and kind in ('gov','q')", (key,)):
+    for date, speaker, pos, kind, body, house, meeting, sid in c.execute(
+            "select date, speaker, position, kind, body, house, meeting, speech_id from tracker_speech where tracker=? and kind in (" + ",".join("?" * len(kinds)) + ")", (key, *kinds)):
         sents = [x for x in re.split(r"(?<=。)", body or "") if any(all(q in x for q in w.split()) for w in words)]
         for sent in sents:
             sent = re.sub(r"^○[^　]+　", "", sent.strip())
@@ -147,15 +147,16 @@ def closest_answers(key, post_text, words, k=8):
                 continue
             sc = len(pb & bigrams(sent)) / (len(bigrams(sent)) or 1)
             sc += max(0, 5 - (this_year - int(date[:4]))) * 0.02   # 直近5年の発言を少し優先
-            found.append((sc, date, speaker, pos, kind, sent, f"{house}{meeting}"))
+            found.append((sc, date, speaker, pos, kind, sent, f"{house}{meeting}", sid))
     found.sort(key=lambda x: -x[0])
     out, seen = [], set()
-    for _, date, speaker, pos, kind, sent, mtg in found:
+    for _, date, speaker, pos, kind, sent, mtg, sid in found:
         if sent in seen:
             continue
         seen.add(sent)
         who = f"{pos}の{speaker}氏" if pos else f"{speaker}議員"
-        out.append({"date": date, "meeting": mtg, "who": who, "kind": "政府の答弁" if kind == "gov" else "議員の質問", "quote": sent})
+        out.append({"date": date, "meeting": mtg, "who": who, "kind": {"gov": "政府の答弁", "ref": "参考人の答弁"}.get(kind, "議員の質問"), "quote": sent,
+                    "_sid": sid})   # 質疑カードのURLに使う（codex には渡さない）
         if len(out) == k:
             break
     return out
@@ -246,18 +247,26 @@ def numbers(s):
     return out
 
 
+def xlen(t):
+    """Xの数え方（全角1字=2・半角1字=1）。URLは含めない"""
+    return sum(1 if ord(c) < 0x1100 else 2 for c in t)
+
+
 def check(item, t):
     """文案の検査。通らなければ理由を返す"""
     if not t:
         return "空"
-    if len(t) > 220:
-        return f"長い（{len(t)}字）"
+    # Xの数え方で280を超えると長文ポストになり、カード（OGP）が出ない（2026-10-17 実測）。URLは1本23字＋改行
+    nurl = len([u for u in (item.get("url") or "").split("\n") if u])
+    wl = xlen(t) + 24 * nurl
+    if wl > 280:
+        return f"長い（Xの数え方で{wl}）"
     if re.search(BANNED, t):
         return "売り込み・感想の言葉"
     allowed = numbers(item["post"]["text"]) | numbers(json.dumps(item["facts"], ensure_ascii=False))
     if not numbers(t) <= allowed:
         return "事実に無い数字"
-    src = item["post"]["text"] + "".join(a["quote"] for a in item["facts"].get("発言", []))
+    src = item["post"]["text"] + "".join(a["quote"] for a in item["facts"].get("発言", [])) + (item["facts"].get("カードに出る答弁") or {}).get("quote", "")
     for q in re.findall(r"「(.+?)」", t):
         for part in re.split(r"…+|\.\.\.", q):
             part = part.strip("。、")
@@ -294,7 +303,7 @@ def codex_batch(items, workdir):
 - 当社のシステムを紹介する場合も、まず相手の投稿への受け止め。システムは「〜を確かめられるシステムを開発しています」と書き、無料とは書かない（販売しているシステムのデモ）
 
 # 守ること
-- 1案 80〜200字。型（答弁を示す・数字や論点を示す・本人の発言に寄せる・現場に寄り添う など）は、お手本から投稿に合うものを2つ選ぶ（2案は違う型・違う事実にする）
+- 1案は全角で60〜110字。**Xの数え方（全角1字=2・URL1本=23）でURL込み280以内に収める。**超えると長文ポストになり、リンク先のカード画像が出ない（お手本は型の参考で、長さはこちらに従う）。文ごとに改行（\n）する。型（答弁を示す・数字や論点を示す・本人の発言に寄せる・現場に寄り添う など）は、お手本から投稿に合うものを2つ選ぶ（2案は違う型・違う事実にする）
 - 使ってよい事実に無い数字・日付・人名・会議名は書かない。かぎかっこで引用するときは quote の文字をそのまま使い、長ければ前後を「…」で切る（言い換えない）
 - 引用する発言は、投稿の出来事そのものについての発言ではないことが多い。投稿の出来事について答えたと読める書き方はしない（年や会議名で区別する）
 - 政治的な賛否で相手を責めない。人への批判はしない。感嘆符・ハッシュタグ・絵文字・URL は書かない（URL はこちらで付ける）
@@ -302,9 +311,11 @@ def codex_batch(items, workdir):
 - 返信しないほうがよい投稿（街頭演説やあいさつだけの投稿、他人への攻撃・罵倒、個人的な被害の吐露など、国会の事実を添えると失礼になるもの）は、drafts を空にする
 - **リンクは当社のシステムのデモ・紹介ページ（LP）を優先する。** 「リンク候補」に投稿の中身に合う「当社のシステムのデモ・紹介ページ」があれば、それを link に入れる（国会トラッカーや記事より先）。
 - link2 には、2つ目のURLとして付けると役に立つものを1つだけ入れる：link がデモ・紹介ページなら、投稿に合う国会トラッカー（リンク候補にあれば）。link が国会トラッカーや記事なら、投稿に合うデモ・紹介ページ。合うものが無ければ 0。link と同じ番号は入れない
-- 候補に「付けるトラッカー」がある場合（トラッカーは必ず付く）、リンク候補（デモ・紹介ページ）から投稿に合うものを1つ link に入れる。合うものが無ければ link は 0 でよい（その場合もトラッカーだけで返信を書く）。この場合 link2 は 0
+- 候補に「付けるトラッカー」がある場合（トラッカーのカードは必ず付く。議員×テーマのカードか、質問と答弁が1枚になった質疑カード）、リンク候補（デモ・紹介ページ、または質問主意書）から投稿に合うものを1つ link に入れる。投稿者本人の質問主意書があれば、それを優先してよい。合うものが無ければ link は 0 でよい（その場合もトラッカーだけで返信を書く）。この場合 link2 は 0
 - 「付けるトラッカー」が無く「リンク候補」がある候補は、投稿の中身にいちばん近いもの（デモ・紹介ページを優先）を1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
-- 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）
+- 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）。「投稿者」に本人の質疑や質問主意書の件数があれば、それに触れてよい
+- 「カードに出る答弁」があれば、その答弁を文の中心にする（付けるカードと文が合う）
+- 「関連する質問主意書」を使うときは、件名と提出者・提出日だけを事実として書く（答弁書の中身は書かない）
 
 {STYLE}
 
@@ -322,13 +333,112 @@ replies に、候補の id ごとに link（選んだリンク候補の番号。
     return {x["id"]: x["drafts"] for x in rep}, {x["id"]: (x.get("link", 0), x.get("link2", 0)) for x in rep}
 
 
+# ---- カードを付ける（2026-10-19）----
+# Xの返信は、貼ったページのカードで読まれ方が変わる（10/1〜18 実測: テーマ一覧のカードは2ページ目まで読んだ人7%、
+# 議員×テーマのカードは32%）。一覧ではなく、投稿者本人や投稿の論点に合う1枚のカードを付ける
+KSHUISHO_DB = os.path.join(WORK, "kshuisho", "php", "kshuisho_data", "kshuisho.sqlite")
+KSHUISHO = "https://kurage.exbridge.jp/kshuisho.php"
+
+
+def member_of(p):
+    """投稿者が国会議員なら giin_all の行（Xのアカウント名で引く）。違えば None"""
+    h = (p.get("screen_name") or "").lower()
+    if not h:
+        return None
+    c = sqlite3.connect(os.path.join(X.ROOT, "data", "giin.sqlite"))
+    cols = ["id", "slug", "name", "plain", "n_q", "n_gov"]
+    r = c.execute("select " + ", ".join(cols) + " from giin_all where lower(x)=?", (h,)).fetchone()
+    if r:
+        return dict(zip(cols, r))
+    # 名簿のXは1つだけ（蓮舫議員は事務所の renho_office、本人の投稿は renho_sha）。国会議員の投稿なら、
+    # X の名簿（x_politicians.json）か表示名に、議員の名前がそのまま1人だけ入っていればその人
+    if not X.is_kokkai(p):
+        return None
+    try:
+        xp = json.load(open(os.path.join(X.ROOT, "data", "x_politicians.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        xp = {}
+    t = re.sub(r"[\s　]", "", (xp.get(p.get("screen_name") or "") or "") + " " + (p.get("name") or ""))
+    hit = [x for x in c.execute("select " + ", ".join(cols) + " from giin_all") if len(x[3]) >= 2 and x[3] in t]
+    return dict(zip(cols, hit[0])) if len(hit) == 1 else None
+
+
+def member_shuisho(m):
+    """その議員の質問主意書の件数（scripts/build_kshuisho_giin.py が作る）"""
+    try:
+        return json.load(open(os.path.join(X.ROOT, "data", "kshuisho_giin.json"), encoding="utf-8")).get(m["slug"])
+    except (OSError, ValueError):
+        return None
+
+
+def member_theme_card(m, key):
+    """議員×テーマのカード（その議員がこのテーマで質問していれば）。id は会議録の表記の名前の crc32（lib/tracker_cards.php の g_tm_id）"""
+    import zlib
+    c = sqlite3.connect(os.path.join(X.ROOT, "data", "giin.sqlite"))
+    r = c.execute("select speaker, count(*) from tracker_speech where tracker=? and giin_id=? and kind='q' group by speaker order by 2 desc limit 1",
+                  (key, m["id"])).fetchone()
+    if not r:
+        return None, 0
+    return f"https://xb4g.com/giin/tracker/{key}/m/{zlib.crc32(r[0].encode('utf-8')) & 0xffffffff:08x}", r[1]
+
+
+def qa_card(key, post_text, words):
+    """投稿にいちばん近い政府答弁の質疑カード（質問と答弁が1枚）。答弁が無ければ None。
+    政府の答弁を先に探す（近い発言の上位には参考人の古い発言が入ることがある。2011年の証券会社の人など）"""
+    for kind in ("gov", "ref"):
+        a = closest_answers(key, post_text, words, k=1, kinds=(kind,))
+        if a:
+            return f"https://xb4g.com/giin/tracker/{key}/{a[0]['_sid']}", a[0]
+    return None, None
+
+
+def shuisho_hits(words, author=None, k=3, post=""):
+    """質問主意書アシストの手元のDBを語で引く。件名に語が入るものを優先し、投稿者本人のものを先に、新しい順"""
+    if not words or not os.path.exists(KSHUISHO_DB):
+        return []
+    c = sqlite3.connect(KSHUISHO_DB)
+    me = (author or "").replace(" ", "")
+    seen, out = set(), []
+    for col in ("title", "q_text"):
+        for w in words:
+            parts = [x for x in w.split() if len(x) >= 2]
+            if not parts:
+                continue
+            sql = ("select id, title, submitter, submit_date, evasive_json from q where " + " and ".join(f"{col} like ?" for _ in parts)
+                   + " order by (replace(submitter, ' ', '')=?) desc, submit_date desc limit 6")
+            for r in c.execute(sql, [f"%{x}%" for x in parts] + [me]):
+                if r[0] not in seen:
+                    seen.add(r[0]); out.append(r)
+        if len(out) >= k:
+            break
+    # 語が一般的だと（「運用状況」など）論点の違うものが当たる。件名の定型（質問主意書・に関する）を除いた2文字の組が、
+    # 投稿と2つ以上重なるものだけ残す
+    if post:
+        pb = bigrams(post)
+        rel = lambda r: len(pb & {b for b in bigrams(re.sub(r"(再?質問主意書|に関する|について)", "", r[1])) if re.fullmatch(r"[一-龥々ァ-ヶーA-Za-zＡ-Ｚ]{2}", b)})
+        out = [r for r in out if r[2].replace(" ", "") == me or rel(r) >= 2]
+        out.sort(key=lambda r: (r[2].replace(" ", "") != me, -rel(r), -(int((r[3] or "0")[:4]) if r[3] else 0)))
+    else:
+        out.sort(key=lambda r: (r[2].replace(" ", "") != me, -(int((r[3] or "0")[:4]) if r[3] else 0)))
+    return [{"id": r[0], "件名": r[1], "提出者": r[2], "提出日": r[3], "本人": r[2].replace(" ", "") == me,
+             "定型句": list(json.loads(r[4] or "{}").keys())} for r in out[:k]]
+
+
+def shuisho_links(hits):
+    """質問主意書をリンク候補の形に（codex が link / link2 に選べる）"""
+    return [{"種類": "質問主意書（1件ごとのカード。件名・提出者・質問と答弁書の抜き書きが1枚）",
+             "題名": h["件名"], "説明": f"{h['提出者']}が{h['提出日']}に提出" + ("（投稿者本人の質問主意書）" if h["本人"] else ""),
+             "url": f"{KSHUISHO}/q/{h['id']}"} for h in hits]
+
+
 def make_item(p, field, mmdd, r=None):
     """投稿1件に、付けるリンク・codex に渡す事実を用意する。付けられるものが無ければ None"""
     tr = X.match_tracker(field, p["text"])
     sy = X.match_system(field, p["text"]) if field else next(
         (m for f in X.SYSTEMS for m in [X.match_system(f, p["text"])] if m), None)
     pol = X.is_politician(p)
-    kf, links = None, []
+    mem = member_of(p)
+    kf, links, kw = None, [], []
     if tr:
         # トラッカーが当たった投稿でも、当社のシステムのデモ・紹介ページ（LP）が合えば一緒に付ける（2026-10-05 ユーザー指示「LPがあるならトラッカーより優先」）
         links = [l for l in related_links(p["text"], k=16) if l["種類"].startswith("当社のシステム")][:4]
@@ -338,8 +448,7 @@ def make_item(p, field, mmdd, r=None):
         links = related_links(p["text"], k=10)
         # LP（デモ・紹介ページ）を先頭に並べる（codex にも優先させる）
         links = [l for l in links if l["種類"].startswith("当社のシステム")] + [l for l in links if not l["種類"].startswith("当社のシステム")]
-        if not links:
-            return None   # リンク先が無い返信は出さない（トラッカーの一覧には付けない）
+        # リンク先が無ければ出さない（トラッカーの一覧には付けない）。質問主意書と議員ページも候補になるので、判定は最後で
         kf, kw = kokkai_facts(p["text"])
         if kf and not kf["発言"]:
             kf = None
@@ -357,6 +466,19 @@ def make_item(p, field, mmdd, r=None):
         facts["発言"] = closest_answers(tr["key"], p["text"], tr.get("words") or [tr["short"]])
         url = with_ref(f"https://xb4g.com/giin/tracker/{tr['key']}", ref)
         label = f"トラッカー: {tr['short']}"
+        # 一覧ではなく1枚のカードを付ける: 投稿者本人がこのテーマで質問していれば議員×テーマのカード、
+        # なければ投稿にいちばん近い政府答弁の質疑カード
+        mc, mn = member_theme_card(mem, tr["key"]) if mem else (None, 0)
+        if mc:
+            url = with_ref(mc, ref)
+            label = f"議員×テーマのカード: {tr['short']}（本人の質疑{mn}件）"
+            facts["投稿者本人のこのテーマの質疑"] = f"{mn}件"
+        else:
+            qc, qa = qa_card(tr["key"], p["text"], tr.get("words") or [tr["short"]])
+            if qc:
+                url = with_ref(qc, ref)
+                label = f"質疑カード: {tr['short']}（{qa['who']}の答弁）"
+                facts["カードに出る答弁"] = {k: v for k, v in qa.items() if not k.startswith("_")}
         fb = f"この論点が国会でどう議論されてきたか、質疑{facts['質疑の件数']}件と政府答弁{facts['政府答弁の件数']}件を会議録から並べています。"
     else:
         what = f"{sy[0]}: {SYSTEM_FACTS.get(sy[0], '')}"
@@ -364,6 +486,28 @@ def make_item(p, field, mmdd, r=None):
         url = with_ref(sy[1], ref)
         label = f"システム: {sy[0]}"
         fb = f"{SYSTEM_FACTS.get(sy[0], '').split('。')[0]}を開発しています。"
+    # 質問主意書のカード（投稿者本人のものを先に）。トラッカーの語、なければ会議録を引いた語で探す
+    if tr:
+        words = (tr.get("words") or [tr["short"]])[:4]
+    elif not sy:
+        words = [w for w in kw if w]
+    else:   # システムが当たった投稿は、質問主意書の話のときだけ探す
+        words = [w for w in keywords(p["text"]) if w] if sy[0] == "質問主意書の検索" else []
+    sh = shuisho_hits(words, mem["name"] if mem else None, post=p["text"])
+    if sh:
+        links = links + shuisho_links(sh)
+        facts = dict(facts, 関連する質問主意書=[{k: v for k, v in h.items() if k != "id"} for h in sh])
+    if mem:
+        ms = member_shuisho(mem)
+        facts = dict(facts, 投稿者=f"{mem['plain']}議員（国会での質疑{mem['n_q']}件・答弁{mem['n_gov']}件（2023年から）"
+                     + (f"・提出した質問主意書{ms['n']}件（{ms['first'][:4]}年から）" if ms else "") + "）")
+        if not (tr or sy) or (not tr and not links):
+            links = links + [{"種類": "議員ページ（投稿者本人の国会での質疑と質問主意書の件数のカード）", "題名": f"{mem['plain']}議員の国会発言",
+                              "説明": "国会での質疑・答弁の件数、年ごとの推移、直近の質問、提出した質問主意書の件数", "url": f"https://xb4g.com/giin/{mem['slug']}"}]
+    if not url and not links:
+        return None
+    for a in facts.get("発言", []) if isinstance(facts, dict) else []:
+        a.pop("_sid", None)
     return {"id": p["id"], "post": p, "r": r or {}, "what": what, "facts": facts, "url": url, "label": label, "fb": fb,
             "links": links, "ref": ref}
 
@@ -385,7 +529,7 @@ def finish(items, texts, picks):
             # トラッカー＋LP：LP を先に、トラッカーを2つ目に
             ln = it["links"][n - 1]
             it["url"] = with_ref(ln["url"], it["ref"]) + "\n" + tracker_url
-            it["label"] = f"デモ・紹介ページ「{ln['題名'][:30]}」＋{it['label']}"
+            it["label"] = f"{ln['種類'].split('（')[0]}「{ln['題名'][:30]}」＋{it['label']}"
             it["facts"] = dict(it["facts"], リンク先=ln["題名"] + "。" + ln["説明"])
             n = 0
         if it["links"] and 1 <= n <= len(it["links"]):   # codex が選んだ関連ページに付け替える
