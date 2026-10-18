@@ -237,7 +237,7 @@ python3 scripts/deploy.py --db      # DBも一緒に
 
 ## ライセンス
 
-MIT License（同梱のコード）。取り込むデータは各出典の条件に従ってください。
+MIT License（[LICENSE](LICENSE)。議員発言ログと、同じコードで動く国会トラッカー（`tracker_index.php`・`lib/tracker_*.php`・`scripts/fetch_tracker.py` ほか）を含みます）。取り込むデータは各出典の条件に従ってください。
 
 ## この議員だけが国会で取り上げていること
 
