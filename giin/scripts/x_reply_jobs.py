@@ -50,6 +50,11 @@ def run_x_reply_job(within: int = 40, **_) -> dict:
     else:
         mailed = notify_status("失敗（公開ページが今回の時刻に置き換わっていない）", steps)
     owners = refresh_owners()
+    # ニュースとカードのページ（確認用 proto・noindex）を毎回作り直す。失敗しても候補の回は失敗にしない（2026-10-20）
+    try:
+        _run([PY, os.path.join(SCRIPTS, "news_cards.py"), "--deploy"], 600)
+    except subprocess.TimeoutExpired:
+        pass
     return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps, "owners": owners}
 
 
