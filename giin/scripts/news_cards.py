@@ -73,13 +73,13 @@ def og(url, cache):
 def headline(text):
     """投稿の1行目（URLを除く）を見出しにする。長ければ切る"""
     first = next((ln.strip() for ln in (text or "").splitlines() if ln.strip() and not ln.strip().startswith("http")), "")
-    first = re.sub(r"https?://\S+", "", first).strip()
+    first = re.sub(r"https?://\S+|[#＃]\S+", "", first).strip()   # URLとハッシュタグ（#nhk_news など）は見出しに入れない
     return first[:80] + ("…" if len(first) > 80 else "")
 
 
-def collect():
+def collect(days=DAYS):
     news = news_handles()
-    since = (datetime.date.today() - datetime.timedelta(days=DAYS - 1)).isoformat()
+    since = (datetime.date.today() - datetime.timedelta(days=days - 1)).isoformat()
     items, seen = [], set()
     for f in sorted(glob.glob(os.path.join(PICK, "20*", "reply-*.json")), reverse=True):
         day = os.path.basename(os.path.dirname(f))
@@ -155,6 +155,31 @@ var k=b.dataset.k;document.querySelectorAll('.item').forEach(function(it){{it.hi
 </script></body></html>"""
 
 
+EXPORT = "/home/kojima/work/kpayload/data/news-cards.json"
+KEEP_DAYS = 90   # 日ごとの保管ページ（exbridge.jp/news/<日付>.html）に残す日数
+
+
+def tracker_page(card):
+    """カードが国会トラッカーのものなら、そのテーマのトラッカーのページ（xb4g.com/giin/tracker/<key>）"""
+    m = re.match(r"(https://xb4g\.com/giin/tracker/[a-z0-9-]+)", card)
+    return m.group(1) if m else ""
+
+
+def export(cache):
+    """exbridge.jp/news/（kpayload の build-news.ts）用のデータ。日付・見出し・出どころ・カード・テーマのトラッカー"""
+    names = {t["key"]: t.get("name") or t.get("short") for t in json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))}
+    rows = []
+    for i in collect(KEEP_DAYS):
+        o = og(i["card"], cache)
+        tp = tracker_page(i["card"])
+        rows.append({**i, "cardTitle": o["title"], "cardImage": o["img"], "tracker": tp,
+                     "trackerName": names.get(tp.rsplit("/", 1)[-1], "") if tp else ""})
+    json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump({"generated": datetime.datetime.now().isoformat(timespec="minutes"), "items": rows},
+              open(EXPORT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    return f"{EXPORT} {len(rows)}"
+
+
 def deploy(path):
     """確認用に proto.exbridge.jp/news-cards-<token>/ に置く（noindex・推測されにくいURL）。公開URLはユーザーが決めてから"""
     import ftplib
@@ -182,6 +207,7 @@ def deploy(path):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--deploy", action="store_true")
+    ap.add_argument("--export", action="store_true", help="kpayload/data/news-cards.json を書く（exbridge.jp/news/ の元データ。build-news.ts が読む）")
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     cache = json.load(open(CACHE, encoding="utf-8")) if os.path.exists(CACHE) else {}
@@ -192,3 +218,5 @@ if __name__ == "__main__":
     print(p, len(items))
     if a.deploy:
         print(deploy(p))
+    if a.export:
+        print(export(cache))
