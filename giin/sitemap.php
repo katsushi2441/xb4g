@@ -52,6 +52,20 @@ if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE name='giin_all'")) {
     foreach (g_all('SELECT slug, last_date FROM giin_all WHERE detail=0 AND n_speech>0 ORDER BY slug') as $g) { $urls[] = [$g['slug'], '0.6', 'weekly', substr((string)$g['last_date'], 0, 10)]; }
 }
 
+// 国会ごとの記録（2026-10-19）。lastmod は、閉じた国会は会期の終わりの日、会期中はその国会の最後の発言の日
+if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE name='sess_meta'")) {
+    $sl = [];
+    foreach (g_all('SELECT m.session, m.close, (SELECT MAX(date) FROM speech_all a WHERE a.session=m.session) AS last FROM sess_meta m') as $r) {
+        $sl[(int)$r['session']] = (string)($r['close'] ?: $r['last'] ?: $speechLast);
+    }
+    $urls[] = ['kokkai', '0.8', 'weekly', $sl ? max($sl) : $speechLast];
+    foreach ($sl as $sn => $lm) { $urls[] = ['kokkai/' . $sn, '0.8', 'weekly', $lm]; }
+    // 中身のある組だけ（質疑か質問主意書が1件以上）
+    foreach (g_all('SELECT g.slug, m.session FROM sess_member m JOIN giin_all g ON g.id=m.giin_id WHERE m.n_q>0 OR m.n_shuisho>0 ORDER BY g.slug, m.session') as $r) {
+        $urls[] = [$r['slug'] . '/' . (int)$r['session'], '0.5', 'monthly', $sl[(int)$r['session']] ?? $speechLast];
+    }
+}
+
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
    . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as [$p, $pri, $freq, $lm]) {

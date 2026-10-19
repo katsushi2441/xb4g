@@ -151,6 +151,8 @@ def update_giin_job(days_news: int = 120, **_) -> dict:
         ("法案", [PY, os.path.join(SCRIPTS, "fetch_bills.py")]),
         # 法案の「この法案で変わること」（手元の gemma4・元の文と数字を照合して合わないものは載せない）。新しく出た法案だけ
         ("法案の説明", [PY, os.path.join(SCRIPTS, "build_bill_explain.py"), "--limit", "30"]),
+        # 国会（回次）ごと・議員ごとの集計（/giin/<議員>/<回次> と /giin/kokkai/<回次>）。法案と発言と質問主意書のあとに作る
+        ("国会ごとの集計", [PY, os.path.join(SCRIPTS, "build_session_stats.py")]),
         # 選挙区ダッシュボード（289区）。各製品のDBを足し直す。他製品側の更新を拾うため毎日回す
         ("選挙区ダッシュボード", [PY, os.path.join(SCRIPTS, "build_senkyoku.py")]),
         ("選挙区の議員名簿", [PY, os.path.join(SCRIPTS, "build_senkyoku_members.py")]),

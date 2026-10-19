@@ -23,7 +23,7 @@ if (!defined('G_GA4'))  { define('G_GA4',  ''); }   // 計測は giin_config.php
  *  Undefined constant になる。2026-09-14 に踏んだ）。 */
 const G_RESERVED = ['list', 'theme', 'party', 'compare', 'about', 'search', 'sitemap.xml',
                     'robots.txt', 'ogp.png', 'data', 'lib', 'scripts', 'tests', 'g', 't', 'mt',
-                    'news', 'ai', 'tracker', 'senkyoku', 'bill'];
+                    'news', 'ai', 'tracker', 'senkyoku', 'bill', 'kokkai'];
 
 function g_url(string $p = ''): string { return G_BASE . '/' . ltrim($p, '/'); }
 function g_abs(string $p = ''): string { return G_HOST . g_url($p); }

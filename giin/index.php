@@ -31,6 +31,8 @@ require __DIR__ . '/lib/ui.php';
 require __DIR__ . '/lib/senkyoku.php';
 // 全国の議員の軽いページ（2026-10-15）。製品版で無いときは読まない
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }
+// 国会（回次）ごとの記録（2026-10-19）
+if (G_HAS_CARD && is_file(__DIR__ . '/lib/session.php')) { require __DIR__ . '/lib/session.php'; }
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 if (strpos($path, G_BASE) === 0) { $path = substr($path, strlen(G_BASE)); }
@@ -71,6 +73,14 @@ function g_route(string $path, int $page): void
     if (G_HAS_CARD && preg_match('#^/bill/(\d+-[a-z]+-\d+)\.png$#', $path, $m)) { g_bill_png($m[1]); return; }
     if (preg_match('#^/bill/(\d+-[a-z]+-\d+)$#', $path, $m)) { g_page_bill($m[1]); return; }
     if (preg_match('#^/party/([a-z0-9]+)$#', $path, $m)) { g_page_party($m[1]); return; }
+    // 国会ごと: /kokkai ・ /kokkai/221(.png) ・ /<議員>/221(.png)
+    if (function_exists('g_page_session')) {
+        if ($path === '/kokkai') { g_page_sessions(); return; }
+        if (preg_match('#^/kokkai/(\d{3})\.png$#', $path, $m)) { g_session_png((int)$m[1]); return; }
+        if (preg_match('#^/kokkai/(\d{3})$#', $path, $m)) { g_page_session((int)$m[1]); return; }
+        if (preg_match('#^/([a-z0-9-]+)/(\d{3})\.png$#', $path, $m) && !in_array($m[1], G_RESERVED, true)) { g_member_session_png($m[1], (int)$m[2]); return; }
+        if (preg_match('#^/([a-z0-9-]+)/(\d{3})$#', $path, $m) && !in_array($m[1], G_RESERVED, true)) { g_page_member_session($m[1], (int)$m[2]); return; }
+    }
     // 地元の数字カード（lib/senkyoku_card.php）
     if (function_exists('g_skc_png') && preg_match('#^/senkyoku/([a-z]+-\d+)/([A-Za-z_]+)\.png$#', $path, $m)) { g_skc_png($m[1], $m[2]); return; }
     if (function_exists('g_page_skc') && preg_match('#^/senkyoku/([a-z]+-\d+)/([A-Za-z_]+)$#', $path, $m)) { g_page_skc($m[1], $m[2]); return; }
@@ -367,7 +377,7 @@ function g_page_giin(int $id, int $page): void
        . '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>'
        . '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>'
        . ((function_exists('g_giin_shuisho') && ($__s = g_giin_shuisho((string)$g['slug']))) ? '<a class="c" href="' . g_e(g_giin_shuisho_url($__s, 'giin-' . $g['slug'])) . '" style="text-decoration:none;color:inherit"><b>' . number_format((int)$__s['n']) . '</b><span>提出した質問主意書（' . g_e(substr((string)$__s['first'], 0, 4)) . '年〜）→ 本文と答弁書</span></a>' : '')
-       . '</div></section>';
+       . '</div>' . (function_exists('g_sess_links') ? g_sess_links((int)$g['id'], (string)$g['slug']) : '') . '</section>';
 
     $L = g_links($g['slug']);
     if ($L) {

@@ -201,6 +201,7 @@ function g_page_giin_lite(int $id, int $page): void
        . g_e(g_date((string)($g['last_date'] ?: g_meta('range_from')))) . ' の国会会議録から数えています。それより前の発言は入っていません。'
        . ($isgov ? 'この期間の多くを大臣・副大臣・政務官（総理大臣を含む）として務めているため、国会での発言の大半は政府の側の答弁で、議員としての質問・討論は少なくなります。' : '')
        . '</p></section>';
+    if (function_exists('g_sess_links')) { echo g_sess_links((int)$g['id'], (string)$g['slug']); }   // 国会ごとの記録（2026-10-19）
 
     $links = [];
     if (!empty($g['profile'])) { $links[] = '<a href="' . g_e($g['profile']) . '" rel="nofollow noopener" target="_blank">議院の公式プロフィール</a>'; }
