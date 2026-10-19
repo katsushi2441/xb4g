@@ -77,6 +77,36 @@ def headline(text):
     return first[:80] + ("…" if len(first) > 80 else "")
 
 
+TRACKING = re.compile(r"^(n_cid|n_tw|utm_[a-z]+|fbclid|gclid|ref|from)$")
+
+
+def article_url(text, post_url):
+    """投稿の本文にある記事のURL（X・t.co 以外）。計測用の n_cid などは外す。無ければ投稿のURL"""
+    for u in re.findall(r"https?://[^\s　]+", text or ""):
+        host = urllib.parse.urlparse(u).netloc.lower()
+        if host.endswith(("x.com", "twitter.com", "t.co", "pic.x.com")):
+            continue
+        pr = urllib.parse.urlparse(u)
+        q = [(k, v) for k, v in urllib.parse.parse_qsl(pr.query, keep_blank_values=True) if not TRACKING.match(k)]
+        return urllib.parse.urlunparse(pr._replace(query=urllib.parse.urlencode(q)))
+    return post_url
+
+
+def lead_of(kind, card_title, tracker_name):
+    """カードへ誘う一文（投稿に入れる）。事実を足さず、カードの種類と題名だけから作る"""
+    if kind == "国会トラッカー" and tracker_name:
+        return f"「{tracker_name}」は国会でどう議論されてきたか。だれが質問し、政府が何と答えたかはこちら。"
+    if kind == "質問主意書":
+        t = re.sub(r"（.*$", "", card_title or "").strip()
+        return f"この話題は、国会でも質問主意書で問われていました。{('「' + t + '」と') if t and len(t) <= 40 else ''}政府の答弁書はこちら。"
+    if kind == "経済指標":
+        t = re.sub(r"[（(].*$", "", card_title or "").strip()
+        return f"関係する経済指標{('「' + t + '」') if t else ''}の最新の値と2年の推移はこちら。"
+    if kind == "議員の記録":
+        return "関係する議員の国会での記録はこちら。"
+    return "関係する制度や公開データは、こちらで確かめられます。"
+
+
 def collect(days=DAYS):
     news = news_handles()
     since = (datetime.date.today() - datetime.timedelta(days=days - 1)).isoformat()
@@ -90,6 +120,11 @@ def collect(days=DAYS):
             rows = json.load(open(f, encoding="utf-8"))
         except ValueError:
             continue
+        # 返信候補の要約は本文が200字で切れるので、記事のURLは集めた投稿の全文から取る
+        try:
+            full = {x.get("url"): x.get("text") or "" for x in json.load(open(os.path.join(os.path.dirname(f), f"posts-{stamp}.json"), encoding="utf-8"))}
+        except (OSError, ValueError):
+            full = {}
         for r in rows:
             if (r.get("screen_name") or "").lower() not in news:
                 continue
@@ -102,7 +137,8 @@ def collect(days=DAYS):
                 continue
             seen.add(key)
             items.append({"day": day, "time": f"{stamp[:2]}:{stamp[2:]}", "source": r.get("name") or r.get("screen_name"),
-                          "post": r.get("url"), "headline": headline(r.get("text")), "card": card, "kind": kind_of(card)})
+                          "post": r.get("url"), "newsUrl": article_url(full.get(r.get("url")) or r.get("text"), r.get("url")),
+                          "headline": headline(full.get(r.get("url")) or r.get("text")), "card": card, "kind": kind_of(card)})
     return items
 
 
@@ -172,8 +208,9 @@ def export(cache):
     for i in collect(KEEP_DAYS):
         o = og(i["card"], cache)
         tp = tracker_page(i["card"])
-        rows.append({**i, "cardTitle": o["title"], "cardImage": o["img"], "tracker": tp,
-                     "trackerName": names.get(tp.rsplit("/", 1)[-1], "") if tp else ""})
+        tn = names.get(tp.rsplit("/", 1)[-1], "") if tp else ""
+        rows.append({**i, "cardTitle": o["title"], "cardImage": o["img"], "tracker": tp, "trackerName": tn,
+                     "lead": lead_of(i["kind"], o["title"], tn)})
     json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump({"generated": datetime.datetime.now().isoformat(timespec="minutes"), "items": rows},
               open(EXPORT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
