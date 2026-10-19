@@ -267,6 +267,24 @@ def is_politician(p):
     return bool(re.search(POLITICIAN, (p.get("name") or "") + " " + (p.get("description") or "")))
 
 
+# 愛知の経営者（2026-10-19 ユーザー指示「毎日の返信候補のメールに『愛知の経営者』の枠を足して」）。
+# 名簿は scripts/find_aichi_owners.py --daily が毎日足す。経営者は1日に数回しか投稿しないので、議員より長く遡って読み、
+# 表示の下限も掛けない（つながるのが目的で、表示の多さは問わない）
+OWNERS_PATH = os.path.join(ROOT, "data", "x_aichi_owners.json")
+OWNER_WITHIN_MIN = 360
+
+
+def owners():
+    try:
+        return {k: v for k, v in json.load(open(OWNERS_PATH, encoding="utf-8")).items() if not v.get("skip")}
+    except (OSError, ValueError):
+        return {}
+
+
+def is_owner(p):
+    return (p.get("screen_name") or "") in owners()
+
+
 def trackers():
     return json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))
 
@@ -357,6 +375,18 @@ def collect(args):
                 s = slim(x); s["query"] = "from:報道一覧"; seen[x["id"]] = s; nnews += 1
         time.sleep(0 if down else 2)
     print(f"報道一覧 {len(news)}アカウント {nnews}件")
+    # ①'' 愛知の経営者。議員・報道と同じく from: でまとめて引き、検索が止まっていれば時系列で読む。直近6時間
+    own = sorted(owners())
+    own_since = int(time.time()) - OWNER_WITHIN_MIN * 60
+    nown = 0
+    for i in range(0, len(own), 20):
+        if over("愛知の経営者"):
+            break
+        q = "(" + " OR ".join(f"from:{h}" for h in own[i:i + 20]) + f") since_time:{own_since} -filter:replies"
+        for x in fx_search(q, pages=2, since_ts=own_since):
+            if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= own_since:
+                s = slim(x); s["query"] = "from:愛知の経営者"; seen[x["id"]] = s; nown += 1
+    print(f"愛知の経営者 {len(own)}人 {nown}件")
     if down:
         words_stage()
     # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す。
@@ -430,7 +460,8 @@ def pick(args):
     posts = [x for x in json.load(open(pp, encoding="utf-8"))
              if (x.get("views") or 0) >= args.min_views
              or (is_politician(x) and (x.get("views") or 0) >= args.min_views_politician)
-             or (is_kokkai(x) and (x.get("views") or 0) >= args.min_views_kokkai)]
+             or (is_kokkai(x) and (x.get("views") or 0) >= args.min_views_kokkai)
+             or is_owner(x)]
     stamp = os.path.basename(pp)[6:-5]
     jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す

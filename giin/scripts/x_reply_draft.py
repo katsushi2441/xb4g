@@ -29,6 +29,11 @@ MAX_ITEMS = 15   # 1回に文案を作る上限（codex の枠を守る）
 # 200前後）は報道機関（1,000〜数万）に毎回押し出され、2026-10-08 は分野の当たった議員の投稿174件（うち国会議員77件）
 # から文案になったのは2件だった。地方議員・首長は今までどおり表示の多い順で競う（2026-10-08 ユーザー指示）
 N_KOKKAI = 6
+# 愛知の経営者の投稿に先に割り当てる枠（2026-10-19 ユーザー指示）。経営者は政策の話をあまりしないので、分野が
+# 「どれでもない」でも経営の実務の語があれば候補にする。同じ投稿は一度メールに出したら次の回から出さない（6時間遡って読むため）
+N_OWNER = 3
+OWNER_RX = r"最低賃金|賃上げ|給料|人手不足|採用|求人|離職|人材|価格転嫁|値上げ|仕入|原価|円安|物価|金利|借入|融資|資金繰り|倒産|補助金|助成金|税|インボイス|社会保険|年収の壁|事業承継|DX|AI|システム|IT|デジタル|業務|効率|生産性|景気|売上|中小企業"
+OWNER_SHOWN = os.path.join(X.OUT, "owner_shown.json")
 # kdeck の worker（systemd）の PATH には nvm の bin が無いので、見つからなければ既定の場所を使う
 CODEX_BIN = os.environ.get("CODEX_BIN") or __import__("shutil").which("codex") or "/home/kojima/.nvm/versions/node/v20.20.2/bin/codex"
 CODEX_MODEL = "gpt-6-sol"   # astra ではなく sol（2026-10-01 ユーザー指定。codex CLI 0.159.3 以上が要る）
@@ -290,6 +295,8 @@ def codex_batch(items, workdir):
         cases.append({"id": it["id"], "投稿した人": it["post"]["name"], "自己紹介": (it["post"].get("description") or "")[:120],
                       "投稿": it["post"]["text"][:700],
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
+        if X.is_owner(it["post"]):
+            cases[-1]["投稿した人の種類"] = "愛知の経営者"
         if it.get("url", "").startswith("https://xb4g.com/giin/tracker/"):
             cases[-1]["付けるトラッカー"] = it["label"]
         if it.get("url", "").startswith("https://exbridge.jp/keizai/"):
@@ -319,6 +326,7 @@ def codex_batch(items, workdir):
 - 「カードに出る答弁」があれば、その答弁を文の中心にする（付けるカードと文が合う）
 - 候補に「付ける経済指標のカード」がある場合（カードは必ず付く）、link は 0 にする。文は「カードに出る指標」の値と時点を中心にし、投稿の出来事と数字をつなぐ
 - 「経済指標」があり、投稿が為替・金利・物価・景気の話なら、経済指標のカードを link に選んでよい（経営者の投稿には特に合う）。数字は「経済指標」に書いてある値と時点だけを使い、「〜月時点で」と時点を必ず添える。値の良し悪しや先行きの予想は書かない
+- 「投稿した人の種類」が「愛知の経営者」の候補は、つながりたい相手。同じ地域の経営者として、相手の仕事の中身（業種・現場・悩み）を受け止め、経営の実務に役立つ事実（賃金・人手・物価・金利・制度の答弁や統計）を1つ添える。政治の話に引き込まない。売り込みや「ご相談ください」は書かない。投稿が日常・告知・宣伝だけで、添える事実が無ければ drafts を空にする
 - 「関連する質問主意書」を使うときは、件名と提出者・提出日だけを事実として書く（答弁書の中身は書かない）
 
 {STYLE}
@@ -623,6 +631,11 @@ def age_min(p, now=None):
     return ((now or time.time()) - ts) / 60 if ts else 1e9
 
 
+def max_age(p):
+    """候補に出す投稿の古さの上限（分）。愛知の経営者はつながるのが目的なので、時事の速さより拾い漏れを防ぐ"""
+    return X.OWNER_WITHIN_MIN if X.is_owner(p) else MAX_AGE_MIN
+
+
 def build(posts_path):
     day = os.path.basename(os.path.dirname(posts_path))
     stamp = os.path.basename(posts_path)[6:-5]
@@ -631,10 +644,17 @@ def build(posts_path):
                                   key=os.path.getmtime)[-1], encoding="utf-8"))
     mmdd = day[5:7] + day[8:10]
     cards, items = [], []
+    try:
+        shown = set(json.load(open(OWNER_SHOWN, encoding="utf-8")))
+    except (OSError, ValueError):
+        shown = set()
     for r in judge:
-        if r["field"] == "none":
-            continue
         p = posts[r["id"]]
+        own = X.is_owner(p)
+        if own and p["id"] in shown:
+            continue
+        if r["field"] == "none" and not (own and re.search(OWNER_RX, p["text"])):
+            continue
         if re.search(SKIP, p["text"]):   # 皇室・弔事・事故の死傷には売り込みをしない
             continue
         it = make_item(p, r["field"], mmdd, r)
@@ -642,15 +662,19 @@ def build(posts_path):
             items.append(it)
     # 文案を作る対象: 国会議員の投稿を N_KOKKAI 件まで先に取り（その中は表示の多い順）、残りの枠は表示の多い順。
     # 国会議員を全部先に取ると議員だけで枠が埋まり、表示の多いニュースが落ちるので、上限を決めて分ける
-    items = [it for it in items if age_min(it["post"]) <= MAX_AGE_MIN]   # 文案を作る前に、もう古いものは外す
+    items = [it for it in items if age_min(it["post"]) <= max_age(it["post"])]   # 文案を作る前に、もう古いものは外す
     by_views = sorted(items, key=lambda it: -it["post"]["views"])
     kokkai = [it for it in by_views if X.is_kokkai(it["post"])][:N_KOKKAI]
-    ids = {it["id"] for it in kokkai}
-    items = kokkai + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai)]
+    owner = [it for it in by_views if X.is_owner(it["post"])][:N_OWNER]
+    ids = {it["id"] for it in kokkai + owner}
+    items = kokkai + owner + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai) - len(owner)]
     texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
     cards = finish(items, texts, picks)
-    cards = [c for c in cards if age_min(c["p"]) <= MAX_AGE_MIN]   # 文案を作っている間に30分を過ぎたものも外す
-    cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), -c["p"]["views"]))   # ページは国会議員を先に、その中と残りは表示の多い順
+    cards = [c for c in cards if age_min(c["p"]) <= max_age(c["p"])]   # 文案を作っている間に30分を過ぎたものも外す
+    # ページは国会議員を先に、次に愛知の経営者、その中と残りは表示の多い順
+    cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), not X.is_owner(c["p"]), -c["p"]["views"]))
+    if any(X.is_owner(c["p"]) for c in cards):
+        json.dump(sorted(shown | {c["p"]["id"] for c in cards if X.is_owner(c["p"])}), open(OWNER_SHOWN, "w", encoding="utf-8"))
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
     empty = None
     if not cards:
@@ -668,7 +692,7 @@ def build(posts_path):
     # メール通知用の要約（x_reply_jobs.py が読んで katsushi2441@gmail.com へ送る。2026-10-02 ユーザー指示）
     summary = [{"name": c["p"].get("name"), "screen_name": c["p"].get("screen_name"), "views": c["p"].get("views"),
                 "url": c["p"].get("url"), "text": re.sub(r"\s+", " ", c["p"].get("text") or "")[:200], "label": c["label"],
-                "politician": X.is_politician(c["p"]),
+                "politician": X.is_politician(c["p"]), "owner": X.is_owner(c["p"]),
                 "drafts": [d["text"] for d in c["drafts"]],
                 "intents": ["https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": c["p"]["id"], "text": d["text"]})
                             for d in c["drafts"]]} for c in cards]
@@ -690,7 +714,7 @@ def card_html(c, pre="t"):
 <a class="go" data-i="{pre}{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
         n += 1
     return f"""<article>
-<div class="who">{'<span class="pol kokkai">国会議員</span>' if X.is_kokkai(p) else ('<span class="pol">議員</span>' if X.is_politician(p) else '')}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
+<div class="who">{'<span class="pol kokkai">国会議員</span>' if X.is_kokkai(p) else ('<span class="pol">議員</span>' if X.is_politician(p) else ('<span class="pol">愛知の経営者</span>' if X.is_owner(p) else ''))}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}</div>

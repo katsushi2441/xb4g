@@ -12,6 +12,7 @@ import json
 import os
 import re
 import subprocess
+import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +49,23 @@ def run_x_reply_job(within: int = 40, **_) -> dict:
         mailed = notify_mail(day, stamp, f"https://proto.exbridge.jp/xreply-{token}/", steps)
     else:
         mailed = notify_status("失敗（公開ページが今回の時刻に置き換わっていない）", steps)
-    return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps}
+    owners = refresh_owners()
+    return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps, "owners": owners}
+
+
+def refresh_owners():
+    """「愛知の経営者」の名簿（data/x_aichi_owners.json）を1日1回ふやす（2026-10-19）。候補のメールを送ったあとに回し、
+    失敗しても候補の回は失敗にしない（名簿は前の日のままで動く）"""
+    reg = os.path.join(ROOT, "data", "x_aichi_owners.json")
+    if os.path.exists(reg) and time.time() - os.path.getmtime(reg) < 20 * 3600:
+        return "skip (today done)"
+    try:
+        code, out, err = _run([PY, os.path.join(SCRIPTS, "find_aichi_owners.py"), "--daily"], 900)
+    except subprocess.TimeoutExpired:
+        return "timeout"
+    if code == 0 and os.path.exists(reg):
+        os.utime(reg)   # 足す人が0人でも、今日の分は済んだ印にする
+    return (out.strip().splitlines() or [""])[-1][:200] if code == 0 else f"error {err[-200:]}"
 
 
 MAIL_TO = "katsushi2441@gmail.com"
@@ -106,7 +123,7 @@ def notify_mail(day, stamp, page_url, steps=None):
         return f"{r} 0"
     lines = [f"X 返信候補 {day} {stamp[:2]}:{stamp[2:]} ／ {len(cards)}件（表示の多い順）", "", f"一覧ページ: {page_url}", ""]
     for i, c in enumerate(cards, 1):
-        lines += [f"■{i}. {'【議員】' if c.get('politician') else ''}{c.get('name')} @{c.get('screen_name')}（表示{(c.get('views') or 0):,}）",
+        lines += [f"■{i}. {'【議員】' if c.get('politician') else ('【愛知の経営者】' if c.get('owner') else '')}{c.get('name')} @{c.get('screen_name')}（表示{(c.get('views') or 0):,}）",
                   f"元の投稿: {c.get('url')}", f"内容: {c.get('text')}", f"リンク先: {c.get('label')}", ""]
         for j, (d, u) in enumerate(zip(c.get("drafts") or [], c.get("intents") or []), 1):
             lines += [f"［案{j}］", d, f"→ 文入りで返信画面を開く: {u}", ""]

@@ -1,11 +1,11 @@
 {
  "naimitsu-shussan": {
   "word": "赤ちゃんポスト",
-  "count": 1
+  "count": 3
  },
  "tokubetsu-yoshi-engumi": {
-  "word": "養子縁組あっせん",
-  "count": 2
+  "word": "特別養子縁組",
+  "count": 10
  },
  "otc-ruiji-yaku": {
   "word": "ＯＴＣ類似薬",
@@ -16,8 +16,8 @@
   "count": 2
  },
  "koki-koreisha-futan": {
-  "word": "後期高齢者 窓口負担",
-  "count": 4
+  "word": "後期高齢者 負担割合",
+  "count": 15
  },
  "kodomo-daredemo-tsuen": {
   "word": "誰でも通園",
@@ -25,119 +25,139 @@
  },
  "kyutokuho": {
   "word": "給特法",
-  "count": 1
+  "count": 5
  },
  "tokubetsu-jido-fuyo-teate": {
-  "word": "特別児童扶養手当 所得制限",
-  "count": 1
+  "word": "特別児童扶養手当 撤廃",
+  "count": 4
+ },
+ "kaji-shien": {
+  "word": "家事支援サービス",
+  "count": 3
  },
  "torishikiho-kakaku-tenka": {
-  "word": "価格転嫁 下請",
-  "count": 3
+  "word": "下請代金支払遅延等防止法 改正",
+  "count": 11
  },
  "koeki-tsuho": {
   "word": "公益通報者保護法",
-  "count": 14
+  "count": 39
  },
  "jidosha-kanren-zei": {
-  "word": "環境性能割",
-  "count": 2
+  "word": "自動車税 廃止",
+  "count": 7
  },
  "kinyu-kyoiku": {
   "word": "金融経済教育",
-  "count": 6
+  "count": 8
  },
  "zaiseiho-4jo": {
   "word": "財政法第四条",
-  "count": 2
+  "count": 7
  },
  "juminzei-genzei": {
-  "word": "住民税減税",
-  "count": 1
+  "word": "標準税率未満",
+  "count": 3
  },
  "shohizei-genzei": {
   "word": "消費税 引き下げ",
-  "count": 20
+  "count": 68
  },
  "gaitameho-fdi": {
   "word": "外為法 改正",
-  "count": 1
+  "count": 9
  },
  "jido-unten": {
   "word": "自動運転",
-  "count": 5
+  "count": 18
  },
  "futoko": {
   "word": "不登校",
-  "count": 11
+  "count": 50
  },
  "jisatsu-taisaku": {
   "word": "自殺対策",
-  "count": 5
+  "count": 33
  },
  "kisokojo-bukka-rendo": {
-  "word": "基礎控除 引上げ",
-  "count": 9
+  "word": "基礎控除 引き上げ",
+  "count": 22
+ },
+ "seito-kofukin": {
+  "word": "政党交付金 返還",
+  "count": 1
  },
  "kasuhara-taisaku": {
   "word": "カスタマーハラスメント",
   "count": 2
  },
  "kokka-joho-kaigi": {
-  "word": "インテリジェンス 国会",
-  "count": 9
+  "word": "インテリジェンス 体制",
+  "count": 22
  },
  "keizai-anpo-infra": {
-  "word": "特定重要物資",
-  "count": 6
+  "word": "海底ケーブル",
+  "count": 11
  },
  "konenki-josei-kenko": {
-  "word": "プレコンセプションケア",
-  "count": 1
+  "word": "更年期",
+  "count": 2
  },
  "tokubetsu-shi": {
   "word": "特別市",
-  "count": 1
+  "count": 3
  },
  "kyu-tekikoku-joko": {
   "word": "敵国条項",
-  "count": 5
+  "count": 7
  },
  "koritsu-byoin-keiei": {
   "word": "公立病院 経営",
-  "count": 7
+  "count": 18
  },
  "tomahawk-hangeki": {
   "word": "トマホーク",
-  "count": 3
+  "count": 18
+ },
+ "gakucho-senko": {
+  "word": "学長選考",
+  "count": 1
  },
  "narita-kinoukyouka": {
   "word": "成田空港 機能強化",
-  "count": 1
+  "count": 6
  },
  "kyufu-tsuki-zeigaku-kojo": {
   "word": "給付付き税額控除",
-  "count": 2
+  "count": 18
  },
  "rissai-shomei": {
   "word": "罹災証明",
-  "count": 2
+  "count": 10
  },
  "nihonban-dbs": {
   "word": "日本版ＤＢＳ",
-  "count": 3
+  "count": 4
  },
  "kyodo-bokin": {
   "word": "共同募金",
-  "count": 5
+  "count": 11
+ },
+ "shushi-hokokusho-db": {
+  "word": "収支報告書 オンライン提出",
+  "count": 4
  },
  "kodomo-shienkin": {
   "word": "子ども・子育て支援金",
   "count": 6
  },
  "jieikan-shogu": {
-  "word": "自衛官 人材確保",
-  "count": 3
+  "word": "自衛官 充足率",
+  "count": 7
+ },
+ "hibochusho-isharyo": {
+  "word": "名誉毀損 慰謝料",
+  "count": 1
  },
  "denshi-karte": {
   "word": "電子カルテ情報共有サービス",
@@ -145,30 +165,362 @@
  },
  "karoshi-boshi": {
   "word": "過労死等防止対策推進法",
-  "count": 1
+  "count": 2
  },
  "naisui-hanran": {
   "word": "内水氾濫",
-  "count": 1
+  "count": 8
  },
  "gyosei-jigyo-review": {
   "word": "行政事業レビュー",
-  "count": 18
+  "count": 52
+ },
+ "chika-ginko": {
+  "word": "地下銀行",
+  "count": 2
  },
  "joho-roei": {
   "word": "個人情報 漏えい",
-  "count": 10
+  "count": 41
  },
  "kodomo-sns": {
   "word": "青少年 インターネット 環境",
-  "count": 3
+  "count": 16
  },
  "saisei-iryo": {
   "word": "再生医療等製品",
-  "count": 4
+  "count": 11
  },
  "kaigo-jimu-futan": {
   "word": "介護 文書 負担",
+  "count": 31
+ },
+ "yakka-chukannen": {
+  "word": "ドラッグ・ロス",
   "count": 6
+ },
+ "nichigin-jishusei": {
+  "word": "日本銀行の独立性",
+  "count": 6
+ },
+ "icc": {
+  "word": "国際刑事裁判所",
+  "count": 23
+ },
+ "funani-denshika": {
+  "word": "船荷証券",
+  "count": 1
+ },
+ "digital-kyokasho": {
+  "word": "デジタル教科書",
+  "count": 3
+ },
+ "koukou-mushouka": {
+  "word": "高等学校等就学支援金",
+  "count": 45
+ },
+ "kyushoku-mushouka": {
+  "word": "給食費の無償化",
+  "count": 4
+ },
+ "giin-teisu-sakugen": {
+  "word": "議員定数の削減",
+  "count": 8
+ },
+ "kigyou-dantai-kenkin": {
+  "word": "企業・団体献金",
+  "count": 7
+ },
+ "bukkadaka-taisaku": {
+  "word": "物価高対策",
+  "count": 26
+ },
+ "spy-boushi-hou": {
+  "word": "スパイ防止法",
+  "count": 13
+ },
+ "gaikokujin-seisaku": {
+  "word": "外国人の受入れ",
+  "count": 32
+ },
+ "kaigo-hoken-kaisei": {
+  "word": "介護保険制度の見直し",
+  "count": 26
+ },
+ "ai-hou": {
+  "word": "人工知能関連技術の研究開発及び活用の推進に関する法律",
+  "count": 7
+ },
+ "denki-ryokin": {
+  "word": "電気料金",
+  "count": 115
+ },
+ "kasho-zuke": {
+  "word": "箇所付け",
+  "count": 4
+ },
+ "ukraine-shien": {
+  "word": "ウクライナ支援",
+  "count": 10
+ },
+ "hoken-fushoji": {
+  "word": "保険 不祥事",
+  "count": 23
+ },
+ "iyakuhin-antei-kyokyu": {
+  "word": "後発医薬品 供給",
+  "count": 21
+ },
+ "foip": {
+  "word": "自由で開かれたインド太平洋",
+  "count": 3
+ },
+ "saishin-hou": {
+  "word": "再審 証拠開示",
+  "count": 15
+ },
+ "gasoline-zantei": {
+  "word": "ガソリン 暫定税率",
+  "count": 20
+ },
+ "danjo-chingin": {
+  "word": "男女間賃金格差",
+  "count": 5
+ },
+ "shokuryo-anzen-hosho": {
+  "word": "食料安全保障",
+  "count": 42
+ },
+ "seibutsu-tayosei": {
+  "word": "生物多様性国家戦略",
+  "count": 19
+ },
+ "seifu-koho": {
+  "word": "政府広報 予算",
+  "count": 29
+ },
+ "net-tohyo": {
+  "word": "インターネット投票",
+  "count": 14
+ },
+ "kaiun-kowan": {
+  "word": "船員 不足",
+  "count": 11
+ },
+ "daijin-kihan-party": {
+  "word": "大臣等規範",
+  "count": 9
+ },
+ "ai-koyo-zeisei": {
+  "word": "ＡＩ 雇用 代替",
+  "count": 3
+ },
+ "chikusan-rakuno": {
+  "word": "畜産 経営安定",
+  "count": 32
+ },
+ "kosenho-kifu-baishu": {
+  "word": "公職選挙法 買収",
+  "count": 22
+ },
+ "hojin-kosoku": {
+  "word": "邦人 拘束",
+  "count": 55
+ },
+ "toshi-nogyo": {
+  "word": "農地 納税猶予",
+  "count": 10
+ },
+ "suisan-gyoson": {
+  "word": "水産物 輸出",
+  "count": 58
+ },
+ "jidosha-seibi": {
+  "word": "自動車整備士",
+  "count": 3
+ },
+ "datacenter-denryoku": {
+  "word": "データセンター 電力",
+  "count": 6
+ },
+ "kogaku-ryoyohi": {
+  "word": "高額療養費 自己負担",
+  "count": 19
+ },
+ "kaigo-shogu": {
+  "word": "介護報酬改定",
+  "count": 72
+ },
+ "jakunen-senkyo-undo": {
+  "word": "被選挙権 年齢 引下げ",
+  "count": 3
+ },
+ "shukensha-kyoiku": {
+  "word": "主権者教育",
+  "count": 5
+ },
+ "net-senkyo-undo": {
+  "word": "インターネット 選挙運動",
+  "count": 32
+ },
+ "kuma-higai": {
+  "word": "クマ 出没",
+  "count": 12
+ },
+ "drug-lag-loss": {
+  "word": "創薬 投資",
+  "count": 9
+ },
+ "chisui-jigyo": {
+  "word": "治水対策",
+  "count": 74
+ },
+ "ai-kodomo": {
+  "word": "生成ＡＩ 子供",
+  "count": 1
+ },
+ "ishi-henzai": {
+  "word": "医師の偏在",
+  "count": 13
+ },
+ "josei-seiji-sanka": {
+  "word": "政治分野における男女共同参画",
+  "count": 2
+ },
+ "rodo-jikan-tanshuku": {
+  "word": "労働時間の短縮",
+  "count": 25
+ },
+ "hattatsu-shogai": {
+  "word": "発達障害 支援",
+  "count": 54
+ },
+ "enyasu-kawase": {
+  "word": "為替介入",
+  "count": 11
+ },
+ "gender-gap": {
+  "word": "ジェンダー・ギャップ指数",
+  "count": 5
+ },
+ "kyu-toitsu-kyokai": {
+  "word": "旧統一教会",
+  "count": 35
+ },
+ "shobyo-teatekin": {
+  "word": "傷病手当金",
+  "count": 16
+ },
+ "bousaichou": {
+  "word": "防災庁",
+  "count": 5
+ },
+ "touyu-kakaku": {
+  "word": "灯油 価格",
+  "count": 28
+ },
+ "hokkyoku-seisaku": {
+  "word": "北極海航路",
+  "count": 2
+ },
+ "kisokojo-shotoku-seigen": {
+  "word": "基礎控除 逓減",
+  "count": 2
+ },
+ "g7-shuno-online": {
+  "word": "Ｇ７首脳オンライン会議",
+  "count": 3
+ },
+ "keshohin-sangyo": {
+  "word": "化粧品 輸出",
+  "count": 5
+ },
+ "boei-kyoryoku-koryu": {
+  "word": "防衛協力 覚書",
+  "count": 3
+ },
+ "suiden-seisaku": {
+  "word": "水田活用の直接支払交付金",
+  "count": 10
+ },
+ "kokusai-kakuzuke": {
+  "word": "日本国債 格付",
+  "count": 10
+ },
+ "ninmei-sekinin": {
+  "word": "任命責任",
+  "count": 21
+ },
+ "joho-hozentai": {
+  "word": "情報保全隊",
+  "count": 8
+ },
+ "murayama-danwa": {
+  "word": "村山談話",
+  "count": 27
+ },
+ "iryo-kiki": {
+  "word": "医療機器 診療報酬",
+  "count": 37
+ },
+ "honnin-kakunin": {
+  "word": "本人確認 ＩＣチップ",
+  "count": 3
+ },
+ "juten-shien-kofukin": {
+  "word": "重点支援地方交付金",
+  "count": 16
+ },
+ "nichiin-anpo": {
+  "word": "日印 安全保障",
+  "count": 3
+ },
+ "keiba-kazei": {
+  "word": "公営競技 課税",
+  "count": 3
+ },
+ "okinawa-senju-minzoku": {
+  "word": "沖縄 先住民族",
+  "count": 7
+ },
+ "hinanjo-kankyo": {
+  "word": "避難所 環境 改善",
+  "count": 15
+ },
+ "gakudo-hoiku": {
+  "word": "放課後児童クラブ 待機児童",
+  "count": 9
+ },
+ "saishu-shobun": {
+  "word": "高レベル放射性廃棄物 最終処分",
+  "count": 51
+ },
+ "macro-slide": {
+  "word": "マクロ経済スライド",
+  "count": 20
+ },
+ "anime-sangyo": {
+  "word": "アニメーター",
+  "count": 9
+ },
+ "shokuba-netchusho": {
+  "word": "熱中症 事業者 義務",
+  "count": 3
+ },
+ "iryo-shohizei": {
+  "word": "医療 消費税 損税",
+  "count": 3
+ },
+ "shogai-fukushi-bukka": {
+  "word": "肢体不自由児",
+  "count": 11
+ },
+ "stablecoin": {
+  "word": "ステーブルコイン",
+  "count": 3
+ },
+ "saitei-chingin": {
+  "word": "最低賃金 引き上げ",
+  "count": 31
  }
 }
