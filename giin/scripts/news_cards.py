@@ -55,18 +55,20 @@ def kind_of(url):
 
 def og(url, cache):
     """カードの og:image と og:title。同じURLは1度だけ取りに行く"""
-    if url in cache:
+    if url in cache and "desc" in cache[url]:
         return cache[url]
-    img = title = ""
+    img = title = desc = ""
     try:
         h = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=20).read().decode("utf-8", "ignore")
         m = re.search(r'<meta property="og:image" content="([^"]+)"', h)
         img = html.unescape(m.group(1)) if m else ""
         m = re.search(r'<meta property="og:title" content="([^"]+)"', h)
         title = html.unescape(m.group(1)) if m else ""
+        m = re.search(r'<meta name="description" content="([^"]+)"', h) or re.search(r'<meta property="og:description" content="([^"]+)"', h)
+        desc = html.unescape(m.group(1)) if m else ""
     except Exception:
         pass
-    cache[url] = {"img": img, "title": title}
+    cache[url] = {"img": img, "title": title, "desc": desc}
     return cache[url]
 
 
@@ -201,6 +203,31 @@ def tracker_page(card):
     return m.group(1) if m else ""
 
 
+def qa_excerpt(card):
+    """答弁1件のカード（/giin/tracker/<key>/<speech_id>）なら、会議録の質問と答弁の冒頭（原文のまま）。
+    ニュース1件ごとのページ（exbridge.jp/news/<日付>/<id>.html）を、見出しとカードだけの薄いページにしないため"""
+    m = re.match(r"https://xb4g\.com/giin/tracker/([a-z0-9-]+)/(\d{3,}X\d+_\d+)$", card)
+    if not m:
+        return None
+    import sqlite3
+    db = sqlite3.connect(os.path.join(ROOT, "data", "giin.sqlite"))
+    row = db.execute("SELECT speech_id,date,house,meeting,speaker,kind,body,speech_order FROM tracker_speech WHERE tracker=? AND speech_id=?", m.groups()).fetchone()
+    if not row:
+        return None
+    issue = row[0].rsplit("_", 1)[0]
+    same = db.execute("SELECT speech_id,speaker,kind,body,speech_order FROM tracker_speech WHERE tracker=? AND speech_id LIKE ? ORDER BY speech_order",
+                      (m.group(1), issue + "_%")).fetchall()
+    clean = lambda b: re.sub(r"^○\S+?[\s　]+", "", re.sub(r"\s+", " ", b or "")).strip()
+    q = row if row[5] == "q" else next((x for x in reversed(same) if x[2] == "q" and x[4] < row[7]), None)
+    a = row if row[5] == "gov" else next((x for x in same if x[2] == "gov" and x[4] > row[7]), None)
+    out = {"date": row[1], "house": row[2], "meeting": row[3]}
+    if q:
+        out["q"] = {"who": q[4] if q is row else q[1], "text": clean(q[6] if q is row else q[3])[:260]}
+    if a:
+        out["a"] = {"who": a[4] if a is row else a[1], "text": clean(a[6] if a is row else a[3])[:360]}
+    return out
+
+
 def export(cache):
     """exbridge.jp/news/（kpayload の build-news.ts）用のデータ。日付・見出し・出どころ・カード・テーマのトラッカー"""
     names = {t["key"]: t.get("name") or t.get("short") for t in json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))}
@@ -209,8 +236,9 @@ def export(cache):
         o = og(i["card"], cache)
         tp = tracker_page(i["card"])
         tn = names.get(tp.rsplit("/", 1)[-1], "") if tp else ""
-        rows.append({**i, "cardTitle": o["title"], "cardImage": o["img"], "tracker": tp, "trackerName": tn,
-                     "lead": lead_of(i["kind"], o["title"], tn)})
+        rows.append({**i, "id": (re.search(r"/status/(\d+)", i["post"] or "") or [None, ""])[1],
+                     "cardTitle": o["title"], "cardImage": o["img"], "cardDesc": o.get("desc", ""), "tracker": tp, "trackerName": tn,
+                     "lead": lead_of(i["kind"], o["title"], tn), "qa": qa_excerpt(i["card"])})
     json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump({"generated": datetime.datetime.now().isoformat(timespec="minutes"), "items": rows},
               open(EXPORT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
