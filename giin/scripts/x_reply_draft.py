@@ -40,7 +40,7 @@ N_ACADEMIC = 2
 ACADEMIC_RX = r"研究|論文|学会|科研|実験|調査|分析|測定|AI|生成|LLM|行政|自治体|DX|デジタル|PFAS|有機フッ素|プラスチック|水質|環境|大学|学生|ゼミ|研究室|採用|就職|経済|金融|政策|教育|データ"
 ACADEMIC_SHOWN = os.path.join(X.OUT, "academic_shown.json")
 ACADEMIC_DATA = os.path.join("/home/kojima/work/kpayload", "data", "academic")
-ACADEMIC_TYPE = "論文トラッカー（東海の大学の研究と国会の議論を並べたページ）"
+ACADEMIC_TYPE = "論文トラッカー（東海・関東の大学の研究と国会の議論を並べたページ）"
 # kdeck の worker（systemd）の PATH には nvm の bin が無いので、見つからなければ既定の場所を使う
 CODEX_BIN = os.environ.get("CODEX_BIN") or __import__("shutil").which("codex") or "/home/kojima/.nvm/versions/node/v20.20.2/bin/codex"
 CODEX_MODEL = "gpt-6-sol"   # astra ではなく sol（2026-10-01 ユーザー指定。codex CLI 0.159.3 以上が要る）
@@ -128,7 +128,7 @@ def academic_catalog():
         nkok = sum(k["count"] for k in d["kokkai"])
         ex = "／".join(f"{x['title']}（{next((r['name'] + '・' + r['tokai'] for r in x['researchers'] if r['tokai']), '')}）" for x in projs[:3])
         out.append({"種類": ACADEMIC_TYPE, "題名": f"{th['name']}の研究と国会の議論",
-                    "説明": f"東海三県の大学の科研費の研究{len(projs)}件・論文{len(d['works'])}本と、国会の質疑と答弁{nkok}件を1ページに並べたもの。研究の例: {ex}"[:400],
+                    "説明": f"東海・関東の大学の科研費の研究{len(projs)}件・論文{len(d['works'])}本と、国会の質疑と答弁{nkok}件を1ページに並べたもの。研究の例: {ex}"[:400],
                     "url": f"https://exbridge.jp/academic/theme/{th['slug']}.html"})
         for x in projs:
             for r in x["researchers"]:

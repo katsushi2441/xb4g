@@ -31,9 +31,9 @@ TH_R = float(os.environ.get("ACADEMIC_TH_R", "0.1"))   # 研究者
 ANNOUNCE = ["論文が掲載", "論文が出版", "論文が公開", "論文が受理", "論文がアクセプト", "研究成果 名古屋大学", "研究成果 岐阜大学",
             "研究成果 三重大学", "研究成果 名古屋工業大学", "研究成果 名古屋市立大学", "研究成果 豊橋技術科学大学"]
 THEME_WORDS = ["PFAS", "有機フッ素化合物", "マイクロプラスチック", "生成AI 自治体", "生成AI 行政", "自治体DX", "AIエージェント 行政", "行政 デジタル化"]
-TYPE_PAPER = "論文トラッカー：論文のページ（題名・要約・東海の大学の著者・同じテーマの国会の議論。カードに論文の題名が出る）"
+TYPE_PAPER = "論文トラッカー：論文のページ（題名・要約・東海・関東の大学の著者・同じテーマの国会の議論。カードに論文の題名が出る）"
 TYPE_PERSON = "論文トラッカー：研究者のページ（科研費の研究・同じテーマの国会の議論。カードに研究者の名前と大学が出る）"
-TYPE_THEME = "論文トラッカー：テーマのページ（東海の大学の科研費の研究・論文と、国会の質疑と答弁の件数。カードに件数が出る）"
+TYPE_THEME = "論文トラッカー：テーマのページ（東海・関東の大学の科研費の研究・論文と、国会の質疑と答弁の件数。カードに件数が出る）"
 
 
 def load():
@@ -110,7 +110,7 @@ def match(post, themes, papers, people, tpages):
         ps = [p for p in sorted(papers, key=lambda p: -sim(tb, p["_bg"]))[:2] if sim(tb, p["_bg"]) >= TH_P]
         qs = [q for q in sorted(people.values(), key=lambda q: -sim(tb, q["_bg"]))[:2] if sim(tb, q["_bg"]) >= TH_R]
     name_hit = [q for q in people.values() if q["name"].replace(" ", "") in (post.get("name") or "").replace(" ", "") + text.replace(" ", "")]
-    links = [{"種類": TYPE_PAPER, "題名": p["title_ja"], "説明": f"{p['summary']}（{p['date']}・{p['venue']}）東海の大学の著者: {'、'.join(p['tokai'][:3])}", "url": p["url"]} for p in ps]
+    links = [{"種類": TYPE_PAPER, "題名": p["title_ja"], "説明": f"{p['summary']}（{p['date']}・{p['venue']}）東海・関東の大学の著者: {'、'.join(p['tokai'][:3])}", "url": p["url"]} for p in ps]
     for q in name_hit + [q for q in qs if q not in name_hit]:
         links.append({"種類": TYPE_PERSON, "題名": f"{q['name']}（{q['aff']}）", "説明": f"{q['aff']}の{q['name']}さんの科研費の研究: " + "／".join(q["projects"][:2]), "url": q["url"]})
     return links[:6]
@@ -183,9 +183,9 @@ def main():
             for x in ans:
                 x.pop("_sid", None)
             facts = {"テーマ": th["theme"]["name"], "テーマの件数": f"科研費の研究{th['n_proj']}件・論文{th['n_work']}本・国会の質疑と答弁{th['n_kok']}件", "発言": ans[:3]}
-        items.append({"id": p["id"], "post": p, "r": {}, "what": ("論文トラッカー（東海の大学の研究と国会の議論を並べた当社のページ）の、論文のページか研究者のページ。どちらもXにその論文・研究者のカードが出る。"
+        items.append({"id": p["id"], "post": p, "r": {}, "what": ("論文トラッカー（東海・関東の大学の研究と国会の議論を並べた当社のページ）の、論文のページか研究者のページ。どちらもXにその論文・研究者のカードが出る。"
                                "リンク候補から、投稿の話題にいちばん近い論文か研究者を1つ選び、返信文の中でその論文の中身か研究者（大学名と名前）を具体的に紹介する"
-                               "（「東海の大学の◯◯大学の◯◯さんは、◯◯を研究しています」のように）。紹介に使ってよいのは、リンク候補の説明にある題名・大学名・名前・研究の中身だけ。"
+                               "（「◯◯大学の◯◯さんは、◯◯を研究しています」のように）。紹介に使ってよいのは、リンク候補の説明にある題名・大学名・名前・研究の中身だけ。"
                                "候補がどれも投稿の話題と無関係なら選ばない（0）"),
                       "facts": facts, "url": "", "label": "論文トラッカー", "fb": "", "links": links, "ref": f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"})
     items.sort(key=lambda it: (it["post"]["query"] not in ("from:東海の研究者", "from:経営者・起業家"), -sum(1 for l in it["links"] if l["種類"] != TYPE_THEME), -(it["post"].get("views") or 0)))
