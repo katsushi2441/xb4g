@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """論文トラッカー（exbridge.jp/academic/）のページを貼れる X の返信候補を作る（2026-10-21 ユーザー指示）。
 
-  /usr/bin/python3 scripts/academic_reply.py [--hours 24] [--deploy] [--no-codex]
+  /usr/bin/python3 scripts/academic_reply.py [--minutes 40] [--deploy] [--no-codex]
 
 ふだんの X 返信候補（x_reply_draft.py）とは別のページにする。貼るページは3種類で、どれもカード画像がある:
   論文のページ   /academic/paper/<OpenAlex ID>.html   … 投稿の中身が論文の題名・要約に近いとき
@@ -21,8 +21,10 @@ import x_reply_draft as D  # noqa: E402
 KP = "/home/kojima/work/kpayload/data/academic"
 BASE = "https://exbridge.jp/academic"
 MAX_ITEMS = 12
-MIN_VIEWS = 300
-MIN_FOLLOWERS = 500
+# 返信するのは、投稿から40分以内の、報道機関・東海の研究者・フォロワーの多いアカウント（1万人以上）の投稿だけ
+# （2026-10-21 ユーザー指示「返信候補は40分以内に投稿されたもの。ニュースとか研究者か、フォロワー数多い大きなアカウントの投稿にして」）
+WITHIN_MIN = 40
+MIN_FOLLOWERS = 10000
 TH_P = float(os.environ.get("ACADEMIC_TH_P", "0.1"))   # 論文の似ている度合いの下限（珍しい組の重み付き。10/21 の試験で決めた）
 TH_R = float(os.environ.get("ACADEMIC_TH_R", "0.1"))   # 研究者
 # 論文の告知・研究成果の言葉（研究者本人や大学が論文を知らせる投稿）
@@ -112,8 +114,16 @@ def match(post, themes, papers, people, tpages):
     return links[:5]
 
 
-def collect(hours):
-    since = int(time.time()) - hours * 3600
+def news_handles():
+    return json.load(open(os.path.join(X.ROOT, "data", "x_news_accounts.json"), encoding="utf-8"))["handles"]
+
+
+def big_enough(p):
+    return p.get("query") in ("from:報道一覧", "from:東海の研究者") or X.is_academic(p) or (p.get("followers") or 0) >= MIN_FOLLOWERS
+
+
+def collect(minutes):
+    since = int(time.time()) - minutes * 60
     seen = {}
     for q in THEME_WORDS + ANNOUNCE:
         for x in X.yahoo_search(f"{q} since_time:{since}", since):
@@ -121,17 +131,17 @@ def collect(hours):
                 s = X.slim(x); s["query"] = q; seen[x["id"]] = s
         print(f"\r語 {len(seen)}件", end="", flush=True)
     print()
-    aca = sorted(X.academics())
-    for x in X.fx_timeline(aca, since, workers=4):
-        if x["id"] not in seen:
-            s = X.slim(x); s["query"] = "from:東海の研究者"; seen[x["id"]] = s
-    print(f"東海の研究者を含めて {len(seen)}件")
+    for label, hs in (("from:東海の研究者", sorted(X.academics())), ("from:報道一覧", news_handles())):
+        for x in X.fx_timeline(hs, since, workers=6):
+            if x["id"] not in seen:
+                s = X.slim(x); s["query"] = label; seen[x["id"]] = s
+    print(f"東海の研究者・報道を含めて {len(seen)}件")
     return list(seen.values())
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--hours", type=int, default=24)
+    ap.add_argument("--minutes", type=int, default=WITHIN_MIN)
     ap.add_argument("--deploy", action="store_true")
     ap.add_argument("--no-codex", action="store_true", help="文案を作らず、当たったページだけを表示する（試し）")
     a = ap.parse_args()
@@ -143,9 +153,7 @@ def main():
         shown = set(json.load(open(shown_p, encoding="utf-8")))
     except (OSError, ValueError):
         shown = set()
-    # 読む人がほとんどいない投稿は外す（10/21 の初回でフォロワー0・表示18の投稿が候補に出た）。東海の研究者と議員は残す
-    posts = [p for p in collect(a.hours) if p["id"] not in shown and not re.search(D.SKIP, p["text"])
-             and ((p.get("views") or 0) >= MIN_VIEWS or (p.get("followers") or 0) >= MIN_FOLLOWERS or X.is_academic(p) or X.is_politician(p))]
+    posts = [p for p in collect(a.minutes) if p["id"] not in shown and not re.search(D.SKIP, p["text"]) and big_enough(p)]
     items = []
     for p in posts:
         links = match(p, themes, papers, people, tpages)
@@ -179,7 +187,7 @@ def main():
         print(f"集めた投稿 {len(posts)}件・候補 0件" if not items else "")
         return
     texts, picks = D.codex_batch(items, os.path.abspath(outdir))
-    cards = D.finish(items, texts, picks)
+    cards = [c for c in D.finish(items, texts, picks) if D.age_min(c["p"]) <= a.minutes]
     out = os.path.join(outdir, f"academic-{stamp}.html")
     page = D.page(day, stamp, cards, None if cards else {"posts": len(posts), "v1000": 0, "prev": []})
     page = page.replace("<title>", "<title>論文トラッカー ", 1)
