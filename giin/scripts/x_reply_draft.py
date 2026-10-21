@@ -34,6 +34,13 @@ N_KOKKAI = 6
 N_OWNER = 3
 OWNER_RX = r"最低賃金|賃上げ|給料|人手不足|採用|求人|離職|人材|価格転嫁|値上げ|仕入|原価|円安|物価|金利|借入|融資|資金繰り|倒産|補助金|助成金|税|インボイス|社会保険|年収の壁|事業承継|DX|AI|システム|IT|デジタル|業務|効率|生産性|景気|売上|中小企業"
 OWNER_SHOWN = os.path.join(X.OUT, "owner_shown.json")
+# 東海の大学の研究者に先に割り当てる枠（2026-10-21 ユーザー指示「論文トラッカーの返信候補も追加」）。
+# 研究の話は分野が「どれでもない」と判定されやすいので、論文トラッカーのテーマに近い語があれば候補にする。同じ投稿は1回だけ出す
+N_ACADEMIC = 2
+ACADEMIC_RX = r"研究|論文|学会|科研|実験|調査|分析|測定|AI|生成|LLM|行政|自治体|DX|デジタル|PFAS|有機フッ素|プラスチック|水質|環境|大学|学生|ゼミ|研究室|採用|就職|経済|金融|政策|教育|データ"
+ACADEMIC_SHOWN = os.path.join(X.OUT, "academic_shown.json")
+ACADEMIC_DATA = os.path.join("/home/kojima/work/kpayload", "data", "academic")
+ACADEMIC_TYPE = "論文トラッカー（東海の大学の研究と国会の議論を並べたページ）"
 # kdeck の worker（systemd）の PATH には nvm の bin が無いので、見つからなければ既定の場所を使う
 CODEX_BIN = os.environ.get("CODEX_BIN") or __import__("shutil").which("codex") or "/home/kojima/.nvm/versions/node/v20.20.2/bin/codex"
 CODEX_MODEL = "gpt-6-sol"   # astra ではなく sol（2026-10-01 ユーザー指定。codex CLI 0.159.3 以上が要る）
@@ -88,6 +95,7 @@ def link_catalog():
                         "説明": m.group(4)[:200], "url": f"https://kurage.exbridge.jp/kseidocal.php/i/{m.group(1)}/"})
     except OSError:
         pass
+    cat += academic_catalog()
     for t in X.trackers():
         cat.append({"種類": "国会トラッカー（国会の質疑と政府答弁を会議録から集めたページ）", "題名": t["name"],
                     "説明": (t.get("lead") or "")[:200] + " 語: " + "・".join(t.get("words") or []),
@@ -100,6 +108,51 @@ def link_catalog():
             df[b] = df.get(b, 0) + 1
     _CATALOG = (cat, df)
     return _CATALOG
+
+
+def academic_catalog():
+    """論文トラッカー exbridge.jp/academic/ のテーマのページと研究者のページ（2026-10-21）。
+    データは kpayload の data/academic（build-academic.ts と同じ絞り込み kaken_must をかける）"""
+    out = []
+    try:
+        themes = json.load(open(os.path.join(ACADEMIC_DATA, "themes.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return out
+    people = {}
+    for th in themes:
+        try:
+            d = json.load(open(os.path.join(ACADEMIC_DATA, th["slug"] + ".json"), encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        projs = [x for x in d["projects"] if not th.get("kaken_must") or re.search(th["kaken_must"], (x["title"] or "") + (x["outline"] or ""))]
+        nkok = sum(k["count"] for k in d["kokkai"])
+        ex = "／".join(f"{x['title']}（{next((r['name'] + '・' + r['tokai'] for r in x['researchers'] if r['tokai']), '')}）" for x in projs[:3])
+        out.append({"種類": ACADEMIC_TYPE, "題名": f"{th['name']}の研究と国会の議論",
+                    "説明": f"東海三県の大学の科研費の研究{len(projs)}件・論文{len(d['works'])}本と、国会の質疑と答弁{nkok}件を1ページに並べたもの。研究の例: {ex}"[:400],
+                    "url": f"https://exbridge.jp/academic/theme/{th['slug']}.html"})
+        for x in projs:
+            for r in x["researchers"]:
+                if r.get("tokai") and r.get("crid") and r.get("name"):
+                    q = people.setdefault(r["crid"], {"name": r["name"], "aff": r["affiliation"], "titles": [], "theme": th["name"]})
+                    q["titles"].append(x["title"])
+    for crid, q in people.items():
+        out.append({"種類": ACADEMIC_TYPE, "題名": f"{q['name']}（{q['aff']}）の研究と国会の議論",
+                    "説明": f"{q['aff']}の{q['name']}さんの科研費の研究: " + "／".join(q["titles"][:3]) + f"。同じテーマ（{q['theme']}）の国会の質疑と答弁も並べている",
+                    "url": f"https://exbridge.jp/academic/researcher/{crid}.html"})
+    return out
+
+
+def academic_theme_links(text, tracker_key=None):
+    """投稿に合う論文トラッカーのテーマのページを規則で選ぶ（似ている度合いではなく、テーマの語 x_rx か、
+    テーマに結び付けた国会トラッカーが当たったとき）。リンク候補の先頭に置く"""
+    try:
+        themes = json.load(open(os.path.join(ACADEMIC_DATA, "themes.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    want = [th for th in themes if (tracker_key and tracker_key in th.get("trackers", [])) or (th.get("x_rx") and re.search(th["x_rx"], text))]
+    cat, _ = link_catalog()
+    urls = {f"https://exbridge.jp/academic/theme/{th['slug']}.html" for th in want}
+    return [{"種類": c["種類"], "題名": c["題名"], "説明": c["説明"], "url": c["url"]} for c in cat if c["url"] in urls]
 
 
 def related_links(text, k=8):
@@ -297,6 +350,8 @@ def codex_batch(items, workdir):
                       "紹介するもの": it["what"], "使ってよい事実": it["facts"]})
         if X.is_owner(it["post"]):
             cases[-1]["投稿した人の種類"] = "愛知の経営者"
+        if X.is_academic(it["post"]):
+            cases[-1]["投稿した人の種類"] = "東海の大学の研究者（" + X.academics()[it["post"]["screen_name"]]["affiliation"] + "）。研究の中身を受け止め、論文トラッカーのリンク候補があれば優先する"
         if it.get("url", "").startswith("https://xb4g.com/giin/tracker/"):
             cases[-1]["付けるトラッカー"] = it["label"]
         if it.get("url", "").startswith("https://exbridge.jp/keizai/"):
@@ -477,13 +532,18 @@ def make_item(p, field, mmdd, r=None):
     kf, links, kw = None, [], []
     if tr:
         # トラッカーが当たった投稿でも、当社のシステムのデモ・紹介ページ（LP）が合えば一緒に付ける（2026-10-05 ユーザー指示「LPがあるならトラッカーより優先」）
-        links = [l for l in related_links(p["text"], k=16) if l["種類"].startswith("当社のシステム")][:4]
+        rl = related_links(p["text"], k=16)
+        links = [l for l in rl if l["種類"].startswith("当社のシステム")][:4]
+        th = academic_theme_links(p["text"], tr["key"])
+        links = links + th + [l for l in rl if l["種類"] == ACADEMIC_TYPE and l["url"] not in {x["url"] for x in th}][:1]
     if not (tr or sy):
         # トラッカーもシステムも当たらない投稿は、会議録をその場で検索し、近い当社のページ（ブログ・note・デモ・
         # 解説ページ）を候補に出す。どれに付けるか（付けないか）は codex が投稿を読んで選ぶ
         links = related_links(p["text"], k=10)
         # LP（デモ・紹介ページ）を先頭に並べる（codex にも優先させる）
         links = [l for l in links if l["種類"].startswith("当社のシステム")] + [l for l in links if not l["種類"].startswith("当社のシステム")]
+        th = academic_theme_links(p["text"])
+        links = th + [l for l in links if l["url"] not in {x["url"] for x in th}]
         # リンク先が無ければ出さない（トラッカーの一覧には付けない）。質問主意書と議員ページも候補になるので、判定は最後で
         kf, kw = kokkai_facts(p["text"])
         if kf and not kf["発言"]:
@@ -633,7 +693,7 @@ def age_min(p, now=None):
 
 def max_age(p):
     """候補に出す投稿の古さの上限（分）。愛知の経営者はつながるのが目的なので、時事の速さより拾い漏れを防ぐ"""
-    return X.OWNER_WITHIN_MIN if X.is_owner(p) else MAX_AGE_MIN
+    return X.OWNER_WITHIN_MIN if (X.is_owner(p) or X.is_academic(p)) else MAX_AGE_MIN
 
 
 def build(posts_path):
@@ -648,12 +708,17 @@ def build(posts_path):
         shown = set(json.load(open(OWNER_SHOWN, encoding="utf-8")))
     except (OSError, ValueError):
         shown = set()
+    try:
+        ashown = set(json.load(open(ACADEMIC_SHOWN, encoding="utf-8")))
+    except (OSError, ValueError):
+        ashown = set()
     for r in judge:
         p = posts[r["id"]]
         own = X.is_owner(p)
-        if own and p["id"] in shown:
+        aca = X.is_academic(p)
+        if (own and p["id"] in shown) or (aca and p["id"] in ashown):
             continue
-        if r["field"] == "none" and not (own and re.search(OWNER_RX, p["text"])):
+        if r["field"] == "none" and not (own and re.search(OWNER_RX, p["text"])) and not (aca and re.search(ACADEMIC_RX, p["text"])):
             continue
         if re.search(SKIP, p["text"]):   # 皇室・弔事・事故の死傷には売り込みをしない
             continue
@@ -666,13 +731,16 @@ def build(posts_path):
     by_views = sorted(items, key=lambda it: -it["post"]["views"])
     kokkai = [it for it in by_views if X.is_kokkai(it["post"])][:N_KOKKAI]
     owner = [it for it in by_views if X.is_owner(it["post"])][:N_OWNER]
-    ids = {it["id"] for it in kokkai + owner}
-    items = kokkai + owner + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai) - len(owner)]
+    acad = [it for it in by_views if X.is_academic(it["post"])][:N_ACADEMIC]
+    ids = {it["id"] for it in kokkai + owner + acad}
+    items = kokkai + owner + acad + [it for it in by_views if it["id"] not in ids][:MAX_ITEMS - len(kokkai) - len(owner) - len(acad)]
     texts, picks = codex_batch(items, os.path.abspath(os.path.dirname(posts_path))) if items else ({}, {})
     cards = finish(items, texts, picks)
     cards = [c for c in cards if age_min(c["p"]) <= max_age(c["p"])]   # 文案を作っている間に30分を過ぎたものも外す
     # ページは国会議員を先に、次に愛知の経営者、その中と残りは表示の多い順
-    cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), not X.is_owner(c["p"]), -c["p"]["views"]))
+    cards.sort(key=lambda c: (not X.is_kokkai(c["p"]), not X.is_owner(c["p"]), not X.is_academic(c["p"]), -c["p"]["views"]))
+    if any(X.is_academic(c["p"]) for c in cards):
+        json.dump(sorted(ashown | {c["p"]["id"] for c in cards if X.is_academic(c["p"])}), open(ACADEMIC_SHOWN, "w", encoding="utf-8"))
     if any(X.is_owner(c["p"]) for c in cards):
         json.dump(sorted(shown | {c["p"]["id"] for c in cards if X.is_owner(c["p"])}), open(OWNER_SHOWN, "w", encoding="utf-8"))
     out = os.path.join(os.path.dirname(posts_path), f"reply-{stamp}.html")
@@ -714,7 +782,7 @@ def card_html(c, pre="t"):
 <a class="go" data-i="{pre}{n}" href="{html.escape(intent)}" target="_blank" rel="noopener">文入りで返信画面を開く</a></div></div>""")
         n += 1
     return f"""<article>
-<div class="who">{'<span class="pol kokkai">国会議員</span>' if X.is_kokkai(p) else ('<span class="pol">議員</span>' if X.is_politician(p) else ('<span class="pol">愛知の経営者</span>' if X.is_owner(p) else ''))}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
+<div class="who">{'<span class="pol kokkai">国会議員</span>' if X.is_kokkai(p) else ('<span class="pol">議員</span>' if X.is_politician(p) else ('<span class="pol">愛知の経営者</span>' if X.is_owner(p) else ('<span class="pol">東海の研究者</span>' if X.is_academic(p) else '')))}<b>{html.escape(p['name'] or '')}</b> @{html.escape(p['screen_name'] or '')}・フォロワー{p['followers']:,}・表示{p['views']:,}・♥{p['likes']:,}・{ago}分前</div>
 <p class="post">{body}</p>
 <a class="src" href="{html.escape(p['url'])}" target="_blank" rel="noopener">元の投稿を開く</a>
 <div class="tag">{html.escape(c['label'])}</div>

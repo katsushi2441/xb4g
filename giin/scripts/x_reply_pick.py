@@ -37,6 +37,7 @@ FIELDS = {
     "chiho": "地方自治・都市計画（特別市、自治体、用途地域、まちづくり）",
     "shiho": "司法・治安（誹謗中傷、刑事手続、犯罪）",
     "keizai": "景気・物価・為替・金利（円安、物価高、値上げ、仕入れ値、利上げ、借入金利、景気、短観）",
+    "kankyo": "環境・水・化学物質（PFAS、有機フッ素化合物、マイクロプラスチック、水道水、地下水の汚染）",
     "none": "上のどれでもない（芸能、スポーツ、日常、商品の宣伝、政策と関係ない話）",
 }
 THEME_TO_FIELD = {
@@ -44,7 +45,7 @@ THEME_TO_FIELD = {
     "kosodate": "kosodate", "zeisei": "zeisei", "zaisei": "zeisei", "nenshu-no-kabe": "zeisei",
     "rodo": "rodo", "chusho": "rodo", "anzen-hosho": "anzen", "kotsu": "kotsu",
     "seiji-kaikaku": "seiji", "digital": "digital", "ai": "digital",
-    "josei-jinken": "josei", "chiho": "chiho", "shiho-chian": "shiho",
+    "josei-jinken": "josei", "chiho": "chiho", "shiho-chian": "shiho", "kankyo": "kankyo",
 }
 # トラッカー以外に返信で案内できる自社システム（分野→URL）。規則で当てる
 SYSTEMS = {
@@ -285,6 +286,23 @@ def is_owner(p):
     return (p.get("screen_name") or "") in owners()
 
 
+# 東海の大学の研究者（2026-10-21 ユーザー指示「論文トラッカーの返信候補も追加」）。論文トラッカー
+# exbridge.jp/academic/ を添えて学者とつながる。経営者と同じく1日に数回しか投稿しないので6時間遡り、表示の下限も掛けない。
+# 名簿は data/x_tokai_academics.json（本人確認したものだけ。足すときも api.fxtwitter.com/<handle> で表示名を照合）
+ACADEMICS_PATH = os.path.join(ROOT, "data", "x_tokai_academics.json")
+
+
+def academics():
+    try:
+        return {k: v for k, v in json.load(open(ACADEMICS_PATH, encoding="utf-8")).items() if not v.get("skip")}
+    except (OSError, ValueError):
+        return {}
+
+
+def is_academic(p):
+    return (p.get("screen_name") or "") in academics()
+
+
 def trackers():
     return json.load(open(os.path.join(ROOT, "data", "trackers.json"), encoding="utf-8"))
 
@@ -387,6 +405,17 @@ def collect(args):
             if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= own_since:
                 s = slim(x); s["query"] = "from:愛知の経営者"; seen[x["id"]] = s; nown += 1
     print(f"愛知の経営者 {len(own)}人 {nown}件")
+    # 東海の大学の研究者（論文トラッカーを添える相手）。経営者と同じく直近6時間
+    aca = sorted(academics())
+    naca = 0
+    for i in range(0, len(aca), 20):
+        if over("東海の研究者"):
+            break
+        q = "(" + " OR ".join(f"from:{h}" for h in aca[i:i + 20]) + f") since_time:{own_since} -filter:replies"
+        for x in fx_search(q, pages=2, since_ts=own_since):
+            if x.get("type") == "status" and x["id"] not in seen and (x.get("created_timestamp") or 0) >= own_since:
+                s = slim(x); s["query"] = "from:東海の研究者"; seen[x["id"]] = s; naca += 1
+    print(f"東海の研究者 {len(aca)}人 {naca}件")
     if down:
         words_stage()
     # ② いいねの条件なしで、トラッカーの語と議員がよく使う語を引き（3ページまで）、作者が議員のものだけ残す。
@@ -461,7 +490,7 @@ def pick(args):
              if (x.get("views") or 0) >= args.min_views
              or (is_politician(x) and (x.get("views") or 0) >= args.min_views_politician)
              or (is_kokkai(x) and (x.get("views") or 0) >= args.min_views_kokkai)
-             or is_owner(x)]
+             or is_owner(x) or is_academic(x)]
     stamp = os.path.basename(pp)[6:-5]
     jp = os.path.join(OUT, day, f"judge-{args.backend}-{stamp}-v{args.min_views}.json")
     if os.path.exists(jp) and not args.rejudge:   # 判定は重いので、同じ日の判定があれば使い回す
