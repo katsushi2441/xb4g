@@ -97,21 +97,23 @@ def sim(tb, bg):
 
 
 def match(post, themes, papers, people, tpages):
-    """投稿に貼れるページを、論文 → 研究者 → テーマの順に並べて返す"""
+    """投稿に貼れる論文のページと研究者のページを返す。テーマのページは候補にしない
+    （2026-10-21 ユーザー指示「テーマじゃない」「全部のOGPを試したい」。テーマのページがあると codex が毎回それを選んだ）。
+    投稿にテーマの語（x_rx）があれば、そのテーマの中で近い論文3本・研究者2人を必ず候補にする。無ければ全体から、近いものだけ"""
     text = post["text"]
     tb = D.bigrams(re.sub(r"https?://\S+|[#＃@]\S+", "", text))
-    links = []
-    for p in sorted(papers, key=lambda p: -sim(tb, p["_bg"]))[:2]:
-        if sim(tb, p["_bg"]) >= TH_P:
-            links.append({"種類": TYPE_PAPER, "題名": p["title_ja"], "説明": f"{p['summary']}（{p['date']}・{p['venue']}）東海の大学の著者: {'、'.join(p['tokai'][:3])}", "url": p["url"]})
+    hit_th = {t["theme"]["slug"] for t in tpages if t["theme"].get("x_rx") and re.search(t["theme"]["x_rx"], text)}
+    if hit_th:
+        ps = sorted([p for p in papers if p["theme"]["slug"] in hit_th], key=lambda p: -sim(tb, p["_bg"]))[:3]
+        qs = sorted([q for q in people.values() if q["theme"]["slug"] in hit_th], key=lambda q: -sim(tb, q["_bg"]))[:2]
+    else:
+        ps = [p for p in sorted(papers, key=lambda p: -sim(tb, p["_bg"]))[:2] if sim(tb, p["_bg"]) >= TH_P]
+        qs = [q for q in sorted(people.values(), key=lambda q: -sim(tb, q["_bg"]))[:2] if sim(tb, q["_bg"]) >= TH_R]
     name_hit = [q for q in people.values() if q["name"].replace(" ", "") in (post.get("name") or "").replace(" ", "") + text.replace(" ", "")]
-    near = [q for q in sorted(people.values(), key=lambda q: -sim(tb, q["_bg"]))[:2] if sim(tb, q["_bg"]) >= TH_R]
-    for q in name_hit + [q for q in near if q not in name_hit]:
-        links.append({"種類": TYPE_PERSON, "題名": f"{q['name']}（{q['aff']}）", "説明": "科研費の研究: " + "／".join(q["projects"][:2]), "url": q["url"]})
-    for t in tpages:
-        if t["theme"].get("x_rx") and re.search(t["theme"]["x_rx"], text):
-            links.append({"種類": TYPE_THEME, "題名": t["theme"]["name"], "説明": f"東海三県の大学の科研費の研究{t['n_proj']}件・論文{t['n_work']}本と、国会の質疑と答弁{t['n_kok']}件", "url": t["url"]})
-    return links[:5]
+    links = [{"種類": TYPE_PAPER, "題名": p["title_ja"], "説明": f"{p['summary']}（{p['date']}・{p['venue']}）東海の大学の著者: {'、'.join(p['tokai'][:3])}", "url": p["url"]} for p in ps]
+    for q in name_hit + [q for q in qs if q not in name_hit]:
+        links.append({"種類": TYPE_PERSON, "題名": f"{q['name']}（{q['aff']}）", "説明": f"{q['aff']}の{q['name']}さんの科研費の研究: " + "／".join(q["projects"][:2]), "url": q["url"]})
+    return links[:6]
 
 
 def business():
@@ -181,9 +183,10 @@ def main():
             for x in ans:
                 x.pop("_sid", None)
             facts = {"テーマ": th["theme"]["name"], "テーマの件数": f"科研費の研究{th['n_proj']}件・論文{th['n_work']}本・国会の質疑と答弁{th['n_kok']}件", "発言": ans[:3]}
-        items.append({"id": p["id"], "post": p, "r": {}, "what": ("論文トラッカー（東海の大学の研究と国会の議論を並べた当社のページ）。リンク候補は文字の近さで機械的に選んだもので、外れも混ざる。"
-                               "投稿と同じ研究の話題だと言える論文・研究者のページがあればそれを選び（カードにその論文・研究者が出る）、無ければテーマのページ、"
-                               "どれも投稿と関係が薄ければリンクを選ばない（0）。論文や研究者を紹介するときは、リンク候補の説明に書いてある題名・大学名・研究の中身だけを使う"),
+        items.append({"id": p["id"], "post": p, "r": {}, "what": ("論文トラッカー（東海の大学の研究と国会の議論を並べた当社のページ）の、論文のページか研究者のページ。どちらもXにその論文・研究者のカードが出る。"
+                               "リンク候補から、投稿の話題にいちばん近い論文か研究者を1つ選び、返信文の中でその論文の中身か研究者（大学名と名前）を具体的に紹介する"
+                               "（「東海の大学の◯◯大学の◯◯さんは、◯◯を研究しています」のように）。紹介に使ってよいのは、リンク候補の説明にある題名・大学名・名前・研究の中身だけ。"
+                               "候補がどれも投稿の話題と無関係なら選ばない（0）"),
                       "facts": facts, "url": "", "label": "論文トラッカー", "fb": "", "links": links, "ref": f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"})
     items.sort(key=lambda it: (it["post"]["query"] not in ("from:東海の研究者", "from:経営者・起業家"), -sum(1 for l in it["links"] if l["種類"] != TYPE_THEME), -(it["post"].get("views") or 0)))
     items = items[:MAX_ITEMS]
