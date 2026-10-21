@@ -105,13 +105,14 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
         $on = $cur === $p || strpos($cur, $p . '/') === 0;
         $navh .= '<a href="' . g_url($p) . '"' . ($on ? ' class="on"' : '') . '>' . $label . '</a>';
     }
-    // 運営会社の帯（2026-10-03）。左に社名とロゴ、右に AI-IT顧問・代理店募集・kappstore。xb4g.com でだけ出す
+    // 運営会社の帯（2026-10-03）。左に社名とロゴ、右に AI-IT顧問・AI-SNS顧問・代理店募集・kappstore。xb4g.com でだけ出す
     if ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com')) {
         $r = 'giin-corpbar';
         echo '<div class="corpbar"><div class="inner">'
            . '<a class="cb-co" href="https://exbridge.jp/?ref=' . $r . '"><img src="https://exbridge.jp/images/logo-mark-128.png" width="20" height="20" alt="">株式会社エクスブリッジ</a>'
            . '<nav class="cb-links" aria-label="運営会社">'
            . '<a href="https://exbridge.jp/ai-it-komon.html?ref=' . $r . '">AI-IT顧問</a>'
+           . '<a href="https://exbridge.jp/ai-sns-komon.html?ref=' . $r . '">AI-SNS顧問</a>'
            . '<a href="https://kurage.exbridge.jp/reseller.html?ref=' . $r . '">代理店募集</a>'
            . '<a href="https://kappstore.exbridge.jp/?ref=' . $r . '">Kurage App Store</a>'
            . '</nav></div></div>';
@@ -164,6 +165,7 @@ function g_foot(): void
        . '<a href="https://exbridge.jp/solution/seiji-dantai/?ref=giin">'
        . '政治団体・後援会・議員事務所のITを業務ごとに安くする</a>'
        . '<a href="https://exbridge.jp/ai-it-komon.html?ref=giin">AI-IT顧問契約</a>'
+       . '<a href="https://exbridge.jp/ai-sns-komon.html?ref=giin">AI-SNS顧問（X運用×HP×Webシステム）</a>'
        . '<a href="https://kappstore.exbridge.jp/?ref=giin">Kurage App Store</a>'
        . '<a href="https://xb4g.com/">エクスブリッジ 第4世代</a>'
        . '</div>'
