@@ -68,6 +68,10 @@ def pairs(sp: list[dict], name: str, k: int = 3) -> list[tuple[dict, dict | None
     for i, s in enumerate(sp):
         if s.get("speaker") != name or len(clean(s.get("speech"))) < 120:
             continue
+        # 討論は質問ではない。次に話すのは別の議員の討論で、答弁ではない（2026-10-21 窪田議員の本会議の反対討論に、
+        # 梅村議員の賛成討論を「答弁」として組んでいた）
+        if re.search(r"討論(いた|を行い|をいた)", clean(s.get("speech"))[:200]):
+            continue
         ans = None
         for t in sp[i + 1:i + 4]:
             pos = t.get("speakerPosition") or ""
@@ -75,7 +79,9 @@ def pairs(sp: list[dict], name: str, k: int = 3) -> list[tuple[dict, dict | None
                 break
             if "委員長" in pos or "議長" in pos or len(clean(t.get("speech"))) < 60:
                 continue
-            ans = t
+            # 答えるのは政府側（大臣・副大臣・政務官・政府参考人など）か参考人だけ。肩書の無い発言は議員なので組まない
+            if re.search(r"大臣|政務官|政府参考人|政府特別補佐人|長官|総裁|参考人|副長官|局長|会計検査院", pos):
+                ans = t
             break
         if ans:
             res.append((s, ans))
