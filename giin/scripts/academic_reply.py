@@ -21,7 +21,7 @@ import x_reply_draft as D  # noqa: E402
 KP = "/home/kojima/work/kpayload/data/academic"
 BASE = "https://exbridge.jp/academic"
 MAX_ITEMS = 12
-# 返信するのは、投稿から40分以内の、報道機関・東海の研究者・フォロワーの多いアカウント（1万人以上）の投稿だけ
+# 返信するのは、投稿から40分以内の、報道機関・東海の研究者・有名な経営者と起業家・フォロワーの多いアカウント（1万人以上）の投稿だけ
 # （2026-10-21 ユーザー指示「返信候補は40分以内に投稿されたもの。ニュースとか研究者か、フォロワー数多い大きなアカウントの投稿にして」）
 WITHIN_MIN = 40
 MIN_FOLLOWERS = 10000
@@ -114,12 +114,21 @@ def match(post, themes, papers, people, tpages):
     return links[:5]
 
 
+def business():
+    """有名な起業家・上場企業の経営者（2026-10-21 ユーザー指示「上場企業の経営者」「有名起業家、フォロワー数多い起業家、経営者」）。
+    名簿は data/x_big_business.json（本人確認したものだけ）"""
+    try:
+        return json.load(open(os.path.join(X.ROOT, "data", "x_big_business.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def news_handles():
     return json.load(open(os.path.join(X.ROOT, "data", "x_news_accounts.json"), encoding="utf-8"))["handles"]
 
 
 def big_enough(p):
-    return p.get("query") in ("from:報道一覧", "from:東海の研究者") or X.is_academic(p) or (p.get("followers") or 0) >= MIN_FOLLOWERS
+    return p.get("query") in ("from:報道一覧", "from:東海の研究者", "from:経営者・起業家") or X.is_academic(p) or (p.get("followers") or 0) >= MIN_FOLLOWERS
 
 
 def collect(minutes):
@@ -131,11 +140,11 @@ def collect(minutes):
                 s = X.slim(x); s["query"] = q; seen[x["id"]] = s
         print(f"\r語 {len(seen)}件", end="", flush=True)
     print()
-    for label, hs in (("from:東海の研究者", sorted(X.academics())), ("from:報道一覧", news_handles())):
+    for label, hs in (("from:東海の研究者", sorted(X.academics())), ("from:経営者・起業家", sorted(business())), ("from:報道一覧", news_handles())):
         for x in X.fx_timeline(hs, since, workers=6):
             if x["id"] not in seen:
                 s = X.slim(x); s["query"] = label; seen[x["id"]] = s
-    print(f"東海の研究者・報道を含めて {len(seen)}件")
+    print(f"東海の研究者・経営者・報道を含めて {len(seen)}件")
     return list(seen.values())
 
 
@@ -176,18 +185,16 @@ def main():
                                "投稿と同じ研究の話題だと言える論文・研究者のページがあればそれを選び（カードにその論文・研究者が出る）、無ければテーマのページ、"
                                "どれも投稿と関係が薄ければリンクを選ばない（0）。論文や研究者を紹介するときは、リンク候補の説明に書いてある題名・大学名・研究の中身だけを使う"),
                       "facts": facts, "url": "", "label": "論文トラッカー", "fb": "", "links": links, "ref": f"x-{(p['screen_name'] or 'x').lower()}-{mmdd}"})
-    items.sort(key=lambda it: (it["post"]["query"] != "from:東海の研究者", -sum(1 for l in it["links"] if l["種類"] != TYPE_THEME), -(it["post"].get("views") or 0)))
+    items.sort(key=lambda it: (it["post"]["query"] not in ("from:東海の研究者", "from:経営者・起業家"), -sum(1 for l in it["links"] if l["種類"] != TYPE_THEME), -(it["post"].get("views") or 0)))
     items = items[:MAX_ITEMS]
     print(f"貼れるページが当たった投稿 {len(items)}件")
     for it in items:
         print(f"  @{it['post']['screen_name']} {it['post']['text'][:40]!r} → " + " / ".join(l["種類"][7:12] + ":" + l["題名"][:20] for l in it["links"]))
-    if a.no_codex or not items:
-        if not items:
-            open(os.path.join(outdir, f"academic-{stamp}.json"), "w").write("[]")
-        print(f"集めた投稿 {len(posts)}件・候補 0件" if not items else "")
+    if a.no_codex:
         return
-    texts, picks = D.codex_batch(items, os.path.abspath(outdir))
-    cards = [c for c in D.finish(items, texts, picks) if D.age_min(c["p"]) <= a.minutes]
+    # 候補が0件の回も、公開ページを「0件」に置き換える（前の回の候補が古いまま残らないように）
+    texts, picks = D.codex_batch(items, os.path.abspath(outdir)) if items else ({}, {})
+    cards = [c for c in D.finish(items, texts, picks) if D.age_min(c["p"]) <= a.minutes] if items else []
     out = os.path.join(outdir, f"academic-{stamp}.html")
     page = D.page(day, stamp, cards, None if cards else {"posts": len(posts), "v1000": 0, "prev": []})
     page = page.replace("<title>", "<title>論文トラッカー ", 1)
