@@ -159,9 +159,9 @@ function g_foot(): void
        // 国会トラッカーのページからは、国会トラッカーの商品へ（別の商品・2026-10-14）
        . (strpos((string)($_SERVER['REQUEST_URI'] ?? ''), '/tracker') !== false
           ? '<a href="https://kappstore.exbridge.jp/app.php?id=5447675118edd258#ref=giin-tracker">'
-            . '国会トラッカーを買い切りで（110,000円税込・MIT・質疑カードつき）</a>'
+            . '国会トラッカーを買い切りで（550,000円税込・MIT・質疑カードつき）</a>'
           : '<a href="https://kappstore.exbridge.jp/app.php?id=dd868beae043026b#ref=giin">'
-            . 'このシステムを買い切りで（110,000円税込・MIT・MCP同梱）</a>')
+            . 'このシステムを買い切りで（550,000円税込・MIT・MCP同梱）</a>')
        . '<a href="https://exbridge.jp/solution/seiji-dantai/?ref=giin">'
        . '政治団体・後援会・議員事務所のITを業務ごとに安くする</a>'
        . '<a href="https://exbridge.jp/ai-it-komon.html?ref=giin">AI-IT顧問契約</a>'
