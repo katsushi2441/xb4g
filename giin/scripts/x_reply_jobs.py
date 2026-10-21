@@ -59,6 +59,39 @@ def run_x_reply_job(within: int = 40, **_) -> dict:
     return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps, "owners": owners}
 
 
+# 論文トラッカーの返信候補（2026-10-21 ユーザー指示「1日3回でいいよ」）。kdeck は時刻を指定できないので毎時起こし、
+# 9時台・13時台・18時台（JST）の最初の1回だけ作る。それ以外の時刻はすぐ戻る（codex を呼ばない）
+ACADEMIC_HOURS = (9, 13, 18)
+
+
+def run_academic_reply_job(**_) -> dict:
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    day = now.date().isoformat()
+    done = sorted(f for f in os.listdir(os.path.join(OUT, day)) if f.startswith("academic-") and f.endswith(".json")) if os.path.isdir(os.path.join(OUT, day)) else []
+    if now.hour not in ACADEMIC_HOURS or any(f[9:11] == f"{now.hour:02d}" for f in done):
+        return {"ok": True, "items": 0, "skipped": f"{now.hour}時（作るのは{'・'.join(map(str, ACADEMIC_HOURS))}時台の1回）"}
+    code, out, err = _run([PY, os.path.join(SCRIPTS, "academic_reply.py"), "--deploy"], 2400)
+    steps = [{"step": "論文トラッカーの返信候補", "code": code, "tail": out.strip().splitlines()[-2:]}]
+    if code != 0:
+        return {"ok": False, "items": 0, "stderr": err[-600:], "steps": steps, "mailed": notify_status("論文トラッカーの返信候補 失敗", steps, err[-600:])}
+    js = sorted(f for f in os.listdir(os.path.join(OUT, day)) if f.startswith("academic-") and f.endswith(".json"))
+    cards = json.load(open(os.path.join(OUT, day, js[-1]), encoding="utf-8")) if js else []
+    token = open(os.path.join(OUT, ".token")).read().strip()
+    url = f"https://proto.exbridge.jp/xreply-{token}/academic.html"
+    stamp = js[-1][9:13] if js else now.strftime("%H%M")
+    lines = [f"論文トラッカーの返信候補 {day} {stamp[:2]}:{stamp[2:]} ／ {len(cards)}件", "", f"一覧ページ: {url}", ""]
+    if not cards:
+        lines += ["今回は候補がありませんでした（処理は最後まで動いています）。"] + _steps_text(steps)
+    for i, c in enumerate(cards, 1):
+        lines += [f"■{i}. {'【東海の研究者】' if c.get('academic') else ''}{c.get('name')} @{c.get('screen_name')}（表示{(c.get('views') or 0):,}）",
+                  f"元の投稿: {c.get('url')}", f"内容: {c.get('text')}", f"リンク先: {c.get('label')}", ""]
+        for j, (d, u) in enumerate(zip(c.get("drafts") or [], c.get("intents") or []), 1):
+            lines += [f"［案{j}］", d, f"→ 文入りで返信画面を開く: {u}", ""]
+    lines.append("投稿は人が確かめてから行ってください。このメールは kdeck の giin-academic-reply-candidates から自動で送っています。")
+    r = _send(f"論文トラッカー返信候補 {stamp[:2]}:{stamp[2:]} {len(cards)}件", "\n".join(lines))
+    return {"ok": True, "items": 1, "cards": len(cards), "mailed": r, "steps": steps}
+
+
 def refresh_owners():
     """「愛知の経営者」の名簿（data/x_aichi_owners.json）を1日1回ふやす（2026-10-19）。候補のメールを送ったあとに回し、
     失敗しても候補の回は失敗にしない（名簿は前の日のままで動く）"""

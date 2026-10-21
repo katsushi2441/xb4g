@@ -174,6 +174,9 @@ def main():
     for it in items:
         print(f"  @{it['post']['screen_name']} {it['post']['text'][:40]!r} → " + " / ".join(l["種類"][7:12] + ":" + l["題名"][:20] for l in it["links"]))
     if a.no_codex or not items:
+        if not items:
+            open(os.path.join(outdir, f"academic-{stamp}.json"), "w").write("[]")
+        print(f"集めた投稿 {len(posts)}件・候補 0件" if not items else "")
         return
     texts, picks = D.codex_batch(items, os.path.abspath(outdir))
     cards = D.finish(items, texts, picks)
@@ -182,6 +185,13 @@ def main():
     page = page.replace("<title>", "<title>論文トラッカー ", 1)
     open(out, "w", encoding="utf-8").write(page)
     json.dump(sorted(shown | {c["p"]["id"] for c in cards}), open(shown_p, "w", encoding="utf-8"))
+    # メール用の要約（x_reply_jobs.run_academic_reply_job が読む）
+    import urllib.parse
+    json.dump([{"name": c["p"].get("name"), "screen_name": c["p"].get("screen_name"), "views": c["p"].get("views"), "url": c["p"].get("url"),
+                "text": re.sub(r"\s+", " ", c["p"].get("text") or "")[:200], "label": c["label"], "academic": X.is_academic(c["p"]),
+                "drafts": [d["text"] for d in c["drafts"]],
+                "intents": ["https://x.com/intent/post?" + urllib.parse.urlencode({"in_reply_to": c["p"]["id"], "text": d["text"]}) for d in c["drafts"]]}
+               for c in cards], open(out[:-5] + ".json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(out, f"{len(cards)}件")
     if a.deploy:
         import ftplib, io
