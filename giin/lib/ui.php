@@ -124,12 +124,12 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     echo '<header class="site"><div class="inner">'
        . (G_APP === 'tracker'
           ? '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
-            . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>'
+            . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>' . '<a class="snsbtn" href="https://exbridge.jp/ai-sns-komon.html#ref=' . (G_APP === 'tracker' ? 'tracker' : 'giin') . '-head-sns-komon">AI-SNS顧問</a>'
           : '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
             . '<small>全国の国会議員が、国会で何を話したか</small></span></a>'
             . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
             . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 玉木雄一郎、年収の壁）">'
-            . '<button>探す</button></form>')
+            . '<button>探す</button></form>' . '<a class="snsbtn" href="https://exbridge.jp/ai-sns-komon.html#ref=' . (G_APP === 'tracker' ? 'tracker' : 'giin') . '-head-sns-komon">AI-SNS顧問</a>')
        . '<nav class="gnav" aria-label="サイト内">' . $navh . '</nav>'
        . '</div></header><main class="wrap">';
 }
@@ -215,6 +215,7 @@ header.site .inner{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;
 .brand .kg{color:var(--teal-d);font-weight:900}
 .brand small{display:block;font-weight:400;font-size:11.5px;color:var(--gray);margin-top:1px}
 .q{margin-left:auto;display:flex;gap:6px;flex:1 1 260px;max-width:420px}
+.snsbtn{flex:none;margin-left:auto;background:var(--teal);color:#fff;font-weight:900;font-size:13.5px;border-radius:999px;padding:8px 15px;text-decoration:none;white-space:nowrap;box-shadow:var(--sh)}.snsbtn:hover{background:var(--teal-d)}.q+.snsbtn{margin-left:0}
 .q input{flex:1;padding:10px 16px;font-size:16px;border:2px solid #cfe5e2;border-radius:999px;background:#fff;font-family:inherit;color:var(--navy)}
 .q input:focus{outline:0;border-color:var(--teal)}
 .q button{padding:10px 18px;border:0;border-radius:999px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:15px}
@@ -387,7 +388,9 @@ footer.site p{font-size:12.5px;color:var(--gray);margin:0 0 8px}
 @media(max-width:640px){
 header.site .inner{padding:10px 16px 0}
 .brand{font-size:15px}.brand small{display:none}.brand .mark{width:30px;height:34px}
-.q{flex:1 1 100%;max-width:none;margin-left:0}
+.q{flex:1 1 100%;max-width:none;margin-left:0;order:2}
+.snsbtn{order:1;margin-left:auto!important;padding:6px 12px;font-size:12.5px}
+.gnav{order:3}
 .wrap{padding-top:16px}
 h1{font-size:24px}h2{font-size:19.5px;margin-top:40px}
 .hero{padding:28px 20px 26px;border-radius:20px}.hero h1{font-size:27px}.hero.p{padding:22px 18px 22px}.hero.p h1{font-size:25px}

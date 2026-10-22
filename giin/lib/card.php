@@ -247,6 +247,14 @@ function g_share_x(string $plain): string
  * 「Xで共有」と「タイトルとURLをコピー」。返信に貼るときは「何の話か」の1行とURLを一緒に貼りたい
  * （URLだけだと文を自分で書くことになる・2026-10-14）。$ref は計測の目印（#ref=x-share-<ref> / copy-<ref>）
  */
+/** AI-SNS顧問への入口の1行（2026-10-22 ユーザー指示。X から人が来るページのカードのすぐ下に置く） */
+function g_sns_line(string $ref): string
+{
+    return '<p class="snsline" style="margin:10px 0 0;padding:10px 14px;border-radius:12px;background:var(--mint-xl);font-size:14px;line-height:1.6">'
+         . 'このシステムを作った会社が、御社の X の運用をお手伝いします。'
+         . '<a href="https://exbridge.jp/ai-sns-komon.html#ref=' . g_e($ref) . '-sns-komon" style="font-weight:900;white-space:nowrap">AI-SNS顧問を見る →</a></p>';
+}
+
 function g_share_buttons(string $label, string $path, string $ref, string $x = ''): void
 {
     // 議員のXアカウントを投稿の文に入れる（2026-10-22 井林大臣応援団からの要望「共有した時に自然にXのアカウントも」）。
@@ -260,5 +268,6 @@ function g_share_buttons(string $label, string $path, string $ref, string $x = '
        . '<script>function gCardCopy(b){var t=b.getAttribute("data-copy");function ok(){b.textContent="コピーしました"}'
        . 'if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok)}else{var a=document.createElement("textarea");'
        . 'a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();ok()}}</script>'
-       . '<p class="note">コピーした1行とURLをXやSlackに貼ると、上のカードが表示されます。</p>';
+       . '<p class="note">コピーした1行とURLをXやSlackに貼ると、上のカードが表示されます。</p>'
+       . g_sns_line($ref . '-share');
 }

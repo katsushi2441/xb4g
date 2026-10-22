@@ -133,6 +133,7 @@ function g_page_tracker(string $key, int $page): void
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
+    echo g_sns_line('tracker-' . $t['key']);   // AI-SNS顧問への入口（2026-10-22）
     echo g_tracker_next($t);
     // この話題の語を件名に含む法案（審議の経過と、その法案に触れた質疑へ）
     if (function_exists('g_bills_for_words') && ($rb = g_bills_for_words((array)$words, 5))) {   // 法案は議員発言ログだけ
