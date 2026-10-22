@@ -105,7 +105,7 @@ function g_giin_draw(array $g): string
     [$FB, $FM, $FR] = g_card_fonts();
     [$im, $C] = g_card_canvas();
     $ku = g_ku_all((string)$g['house'], (string)$g['district']);
-    g_card_header($im, $C, '国会での発言｜' . $g['house'] . ' ' . $ku, '国会会議録から（' . g_date((string)g_meta('range_from')) . '〜）');
+    g_card_header($im, $C, 'Kurage 国会議員 発言ログ｜' . $g['house'] . ' ' . $ku, '国会会議録から（' . g_date((string)g_meta('range_from')) . '〜）');
     $name = $g['plain'] . ' 議員（' . $g['party'] . '）';
     imagettftext($im, g_card_fit($name, $FB, 44, 1080), 0, 56, 146, $C['ink'], $FB, $name);
     // 数字は2つまでだったが、質問主意書を足すと3つになる（2026-10-18）。3つのときは字を小さくして詰める

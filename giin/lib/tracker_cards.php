@@ -54,7 +54,7 @@ function g_tracker_draw(array $t, array $st): string
     $by = [];
     foreach (g_tracker_years($t['key']) as $r) { $by[(string)$r['y']] = (int)$r['q']; }
     $rows = g_tm_years($by, substr((string)$st['first'], 0, 4), substr((string)$st['last'], 0, 4));
-    g_card_header($im, $C, '国会トラッカー', '国会会議録から（' . g_date((string)$st['first']) . '〜' . g_date((string)$st['last']) . '）');
+    g_card_header($im, $C, 'Kurage 国会トラッカー', '国会会議録から（' . g_date((string)$st['first']) . '〜' . g_date((string)$st['last']) . '）');
     $w = (string)($t['short'] ?? $t['name']);
     $title = $w . 'は、国会でどこまで来たか。';
     g_card_center($im, $title, $FB, g_card_fit($title, $FB, 46, 1060), 600, 150, $C['ink']);
@@ -99,7 +99,7 @@ function g_tm_draw(array $t, string $speaker, array $d): string
     [$im, $C] = g_card_canvas();
     $last = $d['rows'][0];
     $party = g_party_short((string)($last['kaiha_at'] ?? ''));
-    g_card_header($im, $C, '国会トラッカー｜' . $t['name'], (string)$last['house']);
+    g_card_header($im, $C, 'Kurage 国会トラッカー｜' . $t['name'], (string)$last['house']);
     $name = $speaker . ' 議員' . ($party !== 'その他' ? '（' . $party . '）' : '');
     imagettftext($im, g_card_fit($name, $FB, 40, 1080), 0, 56, 140, $C['ink'], $FB, $name);
     $w = (string)($t['short'] ?? $t['name']);

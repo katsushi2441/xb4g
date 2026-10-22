@@ -216,7 +216,7 @@ function g_qa_draw(array $t, ?array $q, ?array $a): string
 
     // 上の帯: ことがら名と、いつ・どこで（重ならないよう共通の部品で描く）
     $src = $q ?? $a;
-    g_card_header($im, $C, '国会トラッカー｜' . $t['name'], g_date((string)$src['date']) . '　' . $src['house'] . '　' . $src['meeting']);
+    g_card_header($im, $C, 'Kurage 国会トラッカー｜' . $t['name'], g_date((string)$src['date']) . '　' . $src['house'] . '　' . $src['meeting']);
 
     $y = 104;
     $block = function (string $label, int $labelBg, int $boxBg, string $who, string $quote, int $lines, float $qsize) use (&$y, $im, $X, $IW, $FB, $FM, $FR, $white, $ink, $hi, $words) {
