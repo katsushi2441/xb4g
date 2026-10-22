@@ -66,7 +66,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     $can = g_abs(ltrim($path, '/'));
     // カードの見た目を変えたら版を上げる。X は同じ画像URLを数日覚えているので、URLを変えて読み直させる（2026-10-22 Kurage のブランディング）
     $img = (string)($x['image'] ?? g_abs('ogp.png'));
-    if (str_contains($img, '/giin/')) { $img .= (str_contains($img, '?') ? '&' : '?') . 'b=k2'; }
+    if (str_contains($img, '/giin/')) { $img .= (str_contains($img, '?') ? '&' : '?') . 'b=k3'; }
     $x['image'] = $img;
     echo '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -77,7 +77,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<meta property="og:type" content="website">'
        . '<meta property="og:title" content="' . g_e($full) . '">'
        . '<meta property="og:description" content="' . g_e($desc) . '">'
-       . '<meta property="og:url" content="' . g_e($can . '?b=k2') . '">'   // X は og:url でカードを覚えるので版を付ける（canonical はそのまま）
+       . '<meta property="og:url" content="' . g_e($can . '?b=k3') . '">'   // X は og:url でカードを覚えるので版を付ける（canonical はそのまま）
        . '<meta property="og:image" content="' . g_e($x['image'] ?? g_abs('ogp.png')) . '">'
        . '<meta property="og:image:width" content="1200">'
        . '<meta property="og:image:height" content="630">'

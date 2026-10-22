@@ -44,7 +44,10 @@ function g_card_canvas(int $W = 1200, int $H = 630): array
 function g_card_header($im, array $C, string $tag, string $right = ''): void
 {
     [, $FM, $FR] = g_card_fonts();
-    $X = 56; $W = imagesx($im); $IW = $W - 2 * $X;
+    $X = 56; $W = imagesx($im);
+    // 左上に Kurage のマスコット（X のカードで見える大きさ。2026-10-22 ユーザー「Kurageキャラは？」）
+    $X = g_card_mascot($im, $X - 8, 10, 76) + 6;
+    $IW = $W - $X - 56;
     // 左のラベルと右の文字が両方長いと重なる（2026-10-14 若者の選挙運動×こども・子育て・若者活躍に関する特別委員会）。
     // 右の文字を先に13ptで測り、左はその残りに収める（最大620）。それでも入らなければ右を「…」で切る
     $rw = $right !== '' ? min(g_card_textw($right, $FR, 13), (int)($IW * 0.5)) : 0;
@@ -59,7 +62,7 @@ function g_card_header($im, array $C, string $tag, string $right = ''): void
         $room = $IW - $tw - 70;
         $ws = g_card_fit($right, $FR, 18, $room, 13);
         while (g_card_textw($right, $FR, $ws) > $room && mb_strlen($right) > 4) { $right = mb_substr($right, 0, mb_strlen($right) - 2) . '…'; }
-        imagettftext($im, $ws, 0, $W - $X - g_card_textw($right, $FR, $ws), 62, $C['gray'], $FR, $right);
+        imagettftext($im, $ws, 0, $W - 56 - g_card_textw($right, $FR, $ws), 62, $C['gray'], $FR, $right);
     }
 }
 
@@ -81,18 +84,22 @@ function g_card_footer($im, array $C, string $path, string $note): void
     imagettftext($im, $size, 0, $W - $X - g_card_textw($note, $FR, $size), $H - 26, $C['gray'], $FR, $note);
 }
 
-/** 左下にマスコット（縦横比そのまま）と製品名。描き終えた右端の x を返す */
+/** マスコットを高さ $h で（縦横比そのまま）置く。右端の x を返す */
+function g_card_mascot($im, int $x, int $y, int $h): int
+{
+    $src = __DIR__ . '/../img/kurage-mascot-128.png';
+    if (!is_file($src) || !($m = @imagecreatefrompng($src))) { return $x; }
+    $w = (int)round(imagesx($m) * $h / imagesy($m));
+    imagealphablending($im, true);
+    imagecopyresampled($im, $m, $x, $y, 0, 0, $w, $h, imagesx($m), imagesy($m));
+    imagedestroy($m);
+    return $x + $w;
+}
+
+/** 左下に製品名。描き終えた右端の x を返す */
 function g_card_brand($im, array $C, int $x, int $bottom, string $name): int
 {
     [, $FM] = g_card_fonts();
-    $src = __DIR__ . '/../img/kurage-mascot-128.png';
-    if (is_file($src) && ($m = @imagecreatefrompng($src))) {
-        $h = 46; $w = (int)round(imagesx($m) * $h / imagesy($m));
-        imagealphablending($im, true);
-        imagecopyresampled($im, $m, $x, $bottom - $h, 0, 0, $w, $h, imagesx($m), imagesy($m));
-        imagedestroy($m);
-        $x += $w + 8;
-    }
     imagettftext($im, 16, 0, $x, $bottom - 12, $C['tealD'], $FM, $name);
     return $x + g_card_textw($name, $FM, 16);
 }
