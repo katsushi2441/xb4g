@@ -75,7 +75,7 @@ function g_page_member_session(string $slug, int $s): void
        . '<p class="kick">' . g_e(g_sess_period($m)) . '</p><h1>' . g_e($g['plain']) . '議員の' . g_e($lab) . '</h1>'
        . '<p class="lead">' . g_e($g['house'] . '・' . $g['party']) . '。この国会で、質疑・取り上げた法案・質問主意書がどれだけあったかを、同じ院の議員の中の順位とあわせて数えています。</p></section>';
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($path . '.png') . '?v=' . g_sess_ver($g, $m)) . '" alt="' . g_e($g['plain'] . '議員の' . $lab . 'の記録のカード') . '" width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
-    g_share_buttons($g['plain'] . '議員の' . $lab, $path, 'sess');
+    g_share_buttons($g['plain'] . '議員の' . $lab, $path, 'sess', (string)($g['x'] ?? '') ?: g_share_x((string)$g['plain']));
     $h = (string)$g['house'];
     echo '<div class="kv">'
        . '<div class="c"><b>' . number_format((int)$g['s_q']) . '</b><span>質疑での発言（' . g_e(g_sess_rank($g['rank_q'], $g['n_house'], $h)) . '）</span></div>'

@@ -211,7 +211,7 @@ function g_page_giin_lite(int $id, int $page): void
 
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($g['slug'] . '.png') . $cv) . '" alt="' . g_e($g['plain']) . '議員の国会での発言のカード" '
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
-    g_share_buttons($title, $g['slug'], 'giin');
+    g_share_buttons($title, $g['slug'], 'giin', (string)($g['x'] ?? '') ?: g_share_x((string)$g['plain']));
 
     if ((int)$g['n_speech'] === 0) {
         echo '<div class="panel"><p>' . g_e(g_date($from)) . ' 以降、国会会議録にこの議員の発言が載っていません'

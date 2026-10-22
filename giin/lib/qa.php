@@ -279,7 +279,7 @@ function g_page_qa(string $key, string $sid): void
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
     $label = ($q ? $q['speaker'] . '議員の質問と政府の答弁' : $a['speaker'] . 'の答弁')
            . '（' . $t['name'] . '・' . g_date((string)$main['date']) . '）';
-    g_share_buttons($label, $canon, 'qa');
+    g_share_buttons($label, $canon, 'qa', $q ? g_share_x((string)($q['plain'] ?? $q['speaker'])) : '');
 
     foreach ([['質問', $q, 'q'], ['答弁', $a, 'a']] as [$label, $s, $k]) {
         echo '<h2>' . $label . '</h2>';

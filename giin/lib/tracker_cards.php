@@ -157,7 +157,7 @@ function g_page_tm(string $key, string $id): void
        . (int)$d['meetings'] . 'つの会議で、質疑' . count($d['rows']) . '件。</p></section>';
     echo '<div class="panel" style="padding:10px"><img src="' . g_e(g_url($path . '.png')) . '" alt="' . g_e($sp) . '議員の記録のカード" '
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
-    g_share_buttons($label, $path, 'tm');
+    g_share_buttons($label, $path, 'tm', g_share_x((string)$sp));
 
     echo '<h2>質疑の一覧</h2><p class="note">新しい順。各質疑の「質問と答弁をカードで見る」から、質問とその直後の政府の答弁を1枚にしたカードを開けます。</p>';
     foreach ($d['rows'] as $r) { g_tracker_speech($r + ['slug' => null, 'plain' => null], (array)$t['words']); }

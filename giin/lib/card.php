@@ -209,12 +209,22 @@ function g_card_fit(string $text, string $font, float $size, int $maxw, float $m
     return $size;
 }
 
+/** 議員の名前（plain）から、本人と確かめたXアカウント（無ければ空） */
+function g_share_x(string $plain): string
+{
+    if ($plain === '') { return ''; }
+    return (string)(g_val('SELECT x FROM ' . g_ga_table() . " WHERE plain=? AND x IS NOT NULL AND x<>'' LIMIT 1", [$plain]) ?? '');
+}
+
 /**
  * 「Xで共有」と「タイトルとURLをコピー」。返信に貼るときは「何の話か」の1行とURLを一緒に貼りたい
  * （URLだけだと文を自分で書くことになる・2026-10-14）。$ref は計測の目印（#ref=x-share-<ref> / copy-<ref>）
  */
-function g_share_buttons(string $label, string $path, string $ref): void
+function g_share_buttons(string $label, string $path, string $ref, string $x = ''): void
 {
+    // 議員のXアカウントを投稿の文に入れる（2026-10-22 井林大臣応援団からの要望「共有した時に自然にXのアカウントも」）。
+    // giin_all.x は kokkai_x.json の本人と確かめたもの（verified）だけ。ページには出さず、共有の文にだけ入れる
+    if (preg_match('/^[A-Za-z0-9_]{1,15}$/', $x)) { $label .= ' @' . $x; }
     $share = 'https://x.com/intent/post?text=' . rawurlencode($label) . '&url=' . rawurlencode(g_abs($path) . '#ref=x-share-' . $ref);
     $copy = $label . "\n" . g_abs($path) . '#ref=copy-' . $ref;
     echo '<p style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px">'
