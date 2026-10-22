@@ -64,6 +64,10 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     $full = $title === '' ? G_SITE
           : ((mb_strlen($title, "UTF-8") >= 22 || !empty($x['nosuffix'])) ? $title : $title . '｜' . G_SITE);   // 全国の論点のページ（トラッカー）に「愛知の」を付けない
     $can = g_abs(ltrim($path, '/'));
+    // カードの見た目を変えたら版を上げる。X は同じ画像URLを数日覚えているので、URLを変えて読み直させる（2026-10-22 Kurage のブランディング）
+    $img = (string)($x['image'] ?? g_abs('ogp.png'));
+    if (str_contains($img, '/giin/')) { $img .= (str_contains($img, '?') ? '&' : '?') . 'b=k1'; }
+    $x['image'] = $img;
     echo '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>' . g_e($full) . '</title>'
