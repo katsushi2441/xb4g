@@ -22,7 +22,7 @@ REMOTE = os.environ.get("GIIN_REMOTE_ROOT", "/web/xb4g_com/giin")
 # fonts/（質疑カード用・12MB）は既定では送らない。作り直したときだけ --only fonts
 TARGETS = ["index.php", "sitemap.php", "giin_mcp.php", "ogp.png", "llms.txt", "lib", "img",
            "data/themes.json", "data/links.json", "data/stats.json", "data/trackers.json",
-           "data/kshuisho_links.json", "data/kshuisho_giin.json"]
+           "data/kshuisho_links.json", "data/kshuisho_giin.json", "data/shocho_links.json"]
 SKIP_NAMES = {"giin_config.php", "giin_config.php.example", "giin.sqlite", ".DS_Store"}
 
 

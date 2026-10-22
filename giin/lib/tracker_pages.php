@@ -133,6 +133,16 @@ function g_page_tracker(string $key, int $page): void
        . '立場（質疑・答弁）は発言の冒頭の話者表記から機械的に分けています。要約も賛否の判定もしていません。'
        . ($updated !== '' ? '最終取得 ' . g_e(substr($updated, 0, 16)) . '。' : '') . '</p>';
 
+    // 省庁の新しい発表（Kurage 省庁トラッカー・2026-10-23）。kpayload の shocho-fetch.py が data/shocho_links.json に書く
+    $__sl = @json_decode((string)@file_get_contents(__DIR__ . '/../data/shocho_links.json'), true);
+    if (!empty($__sl['links'][$t['key']])) {
+        echo '<section class="card" style="margin:16px 0;padding:14px 16px"><h2 style="margin:0 0 8px;font-size:18px">省庁の新しい発表</h2><ul style="margin:0;padding-left:18px">';
+        foreach ($__sl['links'][$t['key']] as $__x) {
+            echo '<li style="margin:4px 0"><a href="' . g_e($__x['page']) . '#ref=tracker-' . g_e($t['key']) . '-shocho">' . g_e($__x['title']) . '</a>'
+               . ' <span class="note">' . g_e($__x['ministry']) . '・' . g_e(g_date((string)$__x['date'])) . '</span></li>';
+        }
+        echo '</ul><p class="note" style="margin:8px 0 0">各府省の新着情報を毎日取り込み、この話題に関係する発表を並べています（<a href="https://exbridge.jp/shocho/#ref=tracker-' . g_e($t['key']) . '-shocho">Kurage 省庁トラッカー</a>）。</p></section>';
+    }
     echo g_sns_line('tracker-' . $t['key']);   // AI-SNS顧問への入口（2026-10-22）
     echo g_tracker_next($t);
     // この話題の語を件名に含む法案（審議の経過と、その法案に触れた質疑へ）
