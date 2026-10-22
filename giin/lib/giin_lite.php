@@ -45,6 +45,13 @@ function g_sk_key_any(string $house, string $d): ?string
     return $k ? (string)$k : null;
 }
 
+/** 質問・討論に立った日数と会議の数。発言の回数（1回の質疑が何回もの発言に分かれる）と取り違えられた（2026-10-22 Xで指摘）ので並べて出す */
+function g_lite_meets(int $id, string $kind = 'q'): array
+{
+    $r = g_one('SELECT COUNT(DISTINCT date) d, COUNT(DISTINCT date || meeting) m FROM ' . g_sall() . ' WHERE giin_id=? AND kind=?', [$id, $kind]);
+    return [(int)($r['d'] ?? 0), (int)($r['m'] ?? 0)];
+}
+
 function g_lite_years(int $id): array
 {
     $by = [];
@@ -73,7 +80,7 @@ function g_giin_card_ver(array $g): string
     // 答弁が質疑より多い議員（大臣・総理）は答弁を主にしたカード。版の名前も分ける（2026-10-15）
     // 質問主意書の件数も版に入れる（2026-10-18 カードに足した）
     $sh = g_giin_shuisho((string)$g['slug']);
-    return (g_giin_is_gov($g) ? 'v8g-' : 'v8-') . (int)($sh['n'] ?? 0) . '-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+    return (g_giin_is_gov($g) ? 'v9g-' : 'v9-') . (int)($sh['n'] ?? 0) . '-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
 }
 
 /** 質問主意書の件数（kshuisho の SQLite から scripts/build_kshuisho_giin.py が拾ったもの）。無い議員は null */
@@ -115,7 +122,8 @@ function g_giin_draw(array $g): string
         $items[] = [(int)$g['n_gov'], '大臣・副大臣・政務官としての答弁'];
         $items[] = [(int)$g['n_q'], '議員として質問・討論した発言'];
     } else {
-        $items[] = [(int)$g['n_q'], '議員として質問・討論した発言'];
+        [$qd, $qm] = g_lite_meets((int)$g['id']);
+        $items[] = [(int)$g['n_q'], '議員として質問・討論した発言（' . $qd . '日・' . $qm . 'の会議）'];
         // 2つ目の数字は、答弁があれば答弁、なければ委員長・議長としての議事整理。0件を大きく出すと「発言が0件」に見える（2026-10-15）
         if ((int)$g['n_gov'] > 0) { $items[] = [(int)$g['n_gov'], '大臣・副大臣・政務官としての答弁']; }
         elseif ((int)$g['n_chair'] > 0) { $items[] = [(int)$g['n_chair'], '委員長・議長としての議事整理']; }
@@ -128,7 +136,7 @@ function g_giin_draw(array $g): string
         $ns = $three ? 38 : 46; $num = number_format($it[0]);
         $col = !empty($it[2]) ? $C['tealD'] : $C['ink'];
         imagettftext($im, $ns, 0, 60, $y, $col, $FB, $num);
-        imagettftext($im, $three ? 19 : 22, 0, 66 + g_card_textw($num, $FB, $ns), $y, $col, $FM, '件');
+        imagettftext($im, $three ? 19 : 22, 0, 66 + g_card_textw($num, $FB, $ns), $y, $col, $FM, !empty($it[2]) ? '件' : '回');
         imagettftext($im, $three ? 14 : 16, 0, 62, $y + ($three ? 24 : 28), $C['gray'], $FR, $it[1]);
     }
     $kd = $gov ? 'gov' : 'q';
@@ -136,7 +144,7 @@ function g_giin_draw(array $g): string
     $rows = [];
     $y0 = (int)substr((string)g_meta('range_from') ?: '2023', 0, 4);
     for ($y = $y0; $y <= (int)date('Y'); $y++) { $rows[] = [(string)$y, (int)($by[(string)$y][$kd] ?? 0)]; }
-    imagettftext($im, 16, 0, 440, 196, $C['gray'], $FR, ($gov ? '年ごとの答弁の件数' : '年ごとの質疑の件数') . '（最後の年は途中まで）');
+    imagettftext($im, 16, 0, 440, 196, $C['gray'], $FR, ($gov ? '年ごとの答弁の回数' : '年ごとの質問・討論の発言の回数') . '（最後の年は途中まで）');
     g_card_bars($im, $C, $rows, 440, 204, 704, 200, $C['teal'], $C['tealD']);
     // 締めのあいさつ（「ありがとうございました。」）を拾わないよう、中身のある長さの発言から選ぶ（2026-10-15 蓮舫議員のカード）
     $last = g_one('SELECT * FROM ' . g_sall() . " WHERE giin_id=? AND kind=? AND LENGTH(body)>=120 ORDER BY date DESC, speech_order DESC LIMIT 1", [(int)$g['id'], $kd]);
@@ -168,8 +176,8 @@ function g_page_giin_lite(int $id, int $page): void
     $counts = ['q' => (int)$g['n_q'], 'gov' => (int)$g['n_gov'], 'chair' => (int)$g['n_chair']];
     $from = (string)g_meta('range_from');
     $title = $g['plain'] . 'の国会発言（' . $g['house'] . ' ' . $ku . '）';
-    $desc = $g['plain'] . '（' . $g['house'] . ' ' . $ku . '・' . $g['party'] . '）が' . g_date($from) . '以降に国会で行った質疑'
-          . number_format($counts['q']) . '件・答弁' . number_format($counts['gov']) . '件を、日付・会議名・会議録リンクつきで並べています。要約や論評はしていません。';
+    $desc = $g['plain'] . '（' . $g['house'] . ' ' . $ku . '・' . $g['party'] . '）が' . g_date($from) . '以降に国会で質問・討論した発言'
+          . number_format($counts['q']) . '回（' . g_lite_meets((int)$g['id'])[0] . '日）・答弁' . number_format($counts['gov']) . '回を、日付・会議名・会議録リンクつきで並べています。要約や論評はしていません。';
     $ld = g_jsonld([
         g_crumbs([['ホーム', '/'], [$g['plain'], '/' . $g['slug']]]),
         ['@type' => 'ProfilePage', '@id' => g_abs($g['slug']), 'url' => g_abs($g['slug']), 'name' => $g['plain'] . 'の国会発言',
@@ -192,13 +200,15 @@ function g_page_giin_lite(int $id, int $page): void
        . (empty($g['current']) ? '　<span class="pill gray">いまの議員名簿にはいません</span>' : '')
        . '</p>';
     // 件数の期間をすぐ下に書く。ページの一番下にしか無く、「高市早苗は質問・討論たった2回」と読まれた（2026-10-16 Xの引用）
-    $kq = '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言</span></div>';
+    [$qd, $qm] = g_lite_meets((int)$g['id']);
+    $kq = '<div class="c"><b>' . number_format($counts['q']) . '</b><span>議員として質問・討論した発言（' . $qd . '日・' . $qm . 'の会議）</span></div>';
     $kg = '<div class="c"><b>' . number_format($counts['gov']) . '</b><span>大臣・副大臣・政務官としての答弁</span></div>';
     $kc = '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>';
     $isgov = g_giin_is_gov($g);
     echo '<div class="kv">' . ($isgov ? $kg . $kq : $kq . $kg) . $kc . (($__s = g_giin_shuisho((string)$g['slug'])) ? '<a class="c" href="' . g_e(g_giin_shuisho_url($__s, 'giin-' . $g['slug'])) . '" style="text-decoration:none;color:inherit"><b>' . number_format((int)$__s['n']) . '</b><span>提出した質問主意書（' . g_e(substr((string)$__s['first'], 0, 4)) . '年〜）→ 本文と答弁書</span></a>' : '') . '</div>'
        . '<p class="note" style="margin:8px 0 0">件数は ' . g_e(g_date((string)g_meta('range_from'))) . '〜'
        . g_e(g_date((string)($g['last_date'] ?: g_meta('range_from')))) . ' の国会会議録から数えています。それより前の発言は入っていません。'
+       . '数は会議録の発言の区切りごとで、1回の質疑の中の質問・再質問もそれぞれ1回と数えます（質疑の回数ではありません）。'
        . ($isgov ? 'この期間の多くを大臣・副大臣・政務官（総理大臣を含む）として務めているため、国会での発言の大半は政府の側の答弁で、議員としての質問・討論は少なくなります。' : '')
        . '</p></section>';
     if (function_exists('g_sess_links')) { echo g_sess_links((int)$g['id'], (string)$g['slug']); }   // 国会ごとの記録（2026-10-19）

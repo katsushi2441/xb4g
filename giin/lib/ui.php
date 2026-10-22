@@ -405,7 +405,7 @@ function g_card(array $g): string
         . '<div class="nm">' . g_e($g['plain']) . '</div>'
         . '<div class="mt">' . g_e($g['house']) . ' ' . g_e(g_ku($g['district'])) . '</div>'
         . '<div class="mt"><span class="pill">' . g_e($g['party']) . '</span></div>'
-        . '<div class="n">質疑 ' . number_format((int)$g['n_q']) . '件</div></a>';
+        . '<div class="n">質問・討論の発言 ' . number_format((int)$g['n_q']) . '回</div></a>';
 }
 
 /** 選挙区の表記を整える（（比）東海 → 比例東海） */

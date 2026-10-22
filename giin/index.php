@@ -409,8 +409,8 @@ function g_page_giin(int $id, int $page): void
         if ($all > count($uq)) {
             echo '<p class="note">ほかに' . ($all - count($uq)) . '語あります。</p>';
         }
-        echo '<p class="note">46人の質疑' . number_format((int)g_val('SELECT SUM(n_q) FROM giin'))
-           . '件を全部読み、<b>4回以上・2日以上にまたがって使われた語</b>のうち、'
+        echo '<p class="note">46人の質問・討論の発言' . number_format((int)g_val('SELECT SUM(n_q) FROM giin'))
+           . '回分を全部読み、<b>4回以上・2日以上にまたがって使われた語</b>のうち、'
            . 'ほかの44人が一度も使っていないものを機械的に拾いました。'
            . '多い少ないの比較ではありません。</p>';
         // 貼れる1枚。**議員本人・事務所が使えるように、保存先をそのまま示す。**
@@ -793,7 +793,7 @@ function g_page_search(int $page): void
         foreach ($members as $m) {
             echo '<a class="card" href="' . g_url($m['slug']) . '"><div class="nm">' . g_e($m['plain'])
                . ' <span class="pill">' . g_e($m['party']) . '</span></div>'
-               . '<div class="n">' . g_e($m['house']) . ' ' . g_e(function_exists('g_ku_all') ? g_ku_all((string)$m['house'], (string)$m['district']) : g_ku($m['district'])) . '　質疑 ' . number_format((int)$m['n_q']) . '件</div></a>';
+               . '<div class="n">' . g_e($m['house']) . ' ' . g_e(function_exists('g_ku_all') ? g_ku_all((string)$m['house'], (string)$m['district']) : g_ku($m['district'])) . '　質問・討論の発言 ' . number_format((int)$m['n_q']) . '回</div></a>';
         }
         echo '</div>';
     }
