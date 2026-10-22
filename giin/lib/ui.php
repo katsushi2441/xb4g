@@ -77,7 +77,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<meta property="og:type" content="website">'
        . '<meta property="og:title" content="' . g_e($full) . '">'
        . '<meta property="og:description" content="' . g_e($desc) . '">'
-       . '<meta property="og:url" content="' . g_e($can) . '">'
+       . '<meta property="og:url" content="' . g_e($can . '?b=k2') . '">'   // X は og:url でカードを覚えるので版を付ける（canonical はそのまま）
        . '<meta property="og:image" content="' . g_e($x['image'] ?? g_abs('ogp.png')) . '">'
        . '<meta property="og:image:width" content="1200">'
        . '<meta property="og:image:height" content="630">'
