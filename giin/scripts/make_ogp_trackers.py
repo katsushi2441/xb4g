@@ -29,7 +29,7 @@ def make(con, base: str) -> int:
              "国会でどこまで来たか。",
              f"質疑 {int(r[1] or 0):,}件・答弁 {int(r[2] or 0):,}件・議員 {int(r[3] or 0)}人（{r[4] or ''}まで）",
              "だれが質問し、政府が何と答えたか。日付と会議録リンク。",
-             "国会トラッカー",
+             "Kurage 国会トラッカー",
              f"{base.rstrip('/')}/tracker/{t['key']}")
         n += 1
     return n

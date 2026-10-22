@@ -66,15 +66,35 @@ function g_card_header($im, array $C, string $tag, string $right = ''): void
 /** 下の帯（左に公開URL、右に出典） */
 function g_card_footer($im, array $C, string $path, string $note): void
 {
-    [, , $FR] = g_card_fonts();
+    [, $FM, $FR] = g_card_fonts();
     $X = 56; $W = imagesx($im); $H = imagesy($im);
+    // 製品名とマスコット（2026-10-22 ユーザー指示「Kurage 国会トラッカー」「Kurage 国会議員 発言ログ」のブランディング）
+    $x = g_card_brand($im, $C, $X, $H - 14, str_starts_with($path, 'tracker') ? 'Kurage 国会トラッカー' : 'Kurage 国会議員 発言ログ');
     $url = preg_replace('#^https?://#', '', g_abs($path));
-    imagettftext($im, 17, 0, $X, $H - 26, $C['gray'], $FR, $url);
+    $us = g_card_fit($url, $FR, 15, (int)(($W - 2 * $X) * 0.42) - ($x - $X), 12);
+    imagettftext($im, $us, 0, $x + 14, $H - 26, $C['gray'], $FR, $url);
+    $x += 14 + g_card_textw($url, $FR, $us);
     // 出典が長いと公開URLに重なる（2026-10-14 地元の数字カード）。空いている幅に収め、入らなければ字を小さく、それでも入らなければ切る
-    $room = $W - 2 * $X - g_card_textw($url, $FR, 17) - 30;
+    $room = $W - $X - $x - 30;
     $size = g_card_fit($note, $FR, 17, $room, 13);
     while (g_card_textw($note, $FR, $size) > $room && mb_strlen($note) > 4) { $note = mb_substr($note, 0, mb_strlen($note) - 2) . '…'; }
     imagettftext($im, $size, 0, $W - $X - g_card_textw($note, $FR, $size), $H - 26, $C['gray'], $FR, $note);
+}
+
+/** 左下にマスコット（縦横比そのまま）と製品名。描き終えた右端の x を返す */
+function g_card_brand($im, array $C, int $x, int $bottom, string $name): int
+{
+    [, $FM] = g_card_fonts();
+    $src = __DIR__ . '/../img/kurage-mascot-128.png';
+    if (is_file($src) && ($m = @imagecreatefrompng($src))) {
+        $h = 46; $w = (int)round(imagesx($m) * $h / imagesy($m));
+        imagealphablending($im, true);
+        imagecopyresampled($im, $m, $x, $bottom - $h, 0, 0, $w, $h, imagesx($m), imagesy($m));
+        imagedestroy($m);
+        $x += $w + 8;
+    }
+    imagettftext($im, 16, 0, $x, $bottom - 12, $C['tealD'], $FM, $name);
+    return $x + g_card_textw($name, $FM, 16);
 }
 
 /** 文字列の幅（送り幅。末尾の字の右の余白も含む） */

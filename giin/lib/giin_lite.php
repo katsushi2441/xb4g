@@ -73,7 +73,7 @@ function g_giin_card_ver(array $g): string
     // 答弁が質疑より多い議員（大臣・総理）は答弁を主にしたカード。版の名前も分ける（2026-10-15）
     // 質問主意書の件数も版に入れる（2026-10-18 カードに足した）
     $sh = g_giin_shuisho((string)$g['slug']);
-    return (g_giin_is_gov($g) ? 'v7g-' : 'v7-') . (int)($sh['n'] ?? 0) . '-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
+    return (g_giin_is_gov($g) ? 'v8g-' : 'v8-') . (int)($sh['n'] ?? 0) . '-' . (int)$g['n_q'] . '-' . (int)$g['n_gov'] . '-' . (int)$g['n_chair'] . '-' . preg_replace('/[^0-9]/', '', (string)$g['last_date']);
 }
 
 /** 質問主意書の件数（kshuisho の SQLite から scripts/build_kshuisho_giin.py が拾ったもの）。無い議員は null */

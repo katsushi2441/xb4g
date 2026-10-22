@@ -119,9 +119,9 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     }
     echo '<header class="site"><div class="inner">'
        . (G_APP === 'tracker'
-          ? '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">国</span><span>' . g_e(G_SITE)
+          ? '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
             . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>'
-          : '<a class="brand" href="' . g_url('') . '"><span class="mark" aria-hidden="true">議</span><span>' . g_e(G_SITE)
+          : '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
             . '<small>全国の国会議員が、国会で何を話したか</small></span></a>'
             . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
             . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 玉木雄一郎、年収の壁）">'
@@ -207,7 +207,8 @@ header.site{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);ba
 header.site .inner,footer.site .inner{max-width:1080px;margin:0 auto;padding:12px 16px}
 header.site .inner{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;padding-bottom:0}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--navy);font-weight:900;font-size:17px;line-height:1.25}
-.brand .mark{flex:none;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--teal-l),var(--teal-d));color:#fff;display:grid;place-items:center;font-size:18px;font-weight:900;box-shadow:var(--sh)}
+.brand .mark{flex:none;width:34px;height:38px;object-fit:contain}
+.brand .kg{color:var(--teal-d);font-weight:900}
 .brand small{display:block;font-weight:400;font-size:11.5px;color:var(--gray);margin-top:1px}
 .q{margin-left:auto;display:flex;gap:6px;flex:1 1 260px;max-width:420px}
 .q input{flex:1;padding:10px 16px;font-size:16px;border:2px solid #cfe5e2;border-radius:999px;background:#fff;font-family:inherit;color:var(--navy)}
@@ -381,7 +382,7 @@ footer.site p{font-size:12.5px;color:var(--gray);margin:0 0 8px}
 .stat .scroll table td:first-child{width:42%;word-break:keep-all;overflow-wrap:break-word}
 @media(max-width:640px){
 header.site .inner{padding:10px 16px 0}
-.brand{font-size:15px}.brand small{display:none}.brand .mark{width:34px;height:34px;font-size:16px}
+.brand{font-size:15px}.brand small{display:none}.brand .mark{width:30px;height:34px}
 .q{flex:1 1 100%;max-width:none;margin-left:0}
 .wrap{padding-top:16px}
 h1{font-size:24px}h2{font-size:19.5px;margin-top:40px}
