@@ -163,6 +163,24 @@ function g_share_fallback(): void
             $html = substr($html, 0, $at) . $box . substr($html, $at);
         }
     }
+    // 右の列（PRの動画の枠と災害系デモ）も全ページに（2026-10-23 ユーザー「全ページこのレイアウトでいいんじゃないの？」）。
+    // まだ2列になっていないページだけ、<main> の中身を右の列で囲む。相談先を先に出すページ（g_noside）と404は1列のまま
+    if (($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com' && $c && !str_contains($html, 'class="g-cols"') && empty($GLOBALS['g_noside']) && http_response_code() !== 404) {
+        $m = strpos($html, '<main class="wrap">');
+        if ($m !== false) {
+            $seg = explode('/', explode('?', (string)$c['path'])[0])[0];
+            $ref = 'giin-' . (preg_match('/^[a-z0-9-]{1,40}$/', $seg) ? $seg : 'top') . '-side';
+            $m += strlen('<main class="wrap">');
+            $html = substr($html, 0, $m) . g_side_open($ref) . substr($html, $m) . g_side_close();
+            // スマホでは右の列のCM枠が出ないので、共有の1行のすぐ後にCM枠を置く
+            $sb = strpos($html, 'class="sharebar"');
+            if ($sb !== false && ($e = strpos($html, '</div>', $sb)) !== false) {
+                $html = substr($html, 0, $e + 6) . g_cm_sp($ref) . substr($html, $e + 6);
+            } elseif (($e = strpos($html, '</section>', $m)) !== false) {   // 共有の1行が無いページ（議員ページ等）は見出しの枠の直後
+                $html = substr($html, 0, $e + 10) . g_cm_sp($ref) . substr($html, $e + 10);
+            }
+        }
+    }
     echo $html;
 }
 

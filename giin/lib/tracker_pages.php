@@ -106,7 +106,7 @@ function g_page_tracker(string $key, int $page): void
 
     // 右の列（CM枠と災害系デモ）。相談先を出す notice 付きのページ（自殺対策など）には出さない
     $side = empty($t['notice']);
-    if ($side) { echo g_side_open('giin-tracker'); }
+    if ($side) { echo g_side_open('giin-tracker'); } else { $GLOBALS['g_noside'] = true; }   // 相談先を先に出すページは1列のまま
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › '
        . '<a href="' . g_url('tracker') . '">国会トラッカー</a> › ' . g_e($t['name']) . '</nav>';
     echo '<p class="kick">Diet Tracker</p><h1>' . g_e($w . 'の国会答弁と質疑') . '</h1>'
