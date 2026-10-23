@@ -64,6 +64,11 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
     $full = $title === '' ? G_SITE
           : ((mb_strlen($title, "UTF-8") >= 22 || !empty($x['nosuffix'])) ? $title : $title . '｜' . G_SITE);   // 全国の論点のページ（トラッカー）に「愛知の」を付けない
     $can = g_abs(ltrim($path, '/'));
+    // 全ページに「Xで共有」「コピー」を出すための控え（2026-10-23 ユーザー指示「発言ログ全ページにつけるべき」）。g_foot で使う
+    $GLOBALS['g_cur'] = ['title' => $title !== '' ? $title : G_SITE, 'path' => ltrim($path, '/') . (($x['q'] ?? '') !== '' ? '?q=' . rawurlencode((string)$x['q']) : ''),
+                         'noindex' => !empty($x['noindex'])];
+    // ページを出し終わるまで溜めて、共有ボタンがまだ無ければ最初の見出しの直後に差し込む（g_share_fallback）
+    if (empty($GLOBALS['g_ob'])) { ob_start(); $GLOBALS['g_ob'] = true; }
     // カードの見た目を変えたら版を上げる。X は同じ画像URLを数日覚えているので、URLを変えて読み直させる（2026-10-22 Kurage のブランディング）
     $img = (string)($x['image'] ?? g_abs('ogp.png'));
     if (str_contains($img, '/giin/')) { $img .= (str_contains($img, '?') ? '&' : '?') . 'b=k3'; }
@@ -134,8 +139,29 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '</div></header><main class="wrap">';
 }
 
+/** そのページ用の共有ボタンがまだ出ていなければ、最初の見出し（h1）の直後に差し込む（全ページ共通・2026-10-23）。
+ *  最初はフッターの前に出していたが「ないよ。全部つけろよ」＝下では見つからない。見出しのすぐ下に置く */
+function g_share_fallback(): void
+{
+    $c = $GLOBALS['g_cur'] ?? null;
+    $html = !empty($GLOBALS['g_ob']) ? (string)ob_get_clean() : '';
+    $GLOBALS['g_ob'] = false;
+    // 例外を作らない（「全部つけろ」2026-10-23）。出さないのは存在しないページ（404）だけ
+    if (empty($GLOBALS['g_shared']) && $c && http_response_code() !== 404 && function_exists('g_share_buttons')) {
+        ob_start();
+        echo '<div class="sharebar" style="margin:12px 0 4px">';
+        g_share_buttons($c['title'] . '｜' . G_SITE, $c['path'], 'page');
+        echo '</div>';
+        $box = (string)ob_get_clean();
+        $at = strpos($html, '</h1>');
+        $html = $at === false ? $html . $box : substr($html, 0, $at + 5) . $box . substr($html, $at + 5);
+    }
+    echo $html;
+}
+
 function g_foot(): void
 {
+    g_share_fallback();
     if (G_APP === 'tracker') { g_foot_tracker(); return; }
     $u = g_meta('updated_at'); $f = g_meta('range_from');
     echo '</main><footer class="site"><div class="inner">'

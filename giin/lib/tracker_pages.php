@@ -37,7 +37,10 @@ function g_page_trackers(): void
        . '<p style="margin:14px 0 0"><label for="tq" style="font-weight:700">テーマを探す</label><br>'
        . '<input id="tq" type="search" placeholder="例：年収の壁、不登校、介護、防災" autocomplete="off" '
        . 'style="width:100%;max-width:520px;box-sizing:border-box;font-size:16px;padding:10px 12px;border:1px solid #c9d3dc;border-radius:8px;margin-top:6px">'
-       . '<br><span class="note" id="tqn"></span></p></section><div class="grid" id="tgrid">';
+       . '<br><span class="note" id="tqn"></span></p></section>';
+    // 読んだ人が自分で広められるように（2026-10-23 ユーザー指摘「コピーボタン、X共有ボタンは？」）
+    g_share_buttons('Kurage 国会トラッカー｜' . $n . 'のテーマで、全国の国会議員の質疑' . number_format($sq) . '件と政府の答弁' . number_format($sg) . '件を追う', 'tracker', 'trackers');
+    echo '<div class="grid" id="tgrid">';
     foreach ($rows as [$t, $st]) {
         $hay = $t['name'] . ' ' . ($t['short'] ?? '') . ' ' . ($t['seo_word'] ?? '') . ' ' . implode(' ', (array)($t['words'] ?? []));
         echo '<a class="card" data-q="' . g_e(mb_strtolower($hay)) . '" href="' . g_url('tracker/' . $t['key']) . '">'
@@ -120,6 +123,8 @@ function g_page_tracker(string $key, int $page): void
        . '<div class="c"><b>' . (int)$st['speakers'] . '</b><span>取り上げた<br>議員</span></div>'
        . '<div class="c"><b>' . g_e(substr((string)$st['last'], 0, 4)) . '</b><span>最新 ' . g_e(substr((string)$st['last'], 5)) . '<br>（最初 ' . g_e(substr((string)$st['first'], 0, 7)) . '）</span></div>'
        . '</div></section>';
+    // 共有とコピー（2026-10-23）。AI-SNS顧問の1行は g_share_buttons の中で出す
+    g_share_buttons($w . 'の国会答弁｜質疑' . number_format((int)$st['q']) . '件・答弁' . number_format((int)$st['gov']) . '件・' . (int)$st['speakers'] . '人（Kurage 国会トラッカー）', 'tracker/' . $key, 'tracker-' . $key);
     // 答えを先に一文で（AI検索・強調スニペットが引用しやすい形）
     echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1]) . '</p>';
     // 当社が数えた要点（会議録の写しではない、このページだけの中身。2026-10-09）
@@ -143,7 +148,6 @@ function g_page_tracker(string $key, int $page): void
         }
         echo '</ul><p class="note" style="margin:8px 0 0">各府省の新着情報を毎日取り込み、この話題に関係する発表を並べています（<a href="https://exbridge.jp/shocho/#ref=tracker-' . g_e($t['key']) . '-shocho">Kurage 省庁トラッカー</a>）。</p></section>';
     }
-    echo g_sns_line('tracker-' . $t['key']);   // AI-SNS顧問への入口（2026-10-22）
     echo g_tracker_next($t);
     // この話題の語を件名に含む法案（審議の経過と、その法案に触れた質疑へ）
     if (function_exists('g_bills_for_words') && ($rb = g_bills_for_words((array)$words, 5))) {   // 法案は議員発言ログだけ

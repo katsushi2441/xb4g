@@ -257,6 +257,7 @@ function g_sns_line(string $ref): string
 
 function g_share_buttons(string $label, string $path, string $ref, string $x = ''): void
 {
+    $GLOBALS['g_shared'] = true;   // フッターの共通の共有ボタンを重ねて出さない（ui.php g_share_fallback）
     // 議員のXアカウントを投稿の文に入れる（2026-10-22 井林大臣応援団からの要望「共有した時に自然にXのアカウントも」）。
     // giin_all.x は kokkai_x.json の本人と確かめたもの（verified）だけ。ページには出さず、共有の文にだけ入れる
     if (preg_match('/^[A-Za-z0-9_]{1,15}$/', $x)) { $label .= ' @' . $x; }

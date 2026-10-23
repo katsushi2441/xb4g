@@ -23,6 +23,7 @@ define('G_HAS_TRACKER', is_file(__DIR__ . '/lib/tracker_pages.php'));
 define('G_HAS_QA', G_HAS_TRACKER && is_file(__DIR__ . '/lib/qa.php'));
 // 法案の賛否カードはカードの部品（lib/card.php と fonts/）がある設置だけ
 define('G_HAS_CARD', is_file(__DIR__ . '/lib/card.php') && is_dir(__DIR__ . '/fonts'));
+if (is_file(__DIR__ . '/lib/card.php')) { require_once __DIR__ . '/lib/card.php'; }   // 共有ボタン（g_share_buttons）を全ページで使う
 if (G_HAS_CARD) { require __DIR__ . '/lib/bill_card.php'; if (is_file(__DIR__ . '/lib/senkyoku_card.php')) { require __DIR__ . '/lib/senkyoku_card.php'; } }
 if (G_HAS_TRACKER) { require __DIR__ . '/lib/tracker_pages.php'; }
 if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker_cards.php'; }
@@ -790,6 +791,11 @@ function g_page_search(int $page): void
         ['q' => $q, 'noindex' => $q === '']);
 
     echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
+    // 検索結果も共有できるように（2026-10-23）。返信に「◯◯の国会発言◯件」を貼る使い方が多い
+    if ($q !== '') {
+        g_share_buttons('「' . $q . '」をふくむ国会発言' . number_format($total) . '件' . ($party !== '' ? '（' . $party . '）' : '') . '｜Kurage 国会議員 発言ログ',
+            'search?q=' . rawurlencode($q) . ($party !== '' ? '&party=' . rawurlencode($party) : ''), 'search');
+    }
     if ($members) {
         echo '<h2>名前に一致する議員</h2><div class="grid">';
         foreach ($members as $m) {
