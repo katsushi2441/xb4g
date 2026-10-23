@@ -130,8 +130,12 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . (G_APP === 'tracker'
           ? '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
             . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>' . '<a class="snsbtn" href="https://exbridge.jp/ai-sns-komon.html#ref=' . (G_APP === 'tracker' ? 'tracker' : 'giin') . '-head-sns-komon">AI-SNS顧問</a>'
-          : '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
-            . '<small>全国の国会議員が、国会で何を話したか</small></span></a>'
+          // トラッカーのページでは、ヘッダーの名前も「国会トラッカー」に切り替える（2026-10-23 ユーザー「発言ログと国会トラッカーの切り分けがよくわからない」）
+          : (str_starts_with(ltrim($path, '/'), 'tracker')
+             ? '<a class="brand" href="' . g_url('tracker') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> 国会トラッカー'
+               . '<small>テーマごとに、だれが質問し、政府が何と答えたか</small></span></a>'
+             : '<a class="brand" href="' . g_url('') . '"><img class="mark" src="' . g_url('img/kurage-mascot-128.png') . '" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> ' . g_e(G_SITE)
+               . '<small>全国の国会議員が、国会で何を話したか</small></span></a>')
             . '<form class="q" action="' . g_url('search') . '"><input type="search" name="q" '
             . 'value="' . g_e($x['q'] ?? '') . '" placeholder="議員名、またはことばで探す（例: 玉木雄一郎、年収の壁）">'
             . '<button>探す</button></form>' . '<a class="snsbtn" href="https://exbridge.jp/ai-sns-komon.html#ref=' . (G_APP === 'tracker' ? 'tracker' : 'giin') . '-head-sns-komon">AI-SNS顧問</a>')

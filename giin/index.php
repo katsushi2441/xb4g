@@ -206,8 +206,20 @@ function g_page_top(): void
        . (G_HAS_TRACKER && $ntr ? '<div class="f"><b>' . $ntr . '<i>本</i></b><span>全国の会議録を追う国会トラッカー</span></div>' : '')
        . '<div class="f"><b>' . g_e(substr($from, 0, 4)) . '<i>年〜</i></b><span>収録期間（' . g_e($from) . ' 以降）</span></div>'
        . (g_sk_ready() ? '<div class="f"><a href="' . g_url('senkyoku') . '"><b>289<i>区</i></b><span>選挙区ダッシュボード（全国の小選挙区の公開データ）</span></a></div>' : '')
-       . '</div></section>'
-       . '<div class="panel note"><b>件数の読み方</b>：数えているのは'
+       . '</div></section>';
+    // 入口を2つに分けて、違いを1行ずつ（2026-10-23）。発言ログ＝人が軸、国会トラッカー＝テーマが軸
+    if (G_HAS_TRACKER && $ntr) {
+        echo '<h2 style="margin:22px 0 10px">人で探すか、テーマで探すか</h2>'
+           . '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">'
+           . '<a class="card" href="' . g_url('list') . '"><div class="nm">人で探す｜Kurage 国会議員 発言ログ</div>'
+           . '<div class="n">いまの国会議員' . $ng . '人の、' . g_e(substr($from, 0, 4)) . '年以降の発言を、議員ごと・政党ごと・選挙区ごと・ことばで引けます。'
+           . '「推しの議員が何を質問してきたか」はこちら。</div></a>'
+           . '<a class="card" href="' . g_url('tracker') . '"><div class="nm">テーマで探す｜Kurage 国会トラッカー</div>'
+           . '<div class="n">' . $ntr . 'のテーマで、だれが質問し、政府が何と答えたかを、過去の会議録までさかのぼって並べます。'
+           . '大臣や政府参考人の答弁、いまは議員でない人の質問も入ります。「この話は国会でどこまで来たか」はこちら。</div></a>'
+           . '</div>';
+    }
+    echo '<div class="panel note"><b>件数の読み方</b>：数えているのは'
        . '<b>議員として質問・討論した発言</b>だけです。委員長としての議事整理'
        . '（「次に、○○君。」）や、大臣としての答弁は別に数えています。'
        . '混ぜると、委員長を務めた議員の件数が跳ね上がって「よく質問している人」に'
