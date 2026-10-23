@@ -793,7 +793,7 @@ function g_page_search(int $page): void
     echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
     // 検索結果も共有できるように（2026-10-23）。返信に「◯◯の国会発言◯件」を貼る使い方が多い
     if ($q !== '') {
-        g_share_buttons('「' . $q . '」をふくむ国会発言' . number_format($total) . '件' . ($party !== '' ? '（' . $party . '）' : '') . '｜Kurage 国会議員 発言ログ',
+        echo g_share_bar('「' . $q . '」をふくむ国会発言' . number_format($total) . '件' . ($party !== '' ? '（' . $party . '）' : '') . '｜Kurage 国会議員 発言ログ',
             'search?q=' . rawurlencode($q) . ($party !== '' ? '&party=' . rawurlencode($party) : ''), 'search');
     }
     if ($members) {

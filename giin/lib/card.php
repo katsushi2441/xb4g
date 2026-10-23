@@ -255,6 +255,21 @@ function g_sns_line(string $ref): string
          . '<a href="https://exbridge.jp/ai-sns-komon.html#ref=' . g_e($ref) . '-sns-komon" style="font-weight:900;white-space:nowrap">AI-SNS顧問を見る →</a></p>';
 }
 
+/** カード画像の無いページ用の共有の1行（2026-10-23）。「上のカード」の説明もAI-SNS顧問の行も付けない */
+function g_share_bar(string $label, string $path, string $ref): string
+{
+    $GLOBALS['g_shared'] = true;
+    $share = 'https://x.com/intent/post?text=' . rawurlencode($label) . '&url=' . rawurlencode(g_abs($path) . '#ref=x-share-' . $ref);
+    $copy = $label . "\n" . g_abs($path) . '#ref=copy-' . $ref;
+    return '<div class="sharebar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px">'
+         . '<span style="font-size:14px;font-weight:700;color:var(--muted,#5d6b7a)">このページを共有</span>'
+         . '<a class="btn" style="padding:8px 16px;font-size:14px" href="' . g_e($share) . '" target="_blank" rel="noopener">Xで共有</a>'
+         . '<button class="btn o" style="padding:8px 16px;font-size:14px" type="button" data-copy="' . g_e($copy) . '" onclick="gBarCopy(this)">タイトルとURLをコピー</button></div>'
+         . '<script>function gBarCopy(b){var t=b.getAttribute("data-copy");function ok(){b.textContent="コピーしました"}'
+         . 'if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok)}else{var a=document.createElement("textarea");'
+         . 'a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();ok()}}</script>';
+}
+
 function g_share_buttons(string $label, string $path, string $ref, string $x = ''): void
 {
     $GLOBALS['g_shared'] = true;   // フッターの共通の共有ボタンを重ねて出さない（ui.php g_share_fallback）

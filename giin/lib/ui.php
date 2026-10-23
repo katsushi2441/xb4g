@@ -147,14 +147,17 @@ function g_share_fallback(): void
     $html = !empty($GLOBALS['g_ob']) ? (string)ob_get_clean() : '';
     $GLOBALS['g_ob'] = false;
     // 例外を作らない（「全部つけろ」2026-10-23）。出さないのは存在しないページ（404）だけ
-    if (empty($GLOBALS['g_shared']) && $c && http_response_code() !== 404 && function_exists('g_share_buttons')) {
-        ob_start();
-        echo '<div class="sharebar" style="margin:12px 0 4px">';
-        g_share_buttons($c['title'] . '｜' . G_SITE, $c['path'], 'page');
-        echo '</div>';
-        $box = (string)ob_get_clean();
-        $at = strpos($html, '</h1>');
-        $html = $at === false ? $html . $box : substr($html, 0, $at + 5) . $box . substr($html, $at + 5);
+    if (empty($GLOBALS['g_shared']) && $c && http_response_code() !== 404 && function_exists('g_share_bar')) {
+        $box = g_share_bar($c['title'] . '｜' . G_SITE, $c['path'], 'page');
+        // 見出しを囲む枠（hero）の中に割り込ませない。h1 が section の中なら、その section を閉じた直後に置く
+        $h = strpos($html, '</h1>');
+        if ($h === false) { $html .= $box; }
+        else {
+            $open = strrpos(substr($html, 0, $h), '<section');
+            $close = strpos($html, '</section>', $h);
+            $at = ($open !== false && $close !== false && strpos(substr($html, $open, $h - $open), '</section>') === false) ? $close + 10 : $h + 5;
+            $html = substr($html, 0, $at) . $box . substr($html, $at);
+        }
     }
     echo $html;
 }
