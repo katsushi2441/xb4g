@@ -606,7 +606,7 @@ function g_side_open(string $ref): string
          . '<div class="kpv-cm" data-ref="' . g_e($ref) . '"></div>'
          . '<section class="g-side-box"><h2 class="g-side-h">国会・研究・省庁をつなぐ <small>Kurage</small></h2>'
          . '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">' . $sb . '</div></section>'
-         . '<section class="g-side-box"><h2 class="g-side-h">災害に備えるシステム <small>無料で使えます</small></h2><ul class="g-side-list">' . $li . '</ul>'
+         . '<section class="g-side-box"><h2 class="g-side-h">災害に備えるシステム</h2><ul class="g-side-list">' . $li . '</ul>'
          . '<p class="g-side-by">株式会社エクスブリッジ（名古屋）</p></section>'
          . '</aside><div class="g-main">';
 }
