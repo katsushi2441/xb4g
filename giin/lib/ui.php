@@ -589,8 +589,23 @@ function g_side_open(string $ref): string
         $li .= '<li><a href="https://kurage.exbridge.jp/' . $d[0] . '.php/?ref=' . g_e($ref) . '-side-' . $d[0] . '">'
              . '<b>' . g_e($d[1]) . '</b><span>' . g_e($d[2]) . '</span></a></li>';
     }
+    // 姉妹システムのバナー（2026-10-23 ユーザー指示）。並びと説明は kpayload/scripts/sister-side.ts と揃える
+    $sis = [
+        ['academic', 'Kurage 論文トラッカー', '東海・関東の大学の研究と、国会の議論をつなぐ', 'https://exbridge.jp/academic/', 'https://exbridge.jp/images/academic/index.png'],
+        ['shocho', 'Kurage 省庁トラッカー', '各府省の新しい発表と、国会の議論を並べる', 'https://exbridge.jp/shocho/', 'https://exbridge.jp/images/shocho/index.png'],
+        ['kshuisho', 'Kurage 質問主意書アシスト', '1947年からの質問主意書と答弁書を本文まで検索', 'https://kurage.exbridge.jp/kshuisho.php/', 'https://kurage.exbridge.jp/images/ogp/kshuisho.png'],
+    ];
+    $sb = '';
+    foreach ($sis as $x) {
+        $sb .= '<a href="' . g_e($x[3]) . '#ref=' . g_e($ref) . '-side-' . $x[0] . '" style="display:block;text-decoration:none;color:#12202f;border:1px solid #eef2f5;border-radius:12px;overflow:hidden;background:#fff">'
+             . '<img src="' . g_e($x[4]) . '" width="1200" height="630" loading="lazy" alt="' . g_e($x[1]) . '" style="display:block;width:100%;height:auto;aspect-ratio:1200/630;object-fit:cover;background:#f3faf9">'
+             . '<b style="display:block;font-size:13.5px;color:#0a726b;padding:8px 10px 0">' . g_e($x[1]) . '</b>'
+             . '<span style="display:block;font-size:12px;color:#5d6b7a;line-height:1.5;padding:2px 10px 9px">' . g_e($x[2]) . '</span></a>';
+    }
     return '<div class="g-cols"><aside class="g-side" aria-label="当社のシステム">'
          . '<div class="kpv-cm" data-ref="' . g_e($ref) . '"></div>'
+         . '<section class="g-side-box"><h2 class="g-side-h">国会・研究・省庁をつなぐ <small>Kurage</small></h2>'
+         . '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">' . $sb . '</div></section>'
          . '<section class="g-side-box"><h2 class="g-side-h">災害に備えるシステム <small>無料で使えます</small></h2><ul class="g-side-list">' . $li . '</ul>'
          . '<p class="g-side-by">株式会社エクスブリッジ（名古屋）</p></section>'
          . '</aside><div class="g-main">';
