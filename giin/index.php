@@ -378,6 +378,8 @@ function g_page_giin(int $id, int $page): void
        . '<div class="c"><b>' . number_format($counts['chair']) . '</b><span>委員長・議長としての議事整理</span></div>'
        . ((function_exists('g_giin_shuisho') && ($__s = g_giin_shuisho((string)$g['slug']))) ? '<a class="c" href="' . g_e(g_giin_shuisho_url($__s, 'giin-' . $g['slug'])) . '" style="text-decoration:none;color:inherit"><b>' . number_format((int)$__s['n']) . '</b><span>提出した質問主意書（' . g_e(substr((string)$__s['first'], 0, 4)) . '年〜）→ 本文と答弁書</span></a>' : '')
        . '</div>' . (function_exists('g_sess_links') ? g_sess_links((int)$g['id'], (string)$g['slug']) : '') . '</section>';
+    // AI-SNS顧問への入口（2026-10-23）。愛知の議員の型のページには「Xで共有」が無く、その下の案内も出ていなかった
+    if (function_exists('g_sns_line')) { echo g_sns_line('giin-aichi'); }
 
     $L = g_links($g['slug']);
     if ($L) {
