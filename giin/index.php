@@ -24,6 +24,7 @@ define('G_HAS_QA', G_HAS_TRACKER && is_file(__DIR__ . '/lib/qa.php'));
 // 法案の賛否カードはカードの部品（lib/card.php と fonts/）がある設置だけ
 define('G_HAS_CARD', is_file(__DIR__ . '/lib/card.php') && is_dir(__DIR__ . '/fonts'));
 if (is_file(__DIR__ . '/lib/card.php')) { require_once __DIR__ . '/lib/card.php'; }   // 共有ボタン（g_share_buttons）を全ページで使う
+if (G_HAS_CARD && is_file(__DIR__ . '/lib/search_card.php')) { require __DIR__ . '/lib/search_card.php'; }   // 検索結果のカード（2026-10-23）
 if (G_HAS_CARD) { require __DIR__ . '/lib/bill_card.php'; if (is_file(__DIR__ . '/lib/senkyoku_card.php')) { require __DIR__ . '/lib/senkyoku_card.php'; } }
 if (G_HAS_TRACKER) { require __DIR__ . '/lib/tracker_pages.php'; }
 if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker_cards.php'; }
@@ -52,6 +53,7 @@ try {
 function g_route(string $path, int $page): void
 {
     // ---- 古いURLは 302 で新URLへ送る（公開当日なので検索インデックスの積み上げは無い）----
+    if ($path === '/search.png' && function_exists('g_search_png')) { g_search_png(); return; }
     if (preg_match('#^/g/(\d+)$#', $path, $m)) {
         $g = g_one('SELECT slug FROM ' . (function_exists('g_gall') ? g_gall() : 'giin') . ' WHERE id=?', [(int)$m[1]]);
         if ($g) { g_redirect(g_url($g['slug'])); return; }
@@ -800,7 +802,9 @@ function g_page_search(int $page): void
         $q !== '' ? '国会議員の発言から「' . $q . '」を含むものを ' . number_format($total) . '件見つけました。'
                   . ($members ? '名前に一致する議員は' . count($members) . '人です。' : '')
                   : '国会議員を名前で、国会発言をことばで検索できます。', '/search',
-        ['q' => $q, 'noindex' => $q === '']);
+        ['q' => $q, 'noindex' => $q === '',
+         // 言葉と件数の入ったカード（lib/search_card.php）。無い設置では共通の画像
+         'image' => ($q !== '' && function_exists('g_search_png')) ? g_abs('search.png') . '?q=' . rawurlencode($q) . ($party !== '' ? '&party=' . rawurlencode($party) : '') . ($kind !== 'q' ? '&k=' . rawurlencode($kind) : '') : null]);
 
     echo '<h1>' . ($q !== '' ? '「' . g_e($q) . '」の検索結果' : '議員名、またはことばで探す') . '</h1>';
     // 検索結果も共有できるように（2026-10-23）。返信に「◯◯の国会発言◯件」を貼る使い方が多い
