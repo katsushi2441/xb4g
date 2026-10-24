@@ -156,7 +156,7 @@ def run(dry=False):
         print("メール:", mail(hits) if hits else mail_status(
             f"国会議員の投稿 0件（{datetime.datetime.now():%H:%M}）",
             [f"{len(rows)}人を確認し、{datetime.datetime.fromtimestamp(since):%H:%M} 以降の新しい投稿は {len(posts)}件でした。",
-             "そのうち返信する価値があると判定したものは 0件です（処理は最後まで動いています）。"]))
+             "そのうち返信する価値があると判定したものは 0件です（処理は最後まで動いています）。"] + trend_lines()))
     if not dry:
         st["last_ts"] = now
         st["sent"] = (list(posts) + st.get("sent", []))[:3000]
@@ -173,6 +173,27 @@ def _password():
             return ln.split("=", 1)[1].strip().strip("\"'").replace(" ", "")
     return ""
 
+
+
+def trend_lines():
+    """いま X のトレンドにある語のうち、国会の質疑かトラッカーに当たるもの（2026-10-25 ユーザー指示「メールに足して」）。
+    投稿の本文の最初の1行にトレンドの語を入れ、リンクは件数入りのカードが出る検索ページにする。取れなくてもメールは止めない。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import trend_match
+        hits = trend_match.match(min_n=3)
+    except Exception as e:  # noqa: BLE001
+        return ["", f"（トレンドの突き合わせは取れませんでした: {type(e).__name__}）"]
+    L = ["", "■いま X のトレンドにある語と、当たる当社のページ（本文の1行目に語を入れて投稿すると伸びやすい）"]
+    if not hits:
+        L.append("・国会の質疑に当たる語は、いまはありません")
+    for h in hits[:8]:
+        L.append(f"・{h['word']}：質疑{h['n']}件・{h['people']}人 → {h['url']}" + ("　トラッカー: " + " ".join(h['trackers']) if h['trackers'] else ""))
+        try:   # 投稿文の下書き（1語につき1日1回作って保存。gemma4 が失敗したら決まった型）
+            L += ["  投稿文の案（そのまま貼れます・人が確かめてから）:"] + ["  " + ln for ln in trend_match.draft(h).split("\n")] + [""]
+        except Exception as e:  # noqa: BLE001
+            L.append(f"  （投稿文は作れませんでした: {type(e).__name__}）")
+    return L
 
 def mail_status(subject, lines):
     """0件の回と失敗した回の知らせ"""
@@ -233,6 +254,8 @@ def mail(hits):
         if r["name"] in slugs:
             L.append(f"・議員ページ（愛知の国会議員 発言ログ）: https://xb4g.com/giin/{slugs[r['name']]}")
         L.append("")
+    L += trend_lines()
+    L.append("")
     L.append("価値の判定は手元のAI（gemma4）の推定です。投稿は人が確かめてから行ってください。kdeck の giin-kokkai-x-watch から自動で送っています。")
     msg = MIMEText("\n".join(L), "plain", "utf-8")
     first = hits[0]["r"]["display"].replace("　", "")
