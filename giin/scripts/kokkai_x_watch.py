@@ -186,9 +186,9 @@ def trend_lines():
         return ["", f"（トレンドの突き合わせは取れませんでした: {type(e).__name__}）"]
     L = ["", "■いま X のトレンドにある語と、当たる当社のページ（本文の1行目に語を入れて投稿すると伸びやすい）"]
     if not hits:
-        L.append("・国会の質疑に当たる語は、いまはありません")
+        L.append("・政治・社会の話題で国会の質疑に当たる語は、いまはありません（人名・芸能・アニメなどのトレンドは除いています）")
     for h in hits[:8]:
-        L.append(f"・{h['word']}：質疑{h['n']}件・{h['people']}人 → {h['url']}" + ("　トラッカー: " + " ".join(h['trackers']) if h['trackers'] else ""))
+        L.append(f"・{h['word']}：{h.get('label', '')} 質疑{h['n']}件・{h['people']}人 → {h['url']}")
         try:   # 投稿文の下書き（1語につき1日1回作って保存。gemma4 が失敗したら決まった型）
             L += ["  投稿文の案（そのまま貼れます・人が確かめてから）:"] + ["  " + ln for ln in trend_match.draft(h).split("\n")] + [""]
         except Exception as e:  # noqa: BLE001

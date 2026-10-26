@@ -7,6 +7,8 @@
 import json, re, sqlite3, sys, urllib.request, html
 HERE = __import__('os').path.dirname(__import__('os').path.abspath(__file__))
 DB = HERE + '/../data/giin.sqlite'; TR = HERE + '/../data/trackers.json'
+OLLAMA = 'http://192.168.0.3:11434'   # 手元の gemma4（0.3・think:false）
+LLM = 'gemma4:12b-it-qat'
 MIN = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 3
 
 def trends():
@@ -37,49 +39,98 @@ def trends_cached(max_age=3600):
     json.dump({'at': time.time(), 'words': ws}, open(CACHE, 'w', encoding='utf-8'), ensure_ascii=False)
     return ws
 
+# 人の名前・作品名を落とす（2026-10-27 ユーザー「トレンドキーワードが人の名前ばっかりっておかしくない？」）
+# 夜のトレンドはアニメ・芸能・ドラマの人名が大半で、「久保先生」「吉田さん」が会議録の別人の発言に3件当たって
+# メールに並んでいた。一方「新幹線予約の個人情報17万件流出」のような本当に当てたい話題は、文のままでは会議録に無く落ちていた。
+HONORIFIC = re.compile(r'(先生|さん|くん|君|ちゃん|様|さま|氏|キャスター|選手|監督|誕生日|生誕祭|卒業)$')
+TOPICS = HERE + '/../outputs/kokkai_x_watch/trend_topics.json'
+
+def topics(words):
+    """トレンドの語を手元の gemma4 で「政治・行政・社会の話題か」に分け、話題なら会議録を引く語（空白区切りは全部含む）を出す。
+    {語: [検索語,...]}（話題でない語は入らない）。トレンドの取り直しごとに1回だけ聞いて保存する。gemma が使えないときは {}（何も出さない）。"""
+    import hashlib, os
+    sig = hashlib.md5('\n'.join(words).encode()).hexdigest()
+    try:
+        c = json.load(open(TOPICS, encoding='utf-8'))
+        if c.get('sig') == sig:
+            return c['topics']
+    except Exception:
+        pass
+    prompt = ("次は X（旧Twitter）の日本のトレンドの語です。国会で議論されうる政治・行政・経済・社会の話題（事件・事故・制度・料金・個人情報の流出・災害・選挙・税・物価など）だけを選んでください。"
+              "人の名前・あだ名・キャラクター・アニメ・ドラマ・番組・芸能・アイドル・スポーツの試合・ゲーム・商品名・企業の宣伝・キャンペーン・投資の勧誘や銘柄の推奨・ハッシュタグ遊びは選ばないでください。"
+              "選んだ語ごとに、国会の会議録を検索する短い語を1〜2個つけてください（名詞だけ。2語を全部含む発言を探すときは半角空白で区切る。例: 「新幹線予約の個人情報17万件流出」→「個人情報 流出」）。"
+              "迷ったら選ばないでください。\n\n" + "\n".join(words))
+    schema = {"type": "object", "properties": {"topics": {"type": "array", "items": {"type": "object", "properties": {
+        "word": {"type": "string"}, "queries": {"type": "array", "items": {"type": "string"}}}, "required": ["word", "queries"]}}}, "required": ["topics"]}
+    try:
+        b = json.dumps({"model": LLM, "prompt": prompt, "stream": False, "think": False, "format": schema,
+                        "options": {"temperature": 0, "num_predict": 800}}).encode()
+        r = json.load(urllib.request.urlopen(urllib.request.Request(OLLAMA + "/api/generate", data=b, headers={"Content-Type": "application/json"}), timeout=180))
+        got = json.loads(r.get("response") or "{}").get("topics", [])
+    except Exception as e:  # 取れなければ何も出さない（人名を並べるよりよい）。次の回に聞き直す
+        print(f"trend topics: gemma4 に聞けませんでした: {type(e).__name__}: {e}", file=sys.stderr)
+        return {}
+    out = {}
+    for t in got:
+        w = t.get('word', '')
+        if w not in words or HONORIFIC.search(w.lstrip('#')):
+            continue
+        qs = [re.sub(r'\s+', ' ', q).strip() for q in t.get('queries', []) if q and len(q.strip()) >= 2]
+        if qs:
+            out[w] = qs[:2]
+    os.makedirs(os.path.dirname(TOPICS), exist_ok=True)
+    json.dump({'sig': sig, 'topics': out}, open(TOPICS, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    return out
+
+def count(db, q):
+    """検索語（空白区切りは全部含む）に当たる質疑の件数と人数。カタカナ1語は長い語の一部に当たらないよう数え直す。"""
+    parts = q.split(' ')
+    where = ' and '.join(['body like ?'] * len(parts)); args = ['%' + x + '%' for x in parts]
+    n, p = db.execute(f"select count(*),count(distinct giin_id) from speech_all where kind='q' and {where}", args).fetchone()
+    if n and len(parts) == 1 and re.fullmatch(r'[ァ-ヶー]+', q):
+        pat = re.compile(r'(?<![ァ-ヶー])' + re.escape(q) + r'(?![ァ-ヶー])')
+        rows = [(gid, body) for gid, body in db.execute("select giin_id, body from speech_all where kind='q' and body like ?", args) if pat.search(body)]
+        n, p = len(rows), len({g for g, _ in rows})
+    return n, p
+
 def match(min_n=3, use_cache=True):
-    """いまのトレンド語のうち、国会の質疑かトラッカーに当たるものを [{word,n,people,url,trackers}] で返す。"""
+    """いまのトレンド語のうち、政治・社会の話題で、国会の質疑かトラッカーに当たるものを [{word,query,n,people,url,trackers}] で返す。"""
     import urllib.parse
     db = sqlite3.connect(DB)
     trackers = json.load(open(TR)); trackers = trackers if isinstance(trackers, list) else trackers.get('trackers', trackers)
+    words = trends_cached() if use_cache else trends()
     out = []
-    for w in (trends_cached() if use_cache else trends()):
-        key = w.lstrip('#')
-        if len(key) < 2 or (re.fullmatch(r'[A-Za-z0-9#_]+', key) and len(key) < 4): continue
-        n, p = db.execute("select count(*),count(distinct giin_id) from speech_all where kind='q' and body like ?", ('%' + key + '%',)).fetchone()
-        if n and re.fullmatch(r'[ァ-ヶー]+', key):
-            pat = re.compile(r'(?<![ァ-ヶー])' + re.escape(key) + r'(?![ァ-ヶー])')
-            rows = [(gid, body) for gid, body in db.execute("select giin_id, body from speech_all where kind='q' and body like ?", ('%' + key + '%',)) if pat.search(body)]
-            n, p = len(rows), len({g for g, _ in rows})
-        tr = [t['key'] for t in trackers if key in json.dumps(t, ensure_ascii=False)]
-        if n >= min_n or tr:
-            out.append({'word': w, 'n': n, 'people': p, 'url': 'https://xb4g.com/giin/search?q=' + urllib.parse.quote(key),
-                        'trackers': ['https://xb4g.com/giin/tracker/' + k for k in tr]})
+    for w, qs in topics(words).items():
+        best = None
+        for q in qs:
+            toks = q.split(' ')
+            tr = [t for t in trackers if all(x in ' '.join(t.get('words', [])) + t.get('name', '') for x in toks)]
+            if tr:
+                # トラッカーがあればリンクはトラッカー（件数もトラッカーのページと同じ数を出す）
+                t0 = tr[0]
+                n, p = db.execute("select count(*),count(distinct speaker) from tracker_speech where tracker=? and kind='q'", (t0['key'],)).fetchone()
+                cand = {'word': w, 'query': q, 'n': n, 'people': p, 'url': 'https://xb4g.com/giin/tracker/' + t0['key'],
+                        'label': '国会トラッカー「' + t0.get('name', t0['key']) + '」', 'trackers': ['https://xb4g.com/giin/tracker/' + t['key'] for t in tr]}
+            elif len(toks) == 1:
+                # 発言ログの検索ページは語をそのまま1つの語として探す（空白で区切った2語の「全部含む」はできない）ので、1語のときだけ
+                n, p = count(db, q)
+                if n < min_n:
+                    continue
+                cand = {'word': w, 'query': q, 'n': n, 'people': p, 'url': 'https://xb4g.com/giin/search?q=' + urllib.parse.quote(q),
+                        'label': '発言ログの検索「' + q + '」', 'trackers': []}
+            else:
+                continue
+            if not best or (bool(cand['trackers']), cand['n']) > (bool(best['trackers']), best['n']):
+                best = cand
+        if best:
+            out.append(best)
     return out
 
 def main():
-    db = sqlite3.connect(DB)
-    trackers = json.load(open(TR)); trackers = trackers if isinstance(trackers, list) else trackers.get('trackers', trackers)
-    ws = trends()
-    print(f'トレンド {len(ws)} 語（直近）')
-    hits = 0
-    for w in ws:
-        key = w.lstrip('#')
-        if len(key) < 2 or re.fullmatch(r'[A-Za-z0-9#_]+', key) and len(key) < 4: continue
-        n, p = db.execute("select count(*),count(distinct giin_id) from speech_all where kind='q' and body like ?", ('%' + key + '%',)).fetchone()
-        # カタカナ語は長い語の一部（スーパーマーケットの「パーマー」など）に当たるので、前後がカタカナでない出現だけ数え直す
-        if n and re.fullmatch(r'[ァ-ヶー]+', key):
-            pat = re.compile(r'(?<![ァ-ヶー])' + re.escape(key) + r'(?![ァ-ヶー])')
-            ids = set()
-            for gid, body in db.execute("select giin_id, body from speech_all where kind='q' and body like ?", ('%' + key + '%',)):
-                if pat.search(body): ids.add(gid); n2 = ids
-            n, p = (len([1 for gid, body in db.execute("select giin_id, body from speech_all where kind='q' and body like ?", ('%' + key + '%',)) if pat.search(body)]), len(ids))
-        tr = [t['key'] for t in trackers if key in json.dumps(t, ensure_ascii=False)]
-        if n >= MIN or tr:
-            hits += 1
-            url = 'https://xb4g.com/giin/search?q=' + urllib.parse.quote(key)
-            print(f'  {w:20s} 質疑 {n:4d}件・{p:3d}人  {url}' + (f'  トラッカー: ' + ', '.join(tr) if tr else ''))
-    if not hits: print('  国会の質疑に当たる語はありませんでした')
+    hits = match(MIN, use_cache=False)
+    print(f'政治・社会の話題で当たった語 {len(hits)}')
+    for h in hits:
+        print(f"{h['word']}（{h['query']}）: 質疑{h['n']}件・{h['people']}人 {h['url']}" + (' ' + ' '.join(h['trackers']) if h['trackers'] else ''))
 
 if __name__ == '__main__':
     import urllib.parse
@@ -91,26 +142,25 @@ if __name__ == '__main__':
 # 手元の gemma4（0.3・think:false）で、トレンドの語を1行目に入れた X の投稿文を作る。語ごとに1日1回だけ作って保存する。
 # 文字数（CJK=2・URL=23）が 280 を超えたら短くし直し、それでも駄目なら決まった型で組む（必ず何かは出す）。
 # ---------------------------------------------------------------------------
-OLLAMA = 'http://192.168.0.3:11434'
-LLM = 'gemma4:12b-it-qat'
 DRAFTS = HERE + '/../outputs/kokkai_x_watch/trend_drafts.json'
 
 def xlen(t):
     return sum(1 if ord(c) < 0x1100 else 2 for c in t)
 
 def facts(key):
-    """投稿文の材料: 多い順の3人・最近の発言2つ（日付・名前・会派・120字）。"""
+    """投稿文の材料: 多い順の3人・最近の発言2つ（日付・名前・会派・120字）。key は空白区切りなら全部含む発言。"""
     db = sqlite3.connect(DB)
-    top = db.execute("select g.plain, g.party, count(*) c from speech_all s join giin_all g on g.id=s.giin_id where s.kind='q' and s.body like ? group by g.id order by c desc limit 3", ('%' + key + '%',)).fetchall()
+    parts = key.split(' '); where = ' and '.join(['s.body like ?'] * len(parts)); args = ['%' + x + '%' for x in parts]
+    top = db.execute(f"select g.plain, g.party, count(*) c from speech_all s join giin_all g on g.id=s.giin_id where s.kind='q' and {where} group by g.id order by c desc limit 3", args).fetchall()
     recent = []
-    for plain, party, date, body in db.execute("select g.plain, g.party, s.date, s.body from speech_all s join giin_all g on g.id=s.giin_id where s.kind='q' and s.body like ? order by s.date desc limit 2", ('%' + key + '%',)):
-        i = body.find(key)
+    for plain, party, date, body in db.execute(f"select g.plain, g.party, s.date, s.body from speech_all s join giin_all g on g.id=s.giin_id where s.kind='q' and {where} order by s.date desc limit 2", args):
+        i = max(0, body.find(parts[0]))
         recent.append((date, plain, party, re.sub(r'\s+', ' ', body[max(0, i - 60):i + 80])))
     return top, recent
 
-def draft_llm(word, n, people, top, recent, url, limit=120):
+def draft_llm(word, n, people, top, recent, url, limit=120, query=''):
     key = word.lstrip('#')
-    mat = f"語: {key}\n国会の質問で触れた数: {n}件・{people}人\n多い順: " + "、".join(f"{a}（{b}）{c}件" for a, b, c in top) + "\n最近の発言:\n" + "\n".join(f"- {d} {a}（{b}）: {t}" for d, a, b, t in recent)
+    mat = f"語: {key}\n会議録で探した語: {query or key}\n国会の質問で触れた数: {n}件・{people}人\n多い順: " + "、".join(f"{a}（{b}）{c}件" for a, b, c in top) + "\n最近の発言:\n" + "\n".join(f"- {d} {a}（{b}）: {t}" for d, a, b, t in recent)
     prompt = ("あなたは名古屋のシステム開発会社の広報です。X（旧Twitter）に投稿する日本語の文を1本だけ書いてください。\n"
               "条件: 1行目に必ず「" + key + "」の語をそのまま入れる。国会の会議録の事実（件数・議員の名前と日付・発言の要旨）だけを使い、材料に無いことは書かない。"
               "ほめ言葉・宣伝・絵文字・ハッシュタグ・URLは書かない。2〜3文、合計で全角" + str(limit) + "字以内（これより長いと使えない）。議員の名前は1〜2人まで。最後は見どころを一言。\n"
@@ -141,11 +191,11 @@ def draft(hit):
     ck = key + '|' + datetime.date.today().isoformat()
     if ck in cache:
         return cache[ck]
-    top, recent = facts(key)
+    top, recent = facts(hit.get('query', key))
     text = ''
     for limit in (120, 95):
         try:
-            t = draft_llm(hit['word'], hit['n'], hit['people'], top, recent, url, limit)
+            t = draft_llm(hit['word'], hit['n'], hit['people'], top, recent, url, limit, hit.get('query', ''))
         except Exception:
             t = ''
         if t and key in t.split('\n')[0] and xlen(t) + 1 + 23 <= 280:
