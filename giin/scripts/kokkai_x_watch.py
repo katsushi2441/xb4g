@@ -154,9 +154,9 @@ def run(dry=False):
     if not dry:
         # 0件の回も送る（2026-10-09 ユーザー指示。黙ると、止まったのか0件なのか分からない）
         print("メール:", mail(hits) if hits else mail_status(
-            f"国会議員の投稿 0件（{datetime.datetime.now():%H:%M}）",
+            enjo_subject() + f"国会議員の投稿 0件（{datetime.datetime.now():%H:%M}）",
             [f"{len(rows)}人を確認し、{datetime.datetime.fromtimestamp(since):%H:%M} 以降の新しい投稿は {len(posts)}件でした。",
-             "そのうち返信する価値があると判定したものは 0件です（処理は最後まで動いています）。"] + trend_lines()))
+             "そのうち返信する価値があると判定したものは 0件です（処理は最後まで動いています）。"] + enjo_lines() + trend_lines()))
     if not dry:
         st["last_ts"] = now
         st["sent"] = (list(posts) + st.get("sent", []))[:3000]
@@ -194,6 +194,26 @@ def trend_lines():
         except Exception as e:  # noqa: BLE001
             L.append(f"  （投稿文は作れませんでした: {type(e).__name__}）")
     return L
+
+
+def enjo_lines():
+    """いま燃えている本人の投稿（2026-10-27 ユーザー指示。熊谷代表・石井めぐみ議員のような投稿）。取れなくてもメールは止めない。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import enjo_watch
+        return enjo_watch.enjo_lines()
+    except Exception as e:  # noqa: BLE001
+        return ["", f"（いま燃えている投稿は取れませんでした: {type(e).__name__}）"]
+
+
+def enjo_subject():
+    """燃えている投稿があれば件名の頭に【炎上】名前 を付ける（0件の回のメールでも埋もれないように）。"""
+    try:
+        import enjo_watch
+        items = enjo_watch.find_cached()
+        return f"【炎上】{re.sub(r'[【（(].*', '', items[0]['name']).strip()}{'ほか' if len(items) > 1 else ''} " if items else ""
+    except Exception:  # noqa: BLE001
+        return ""
 
 def mail_status(subject, lines):
     """0件の回と失敗した回の知らせ"""
@@ -254,12 +274,13 @@ def mail(hits):
         if r["name"] in slugs:
             L.append(f"・議員ページ（愛知の国会議員 発言ログ）: https://xb4g.com/giin/{slugs[r['name']]}")
         L.append("")
+    L += enjo_lines()
     L += trend_lines()
     L.append("")
     L.append("価値の判定は手元のAI（gemma4）の推定です。投稿は人が確かめてから行ってください。kdeck の giin-kokkai-x-watch から自動で送っています。")
     msg = MIMEText("\n".join(L), "plain", "utf-8")
     first = hits[0]["r"]["display"].replace("　", "")
-    msg["Subject"] = Header(f"{'【要返信】' if n3 else ''}国会議員の投稿 {len(hits)}件（{first}ほか）", "utf-8")
+    msg["Subject"] = Header(enjo_subject() + f"{'【要返信】' if n3 else ''}国会議員の投稿 {len(hits)}件（{first}ほか）", "utf-8")
     msg["From"] = MAIL_TO
     msg["To"] = MAIL_TO
     try:
