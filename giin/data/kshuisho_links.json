@@ -61,7 +61,7 @@
  },
  "shohizei-genzei": {
   "word": "消費税 引き下げ",
-  "count": 68
+  "count": 70
  },
  "gaitameho-fdi": {
   "word": "外為法 改正",
@@ -233,7 +233,7 @@
  },
  "bukkadaka-taisaku": {
   "word": "物価高対策",
-  "count": 26
+  "count": 27
  },
  "spy-boushi-hou": {
   "word": "スパイ防止法",
@@ -485,7 +485,7 @@
  },
  "hinanjo-kankyo": {
   "word": "避難所 環境 改善",
-  "count": 15
+  "count": 16
  },
  "gakudo-hoiku": {
   "word": "放課後児童クラブ 待機児童",
@@ -522,5 +522,41 @@
  "saitei-chingin": {
   "word": "最低賃金 引き上げ",
   "count": 31
+ },
+ "uchu-seisaku": {
+  "word": "宇宙基本計画",
+  "count": 12
+ },
+ "hokou-anzen": {
+  "word": "通学路 歩道",
+  "count": 7
+ },
+ "kinyu-yuetsu": {
+  "word": "優越的地位の濫用 金融機関",
+  "count": 6
+ },
+ "mudenchuka": {
+  "word": "無電柱化",
+  "count": 9
+ },
+ "pfas": {
+  "word": "有機フッ素化合物",
+  "count": 23
+ },
+ "micro-plastic": {
+  "word": "海洋プラスチック",
+  "count": 3
+ },
+ "fufu-bessei": {
+  "word": "夫婦別姓",
+  "count": 24
+ },
+ "kenpo-kokkai-kino": {
+  "word": "任期延長 憲法",
+  "count": 3
+ },
+ "ransomware": {
+  "word": "サイバー犯罪 捜査",
+  "count": 5
  }
 }
