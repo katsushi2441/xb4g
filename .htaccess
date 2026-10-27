@@ -1,3 +1,23 @@
 AddHandler application/x-httpd-php .php
 AddCharset UTF-8 .html .php .json
 DirectoryIndex index.php index.html
+
+# http:// で来たら https:// へ（2026-10-27。恒久なので 301）
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+
+# セキュリティの設定（2026-10-27。exbridge.jp・kurage.exbridge.jp と同じ。同じサーバー。診断 38点 → 直す）
+# カメラ・マイク・位置情報は、自分のサイトからは使える（デモに顔の打刻・議事録・地図がある）。埋め込みは自社のサイトからだけ。
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(self), microphone=(self), geolocation=(self)"
+  Header always set Content-Security-Policy "frame-ancestors 'self' https://exbridge.jp https://*.exbridge.jp https://xb4g.com https://*.xb4g.com https://katsushi2441.github.io; object-src 'none'; base-uri 'self'"
+  # PHP の版を外に見せない
+  Header unset X-Powered-By
+  Header always unset X-Powered-By
+</IfModule>

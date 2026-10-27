@@ -1,0 +1,5 @@
+# 株式会社エクスブリッジ（xb4g.com）の、弱点を見つけた方の連絡先
+Contact: https://exbridge.jp/contact.php
+Expires: 2027-10-24T00:00:00.000Z
+Preferred-Languages: ja, en
+Canonical: https://xb4g.com/.well-known/security.txt
