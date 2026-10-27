@@ -6,6 +6,10 @@ AddCharset UTF-8 .php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /giin/
+# http:// で来たら https:// へ（2026-10-27。この .htaccess は親の書き換えを引き継がないので、ここにも置く。恒久なので 301）
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
