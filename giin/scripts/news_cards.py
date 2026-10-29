@@ -206,12 +206,20 @@ def tracker_page(card):
 def qa_excerpt(card):
     """答弁1件のカード（/giin/tracker/<key>/<speech_id>）なら、会議録の質問と答弁の冒頭（原文のまま）。
     ニュース1件ごとのページ（exbridge.jp/news/<日付>/<id>.html）を、見出しとカードだけの薄いページにしないため"""
-    m = re.match(r"https://xb4g\.com/giin/tracker/([a-z0-9-]+)/(\d{3,}X\d+_\d+)$", card)
-    if not m:
-        return None
     import sqlite3
     db = sqlite3.connect(os.path.join(ROOT, "data", "giin.sqlite"))
-    row = db.execute("SELECT speech_id,date,house,meeting,speaker,kind,body,speech_order FROM tracker_speech WHERE tracker=? AND speech_id=?", m.groups()).fetchone()
+    latest = False
+    m = re.match(r"https://xb4g\.com/giin/tracker/([a-z0-9-]+)/(\d{3,}X\d+_\d+)$", card)
+    if m:
+        row = db.execute("SELECT speech_id,date,house,meeting,speaker,kind,body,speech_order FROM tracker_speech WHERE tracker=? AND speech_id=?", m.groups()).fetchone()
+    else:
+        # テーマのトラッカー本体のカード（/giin/tracker/<key>）なら、そのテーマで最新の質問とそれに続く答弁（2026-10-29）。
+        # ニュース1件ごとのページの大半（10月は1,045件中992件）がこの型で、見出しとカードだけの薄いページになっていた。
+        m = re.match(r"https://xb4g\.com/giin/tracker/([a-z0-9-]+)/?$", card)
+        if not m:
+            return None
+        row = db.execute("SELECT speech_id,date,house,meeting,speaker,kind,body,speech_order FROM tracker_speech WHERE tracker=? AND kind='q' ORDER BY date DESC, speech_order ASC LIMIT 1", (m.group(1),)).fetchone()
+        latest = True
     if not row:
         return None
     issue = row[0].rsplit("_", 1)[0]
@@ -220,7 +228,7 @@ def qa_excerpt(card):
     clean = lambda b: re.sub(r"^○\S+?[\s　]+", "", re.sub(r"\s+", " ", b or "")).strip()
     q = row if row[5] == "q" else next((x for x in reversed(same) if x[2] == "q" and x[4] < row[7]), None)
     a = row if row[5] == "gov" else next((x for x in same if x[2] == "gov" and x[4] > row[7]), None)
-    out = {"date": row[1], "house": row[2], "meeting": row[3]}
+    out = {"date": row[1], "house": row[2], "meeting": row[3], "latest": latest}
     if q:
         out["q"] = {"who": q[4] if q is row else q[1], "text": clean(q[6] if q is row else q[3])[:260]}
     if a:
