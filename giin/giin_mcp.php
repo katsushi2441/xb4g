@@ -71,7 +71,7 @@ function t_speeches(array $a)
         if (!$g) { return err('その議員は収録していません: ' . $a['member']); }
         $w[] = 's.giin_id = ?'; $args[] = (int)$g['id'];
     }
-    if (!empty($a['q']))    { $w[] = 's.body LIKE ?'; $args[] = '%' . $a['q'] . '%'; }
+    if (!empty($a['q']))    { $w[] = g_like_or('s.body', (string)$a['q'], $args); }   // 半角/全角の表記ゆれ
     if (!empty($a['from'])) { $w[] = 's.date >= ?';   $args[] = $a['from']; }
     if (!empty($a['until'])){ $w[] = 's.date <= ?';   $args[] = $a['until']; }
     if (!empty($a['theme'])) {
@@ -108,7 +108,7 @@ function t_who(array $a)
         $ta = []; $w .= ' AND ' . g_words_where($t['words'], $ta);
         $args = array_merge($args, $ta);
     } elseif (!empty($a['q'])) {
-        $w .= ' AND s.body LIKE ?'; $args[] = '%' . $a['q'] . '%';
+        $w .= ' AND ' . g_like_or('s.body', (string)$a['q'], $args);
     } else {
         return err('theme か q のどちらかを指定してください');
     }

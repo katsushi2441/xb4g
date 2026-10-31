@@ -780,7 +780,8 @@ function g_page_search(int $page): void
     $GA = function_exists('g_gall') ? g_gall() : 'giin'; $SA = function_exists('g_sall') ? g_sall() : 'speech';
     $where = ['s.kind = ?']; $args = [$kind];
     $cw = []; $cargs = [];
-    if ($q !== '')     { $where[] = 's.body LIKE ?'; $args[] = '%' . $q . '%'; $cw[] = 's.body LIKE ?'; $cargs[] = '%' . $q . '%'; }
+    // 半角「MMT」でも全角「ＭＭＴ」の本文が引けるように、表記ゆれを OR で並べる（lib/text.php g_like_or）
+    if ($q !== '')     { $where[] = g_like_or('s.body', $q, $args); $cw[] = g_like_or('s.body', $q, $cargs); }
     if ($party !== '') { $where[] = 'g.party = ?';   $args[] = $party; $cw[] = 'g.party = ?'; $cargs[] = $party; }
     $w = implode(' AND ', $where);
     $counts = array_fill_keys(array_keys(G_KINDS), 0);

@@ -19,14 +19,38 @@ function g_excerpt(?string $body, int $len = 140): string
     return mb_strlen($t, 'UTF-8') > $len ? mb_substr($t, 0, $len, 'UTF-8') . '…' : $t;
 }
 
+/** 検索語の表記ゆれ。会議録は英字・数字が全角（「ＭＭＴ」「ＧＤＰ」「２０２５年」）なので、
+ *  半角で入れた語は全角に直したものでも探す（逆も）。2026-10-31、半角「MMT」が0件だった件。 */
+function g_q_forms(string $q): array
+{
+    if ($q === '') { return []; }
+    return array_values(array_unique(array_filter([
+        $q,
+        mb_convert_kana($q, 'A', 'UTF-8'),   // 半角英数 → 全角
+        mb_convert_kana($q, 'a', 'UTF-8'),   // 全角英数 → 半角
+    ], fn($x) => $x !== '')));
+}
+
+/** `(col LIKE ? OR col LIKE ?)` を作り、引数を $args に足す。表記ゆれ（g_q_forms）ぶん並べる。 */
+function g_like_or(string $col, string $q, array &$args): string
+{
+    $forms = g_q_forms($q);
+    foreach ($forms as $f) { $args[] = '%' . $f . '%'; }
+    return '(' . implode(' OR ', array_fill(0, count($forms), "$col LIKE ?")) . ')';
+}
+
 /** 検索語の周辺を切り出す（キーワード・イン・コンテキスト）。 */
 function g_kwic(?string $body, string $kw, int $span = 60): string
 {
     $t = preg_replace('/\s+/u', ' ', (string)$body) ?? '';
-    $p = $kw === '' ? false : mb_strpos($t, $kw, 0, 'UTF-8');
+    $p = false; $hit = $kw;
+    foreach (g_q_forms($kw) as $f) {   // 本文に出ている表記のほうで切り出す
+        $p = mb_strpos($t, $f, 0, 'UTF-8');
+        if ($p !== false) { $hit = $f; break; }
+    }
     if ($p === false) { return g_excerpt($t, $span * 2); }
     $s = max(0, $p - $span);
-    $cut = mb_substr($t, $s, $span * 2 + mb_strlen($kw, 'UTF-8'), 'UTF-8');
+    $cut = mb_substr($t, $s, $span * 2 + mb_strlen($hit, 'UTF-8'), 'UTF-8');
     return ($s > 0 ? '…' : '') . $cut . '…';
 }
 
@@ -34,8 +58,11 @@ function g_kwic(?string $body, string $kw, int $span = 60): string
 function g_mark(string $escaped, string $kw): string
 {
     if ($kw === '') { return $escaped; }
-    $k = g_e($kw);
-    return str_replace($k, '<mark>' . $k . '</mark>', $escaped);
+    foreach (g_q_forms($kw) as $f) {
+        $k = g_e($f);
+        $escaped = str_replace($k, '<mark>' . $k . '</mark>', $escaped);
+    }
+    return $escaped;
 }
 
 function g_date(?string $d): string

@@ -28,7 +28,7 @@ function g_search_png(): void
 function g_search_draw(string $q, string $party, string $kind): ?string
 {
     $GA = function_exists('g_gall') ? g_gall() : 'giin'; $SA = function_exists('g_sall') ? g_sall() : 'speech';
-    $w = ['s.kind = ?', 's.body LIKE ?']; $a = [$kind, '%' . $q . '%'];
+    $a = [$kind]; $w = ['s.kind = ?', g_like_or('s.body', $q, $a)];   // 半角/全角の表記ゆれも数える
     if ($party !== '') { $w[] = 'g.party = ?'; $a[] = $party; }
     $where = implode(' AND ', $w);
     $total = (int)g_val("SELECT COUNT(*) FROM $SA s JOIN $GA g ON g.id=s.giin_id WHERE $where", $a);
