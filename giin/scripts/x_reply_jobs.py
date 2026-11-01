@@ -26,7 +26,21 @@ def _run(args, timeout):
     return r.returncode, (r.stdout or "")[-2000:], (r.stderr or "")[-1500:]
 
 
+# 定期の返信候補は1日6回（2026-11-01 ユーザー指示「定期の X 返信候補は B案」＝7・10・13・16・19・22時）。
+# Codex の週の枠を守るため（それまでは約75分おき・1日18回）。kdeck は時刻を指定できないので25分おきに起こし、
+# この時刻の最初の1回だけ作る。それ以外はすぐ戻る（収集も Codex も /news/ の作り直しもしない）。
+# /news/ は毎回の候補から作るので、載るニュースも1日6回分になる（承知のうえ・同日ユーザー判断）
+REPLY_HOURS = (7, 10, 13, 16, 19, 22)
+
+
 def run_x_reply_job(within: int = 40, **_) -> dict:
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    slot_file = os.path.join(OUT, "last_reply_slot.txt")
+    slot = now.strftime("%Y-%m-%d %H")
+    if now.hour not in REPLY_HOURS or (os.path.exists(slot_file) and open(slot_file).read().strip() == slot):
+        return {"ok": True, "items": 0, "skipped": f"{now.hour}時（作るのは{'・'.join(map(str, REPLY_HOURS))}時の1回）"}
+    with open(slot_file, "w") as f:
+        f.write(slot)
     steps = []
     for name, args, to in [
         ("収集", [PY, os.path.join(SCRIPTS, "x_reply_pick.py"), "collect", "--within", str(within)], 1200),
