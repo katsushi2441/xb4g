@@ -156,7 +156,8 @@ function g_page_top(): void
     $n  = (int)g_val("SELECT COUNT(*) FROM $SA WHERE kind='q'");
     $ng = (int)g_val("SELECT COUNT(*) FROM $GA WHERE current=1");
     $na = (int)g_val('SELECT COUNT(*) FROM giin');
-    g_head('', 'いまの衆議院・参議院の国会議員' . $ng . '人が、'
+    // 題名に「国会の議事録を検索」（国会 議事録 検索 月590回・2026-11-01 実測）。ChatGPT に「国会の議事録を検索できるサイト」と聞かれて挙がるように
+    g_head('国会の議事録を議員・ことばで検索', '国会の議事録（国会会議録）を、議員・ことば・テーマで検索できます。いまの衆議院・参議院の国会議員' . $ng . '人が、'
         . '国会で何を質問したかを ' . number_format($n) . '件の質疑から引けます。要約はしません。', '/',
         ['jsonld' => g_jsonld([
             ['@type' => 'WebSite', '@id' => g_abs(''), 'url' => g_abs(''), 'name' => G_SITE,
@@ -195,7 +196,7 @@ function g_page_top(): void
     echo g_side_open('giin-top');   // 右の列（CM枠と災害系デモ）。閉じるのは g_foot() の直前
     echo '<section class="hero"><p class="kick">Diet &middot; Speech Log</p>'
        . '<h1>国会議員が、<br>国会で何を話したか</h1>'
-       . '<p class="lead">いまの衆議院・参議院の議員'
+       . '<p class="lead"><b>国会の議事録（国会会議録）を、議員・ことば・テーマで検索できるシステムです。</b>いまの衆議院・参議院の議員'
        . '<b>' . $ng . '人</b>について、'
        . '<b>' . number_format($n) . '件</b>の質疑を、日付と会議名と一次情報リンクつきで並べています。'
        . '党派では選んでいません。要約も論評もしません。'
