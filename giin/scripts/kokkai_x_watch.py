@@ -312,8 +312,23 @@ def mail(hits, ej=(), ej_ready=()):
         return f"error {type(e).__name__}"
 
 
+# 見回りは1日6回（2026-11-01 ユーザー指示「国会議員の X 返信候補は C案」＝7・10・13・16・19・22時）。
+# Codex の週の枠を、★高いの返信の作り置き（1日70〜120回）が食っていた。kdeck は時刻を指定できないので15分おきに起こし、
+# この時刻の最初の1回だけ見回る。それ以外はすぐ戻る（fxtwitter も gemma4 も codex も呼ばない）。
+# 知らせるのは投稿から30分以内のもの（TARGET_AGE・10/9 の指示）のままなので、各時刻の直前30分の投稿だけを見る
+WATCH_HOURS = (7, 10, 13, 16, 19, 22)
+SLOT = os.path.join(OUT, "last_slot.txt")
+
+
 def run_kokkai_x_watch_job(**_):
     """kdeck から呼ぶ入口。失敗した回もメールで知らせてから、ジョブとしては失敗にする"""
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    slot = now.strftime("%Y-%m-%d %H")
+    done = open(SLOT).read().strip() if os.path.exists(SLOT) else ""
+    if now.hour not in WATCH_HOURS or done == slot:
+        return {"ok": True, "items": 0, "skipped": f"{now.hour}時（見回るのは{'・'.join(map(str, WATCH_HOURS))}時の1回）"}
+    with open(SLOT, "w") as f:
+        f.write(slot)
     try:
         r = run()
     except Exception as e:  # noqa: BLE001
