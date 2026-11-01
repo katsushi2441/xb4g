@@ -18,7 +18,7 @@
 --deploy: リモートからスマホ・PCで開けるよう、proto.exbridge.jp/xreply-<token>/ に置く（index.html＝最新、
           <日付>-<時分>.html＝その回）。token は outputs/x_reply_pick/.token（git に入れない）。検索には載せない（noindex）
 """
-import argparse, datetime, glob, html, json, os, re, sqlite3, subprocess, sys, time, urllib.parse
+import argparse, datetime, glob, html, json, os, re, sqlite3, subprocess, sys, time, unicodedata, urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -297,6 +297,9 @@ STYLE = """# お手本（当社が実際に出した返信案。この型・こ�
 def numbers(s):
     """文中の数（先頭の0は無視。「2025-05」の05と「5月」の5を同じに数える）。西暦には令和の年も足す"""
     out = set()
+    # 全角の数字を半角にそろえてから数える（2026-11-01）。codex は「２０２６年に１２４件」と全角で書くことがあり、
+    # 事実の側の「124」と文字列で合わず、正しい数字の案まで「事実に無い数字」で落として定型文に差し替えていた（作り置きの約1割）
+    s = unicodedata.normalize("NFKC", s)
     for x in re.findall(r"\d+(?:\.\d+)?", s.replace(",", "").replace("，", "")):
         x = x.lstrip("0") or "0"
         out.add(x)
@@ -325,9 +328,10 @@ def check(item, t):
     if not numbers(t) <= allowed:
         return "事実に無い数字"
     src = item["post"]["text"] + "".join(a["quote"] for a in item["facts"].get("発言", [])) + (item["facts"].get("カードに出る答弁") or {}).get("quote", "")
+    src = unicodedata.normalize("NFKC", src)   # 引用も全角・半角をそろえて照らす（数字と同じ理由）
     for q in re.findall(r"「(.+?)」", t):
         for part in re.split(r"…+|\.\.\.", q):
-            part = part.strip("。、")
+            part = unicodedata.normalize("NFKC", part).strip("。、")
             if part and part not in src:
                 return "引用が会議録と一致しない"
     return None
@@ -379,7 +383,7 @@ def codex_batch(items, workdir):
 - 「付けるトラッカー」が無く「リンク候補」がある候補は、投稿の中身にいちばん近いもの（デモ・紹介ページを優先）を1つ選んで link にその番号を入れる。投稿と話がずれるものしか無ければ link は 0 にし、drafts も空にする。選んだページは、題名と説明に書いてあることだけを使って、最後の一文で自然に触れてよい（「〜について記事に書きました」「〜を確かめられるシステムを開発しています」など）。リンク候補が無い候補は link を 0 にする
 - 議員本人の投稿には、議員の問題意識に寄り添い、国会でのやりとりで論点を深める（本人の質問が発言にあればそれに触れる）。「投稿者」に本人の質疑や質問主意書の件数があれば、それに触れてよい
 - 「カードに出る答弁」があれば、その答弁を文の中心にする（付けるカードと文が合う）
-- 候補に「付ける経済指標のカード」がある場合（カードは必ず付く）、link は 0 にする。文は「カードに出る指標」の値と時点を中心にし、投稿の出来事と数字をつなぐ
+- 候補に「付ける経済指標のカード」がある場合（カードは必ず付く）、link は 0 にする。1文目は相手の投稿の出来事や言葉を受け止め、「カードに出る指標」の値と時点は2文目以降で添えて、投稿の出来事と数字をつなぐ。指標の名前や値から書き始めない（毎回同じ書き出しになり、決まり文句に見える）
 - 「経済指標」があり、投稿が為替・金利・物価・景気の話なら、経済指標のカードを link に選んでよい（経営者の投稿には特に合う）。数字は「経済指標」に書いてある値と時点だけを使い、「〜月時点で」と時点を必ず添える。値の良し悪しや先行きの予想は書かない
 - 「投稿した人の種類」が「愛知の経営者」の候補は、つながりたい相手。同じ地域の経営者として、相手の仕事の中身（業種・現場・悩み）を受け止め、経営の実務に役立つ事実（賃金・人手・物価・金利・制度の答弁や統計）を1つ添える。政治の話に引き込まない。売り込みや「ご相談ください」は書かない。投稿が日常・告知・宣伝だけで、添える事実が無ければ drafts を空にする
 - 「関連する質問主意書」を使うときは、件名と提出者・提出日だけを事実として書く（答弁書の中身は書かない）
