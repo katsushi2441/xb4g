@@ -73,6 +73,22 @@ def run_x_reply_job(within: int = 40, **_) -> dict:
     return {"ok": ok, "items": 1 if ok else 0, "stamp": stamp, "cards": n, "mailed": mailed, "steps": steps, "owners": owners}
 
 
+# /news/ 用に報道機関の投稿だけを30分おきに集めてカードを付け、/news/ を作り直す（2026-11-01 ユーザー指示
+# 「報道機関の分だけは今までの回数に戻して、むしろ増やす」）。Codex は使わない（scripts/news_only.py）。
+# 定期の返信候補は Codex の枠のため1日6回にしたので、/news/ のニュースはこちらで補う
+def run_news_only_job(**_) -> dict:
+    code, out, err = _run([PY, os.path.join(SCRIPTS, "news_only.py")], 1200)
+    last = (out.strip().splitlines() or [""])[-1]
+    if code != 0:
+        return {"ok": False, "items": 0, "stderr": err[-600:], "tail": last}
+    m = re.search(r"カードあり (\d+)件", last)
+    try:
+        _run(["bash", "/home/kojima/work/kpayload/scripts/news_refresh.sh"], 900)
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "items": 0, "tail": last, "news": "timeout"}
+    return {"ok": True, "items": 1, "cards": int(m.group(1)) if m else 0, "tail": last}
+
+
 # 論文トラッカーの返信候補（2026-10-21 ユーザー指示「1日3回でいいよ」）。kdeck は時刻を指定できないので毎時起こし、
 # 9時台・13時台・18時台（JST）の最初の1回だけ作る。それ以外の時刻はすぐ戻る（codex を呼ばない）
 ACADEMIC_HOURS = (9, 13, 18)

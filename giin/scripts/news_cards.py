@@ -141,6 +141,31 @@ def collect(days=DAYS):
             items.append({"day": day, "time": f"{stamp[:2]}:{stamp[2:]}", "source": r.get("name") or r.get("screen_name"),
                           "post": r.get("url"), "newsUrl": article_url(full.get(r.get("url")) or r.get("text"), r.get("url")),
                           "headline": headline(full.get(r.get("url")) or r.get("text")), "card": card, "kind": kind_of(card)})
+    # 報道機関だけを30分おきに集めた分（news_only.py・Codex なし。2026-11-01）。カードは "card" に直接入っている。
+    # 同じ投稿・同じカードは、上の返信候補の分と重ねない（seen を共有）
+    for f in sorted(glob.glob(os.path.join(PICK, "20*", "newsonly-*.json")), reverse=True):
+        day = os.path.basename(os.path.dirname(f))
+        if day < since:
+            continue
+        stamp = os.path.basename(f)[9:-5]
+        try:
+            rows = json.load(open(f, encoding="utf-8"))
+            full = {x.get("url"): x.get("text") or "" for x in json.load(open(os.path.join(os.path.dirname(f), f"newsposts-{stamp}.json"), encoding="utf-8"))}
+        except (OSError, ValueError):
+            continue
+        for r in rows:
+            card = r.get("card") or ""
+            if not card or (r.get("screen_name") or "").lower() not in news:
+                continue
+            card = re.sub(r"#ref=.*$", "", card)   # 計測の ref は返信用。/news/ では ref=x-share-newscard を付け直す
+            key = (r.get("url"), card)
+            if key in seen or any(k[0] == r.get("url") for k in seen):
+                continue
+            seen.add(key)
+            items.append({"day": day, "time": f"{stamp[:2]}:{stamp[2:]}", "source": r.get("name") or r.get("screen_name"),
+                          "post": r.get("url"), "newsUrl": article_url(full.get(r.get("url")) or r.get("text"), r.get("url")),
+                          "headline": headline(full.get(r.get("url")) or r.get("text")), "card": card, "kind": kind_of(card)})
+    items.sort(key=lambda i: (i["day"], i["time"]), reverse=True)
     return items
 
 
