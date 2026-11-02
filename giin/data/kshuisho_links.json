@@ -289,7 +289,7 @@
  },
  "shokuryo-anzen-hosho": {
   "word": "食料安全保障",
-  "count": 42
+  "count": 43
  },
  "seibutsu-tayosei": {
   "word": "生物多様性国家戦略",
@@ -562,5 +562,9 @@
  "nichigin-etf": {
   "word": "日本銀行 ＥＴＦ",
   "count": 7
+ },
+ "iryo-inbound": {
+  "word": "外国人患者",
+  "count": 12
  }
 }
