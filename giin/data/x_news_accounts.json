@@ -1,5 +1,5 @@
 {
- "_comment": "報道機関のアカウント。いいねが少なく（朝日は表示1,000超でもいいね0〜10）トラッカーの語も含まないので、語の検索では拾えない。from: でまとめて引く。2026-10-01 fxtwitter でフォロワー数を確かめた",
+ "_comment": "報道機関のアカウント。いいねが少なく（朝日は表示1,000超でもいいね0〜10）トラッカーの語も含まないので、語の検索では拾えない。from: でまとめて引く。2026-10-01 fxtwitter でフォロワー数を確かめた。2026-11-03 国会議員のX監視（kokkai_x_watch）にも使うため21件を足した（日テレ・テレ朝・WBS・ABEMA・NHK首都圏/科学文化部・朝日デジタル・毎日社会部・47NEWS・北海道/京都新聞・MBS・CBC・ブルームバーグ・日経ビジネス・NewsPicks・ITmedia・弁護士ドットコム・J-CAST・プレジデント）。どれも fxtwitter で表示名とプロフィールが公式であることを確かめた。NHK_PR・日刊スポーツ・番組アカウントは入れない",
  "handles": [
   "asahi",
   "nhk_news",
@@ -20,6 +20,27 @@
   "HuffPostJapan",
   "NewsDigestWeb",
   "tokyo_shimbun",
-  "kahoku_shimpo"
+  "kahoku_shimpo",
+  "news24ntv",
+  "tv_asahi_news",
+  "wbs_tvtokyo",
+  "News_ABEMA",
+  "ABEMATIMES",
+  "nhk_shutoken",
+  "nhk_kabun",
+  "asahicom",
+  "mainichi_shakai",
+  "47news_official",
+  "doshinweb",
+  "kyoto_np",
+  "mbs_news",
+  "cbctv_news",
+  "BloombergJapan",
+  "nikkeibusiness",
+  "NewsPicks",
+  "itmedia_news",
+  "bengo4topics",
+  "jcast_news",
+  "Pre_Online"
  ]
 }
