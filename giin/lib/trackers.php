@@ -362,8 +362,14 @@ function g_tracker_faq(array $t, array $st, array $qs, array $years, array $late
     if (count($years) >= 2) {
         $peak = $years[0];
         foreach ($years as $y) { if ((int)$y['n'] > (int)$peak['n']) { $peak = $y; } }
-        $out[] = [$n . 'が国会で最も多く議論されたのはいつですか？',
-            '件数が最も多かったのは' . $peak['y'] . '年で、質疑' . (int)$peak['q'] . '件・答弁' . (int)$peak['gov'] . '件でした。'];
+        // 冒頭の要点は「質疑だけ」の最多年。合計の最多年と違うと矛盾して読めるので、数え方を書き、違うときは両方出す（2026-11-02）
+        $qpeak = $years[0];
+        foreach ($years as $y) { if ((int)$y['q'] > (int)$qpeak['q']) { $qpeak = $y; } }
+        $a = '質疑と答弁を合わせた件数が最も多かったのは' . $peak['y'] . '年で、質疑' . (int)$peak['q'] . '件・答弁' . (int)$peak['gov'] . '件でした。';
+        if ($qpeak['y'] !== $peak['y']) {
+            $a .= '議員の質疑だけで数えると、' . $qpeak['y'] . '年の' . (int)$qpeak['q'] . '件がいちばん多くなります。';
+        }
+        $out[] = [$n . 'が国会で最も多く議論されたのはいつですか？', $a];
     }
     return $out;
 }
