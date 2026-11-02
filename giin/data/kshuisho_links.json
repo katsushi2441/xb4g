@@ -136,7 +136,7 @@
   "count": 10
  },
  "nihonban-dbs": {
-  "word": "日本版ＤＢＳ",
+  "word": "日本版DBS",
   "count": 4
  },
  "kyodo-bokin": {
@@ -184,8 +184,8 @@
   "count": 41
  },
  "kodomo-sns": {
-  "word": "青少年 インターネット 環境",
-  "count": 16
+  "word": "子ども SNS",
+  "count": 28
  },
  "saisei-iryo": {
   "word": "再生医療等製品",
@@ -457,7 +457,7 @@
  },
  "murayama-danwa": {
   "word": "村山談話",
-  "count": 27
+  "count": 28
  },
  "iryo-kiki": {
   "word": "医療機器 診療報酬",
@@ -558,5 +558,9 @@
  "ransomware": {
   "word": "サイバー犯罪 捜査",
   "count": 5
+ },
+ "nichigin-etf": {
+  "word": "日本銀行 ＥＴＦ",
+  "count": 7
  }
 }
