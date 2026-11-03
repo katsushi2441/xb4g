@@ -54,7 +54,11 @@ function g_tracker_draw(array $t, array $st): string
     $by = [];
     foreach (g_tracker_years($t['key']) as $r) { $by[(string)$r['y']] = (int)$r['q']; }
     $rows = g_tm_years($by, substr((string)$st['first'], 0, 4), substr((string)$st['last'], 0, 4));
-    g_card_header($im, $C, 'Kurage 国会トラッカー', '国会会議録から（' . g_date((string)$st['first']) . '〜' . g_date((string)$st['last']) . '）');
+    // 右上は「最初の発言の日〜・会議録を確かめた日」。最後の発言の日を出すと、データが止まっているように読めた
+    // （2026-11-03 ユーザー「7月24日になってるけど、もっと最新ひろってないか？」→ 7/25 以降は憲法審査会が開かれておらず拾い漏れではなかった）。
+    // 確かめた日は毎日の取り直しの記録 tracker_<key>_at
+    $chk = substr((string)g_meta('tracker_' . $t['key'] . '_at'), 0, 10) ?: date('Y-m-d');
+    g_card_header($im, $C, 'Kurage 国会トラッカー', '国会会議録から（' . g_date((string)$st['first']) . '〜・' . g_date($chk) . '時点）');
     $w = (string)($t['short'] ?? $t['name']);
     $title = $w . 'は、国会でどこまで来たか。';
     g_card_center($im, $title, $FB, g_card_fit($title, $FB, 46, 1060), 600, 150, $C['ink']);
