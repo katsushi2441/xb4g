@@ -2,6 +2,8 @@
 """kdeck から呼ばれる Kurage 省庁トラッカー（exbridge.jp/shocho/）の日次更新（2026-10-23）。
 
 1. kpayload/scripts/shocho-fetch.py  各府省の RSS を取り込み、国会トラッカーと結び付ける
+1.5 kpayload/scripts/shocho-detail.py 公式ページの本文の冒頭・配布資料の一覧・資料の要点（gemma4）を取り込む（2026-11-03 追加）。
+    落ちても前の日の取り込み分でページは作れるので、ここだけは止めずに次へ進む
 2. kpayload/scripts/build-shocho.ts  exbridge_jp/shocho/ のページを作る
 3. kpayload/scripts/deploy.sh shocho ページとカード画像を送る（変わったものだけ・1接続）
 4. giin の data/shocho_links.json を送る（国会トラッカーの「省庁の新しい発表」欄）
@@ -44,15 +46,19 @@ def run_shocho_update_job(**_) -> dict:
     steps = []
     for name, cmd, cwd, to in [
         ("fetch", [PY, "scripts/shocho-fetch.py"], KP, 900),
+        ("detail", [PY, "scripts/shocho-detail.py"], KP, 2700),
         ("build", [NODE_BIN + "/npx", "tsx", "scripts/build-shocho.ts"], KP, 900),
         ("deploy", ["bash", "scripts/deploy.sh", "shocho"], KP, 2400),
         ("giin", [PY, "scripts/deploy.py", "--only", "data/shocho_links.json"], GIIN, 600),
     ]:
-        ok, tail = _run(cmd, cwd, env, to)
+        try:
+            ok, tail = _run(cmd, cwd, env, to)
+        except subprocess.TimeoutExpired:
+            ok, tail = False, [f"{to}秒で打ち切り"]
         steps.append({"step": name, "ok": ok, "tail": tail})
-        if not ok:
+        if not ok and name != "detail":
             break
-    ok = all(s["ok"] for s in steps) and len(steps) == 4
+    ok = all(s["ok"] for s in steps) and len(steps) == 5
     n = 0
     try:
         n = len(json.load(open(os.path.join(KP, "data", "shocho", "items.json"))))
