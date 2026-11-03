@@ -1,7 +1,179 @@
 {
- "updated": "2026-10-23T07:57:44",
+ "updated": "2026-11-03T13:42:10",
  "links": {
+  "kokuho-nogare": [
+   {
+    "id": "c39de0152eab",
+    "title": "第219回社会保障審議会医療保険部会（ペーパーレス）の開催について",
+    "ministry": "厚生労働省",
+    "date": "2026-11-02",
+    "page": "https://exbridge.jp/shocho/n/c39de0152eab.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_77043.html"
+   },
+   {
+    "id": "c07d7d7b4d6e",
+    "title": "第273回社会保障審議会介護給付費分科会（Web会議）を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/c07d7d7b4d6e.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76901.html"
+   },
+   {
+    "id": "7e4a3f8d47d9",
+    "title": "第272回社会保障審議会介護給付費分科会（Web会議）を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-27",
+    "page": "https://exbridge.jp/shocho/n/7e4a3f8d47d9.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76725.html"
+   },
+   {
+    "id": "ab9ae6b9a025",
+    "title": "第137回社会保障審議会介護保険部会の資料について",
+    "ministry": "厚生労働省",
+    "date": "2026-10-26",
+    "page": "https://exbridge.jp/shocho/n/ab9ae6b9a025.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76887.html"
+   },
+   {
+    "id": "03da10137e03",
+    "title": "第33回社会保障審議会介護給付費分科会介護報酬改定検証・研究委員会（Web会議）を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/03da10137e03.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76755.html"
+   }
+  ],
+  "saisei-iryo": [
+   {
+    "id": "af2b36f30d4a",
+    "title": "薬事審議会　再生医療等製品・生物由来技術部会を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-11-02",
+    "page": "https://exbridge.jp/shocho/n/af2b36f30d4a.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76912.html"
+   },
+   {
+    "id": "f02b35d825d1",
+    "title": "薬事審議会　再生医療等製品・生物由来技術部会を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-08",
+    "page": "https://exbridge.jp/shocho/n/f02b35d825d1.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76385.html"
+   }
+  ],
+  "gakucho-senko": [
+   {
+    "id": "2adc1bac1cb6",
+    "title": "国立大学法人評価委員会（第82回）　議事録",
+    "ministry": "文部科学省",
+    "date": "2026-11-02",
+    "page": "https://exbridge.jp/shocho/n/2adc1bac1cb6.html",
+    "url": "https://www.mext.go.jp/b_menu/shingi/kokuritu/gijiroku/mext_00011.html"
+   },
+   {
+    "id": "6b33cf1d18c6",
+    "title": "令和9年度開設予定の大学の学部等の設置届出について（令和8年8月分）",
+    "ministry": "文部科学省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/6b33cf1d18c6.html",
+    "url": "https://www.mext.go.jp/a_menu/koutou/ninka/1418456_00086.htm"
+   }
+  ],
+  "tokushu-sagi": [
+   {
+    "id": "8e292e711633",
+    "title": "不適正利用対策に関するワーキンググループ（第15回）",
+    "ministry": "総務省",
+    "date": "2026-11-02",
+    "page": "https://exbridge.jp/shocho/n/8e292e711633.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/ICT_services/02kiban18_02000512.html"
+   },
+   {
+    "id": "d2f6dd56dafc",
+    "title": "不適正利用対策に関するワーキンググループ（第15回）",
+    "ministry": "総務省",
+    "date": "2026-10-27",
+    "page": "https://exbridge.jp/shocho/n/d2f6dd56dafc.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/ICT_services/02kiban18_02000511.html"
+   }
+  ],
+  "koritsu-byoin-keiei": [
+   {
+    "id": "23ac914e0e3f",
+    "title": "自治体・医療機関等をつなぐ情報連携システム（Public Medical Hub：PMH）に係る「先行実施事業の実施状況」「自治体・自治体システムベンダー向けの情報」「医療機関・薬局システムベンダー向けの情報」の資料を更新しました",
+    "ministry": "デジタル庁",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/23ac914e0e3f.html",
+    "url": "https://www.digital.go.jp/policies/health/public-medical-hub"
+   },
+   {
+    "id": "0a2391266d2b",
+    "title": "自治体が実施する健康・医療・介護分野の事業のデジタル化（PMH）ー医療費助成に関するダッシュボードを更新しました",
+    "ministry": "デジタル庁",
+    "date": "2026-10-16",
+    "page": "https://exbridge.jp/shocho/n/0a2391266d2b.html",
+    "url": "https://www.digital.go.jp/resources/govdashboard/pmh-medical-expense-subsidies"
+   }
+  ],
+  "ai-agent": [
+   {
+    "id": "4b341558ccb6",
+    "title": "ガバメントAI 源内 利用状況アンケート調査（第1回）の結果を公表しました",
+    "ministry": "デジタル庁",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/4b341558ccb6.html",
+    "url": "https://www.digital.go.jp/policies/genai/f9ed1b1c-b22f-4466-8e50-c1c9adf9f8eb"
+   },
+   {
+    "id": "2ceac02ca0b5",
+    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/2ceac02ca0b5.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/shiryou/index.html"
+   },
+   {
+    "id": "45dc27e1a62d",
+    "title": "第14回人工知能（AI）技術の利用と消費者問題に関する専門調査会【11月５日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/45dc27e1a62d.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/014/kaisai/index.html"
+   },
+   {
+    "id": "2744a5e022a7",
+    "title": "第12回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月22日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/2744a5e022a7.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/012/shiryou/index.html"
+   },
+   {
+    "id": "8a06a2c9828a",
+    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/8a06a2c9828a.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/kaisai/index.html"
+   }
+  ],
   "joho-roei": [
+   {
+    "id": "0872902dfeb6",
+    "title": "不正アクセスによる情報漏えい等の事案を踏まえたセキュリティ対策の徹底について（注意喚起）",
+    "ministry": "厚生労働省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/0872902dfeb6.html",
+    "url": "https://www.mhlw.go.jp/stf/kinkyu/20261030.html"
+   },
+   {
+    "id": "d58fd5b85fc5",
+    "title": "その他,個人情報流出の被害に遭われた方・ご心配のある方向けの相談窓口について掲載しました。",
+    "ministry": "金融庁",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d58fd5b85fc5.html",
+    "url": "https://www.fsa.go.jp/receipt/soudansitu/index.html#kojinjouhou"
+   },
    {
     "id": "f7a2a4e7aed7",
     "title": "Studio 株式会社における不正アクセスによる個人情報の漏えいの可能性について",
@@ -19,7 +191,157 @@
     "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/data_protection/02kiban18_02000510.html"
    }
   ],
+  "saitei-chingin": [
+   {
+    "id": "85e78d4a4484",
+    "title": "中央最低賃金審議会 (目安に関する小委員会)",
+    "ministry": "厚生労働省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/85e78d4a4484.html",
+    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-tingin_127941.html"
+   },
+   {
+    "id": "83c29b1a1076",
+    "title": "中央最低賃金審議会(目安制度の在り方に関する全員協議会)",
+    "ministry": "厚生労働省",
+    "date": "2026-10-16",
+    "page": "https://exbridge.jp/shocho/n/83c29b1a1076.html",
+    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-tingin_127940.html"
+   },
+   {
+    "id": "8742a0895054",
+    "title": "中央最低賃金審議会 (中央最低賃金審議会)",
+    "ministry": "厚生労働省",
+    "date": "2026-10-16",
+    "page": "https://exbridge.jp/shocho/n/8742a0895054.html",
+    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-tingin_127939.html"
+   },
+   {
+    "id": "b55ab3ed3a63",
+    "title": "令和８年熊本地震に伴う産業雇用安定助成金の特例を実施します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-15",
+    "page": "https://exbridge.jp/shocho/n/b55ab3ed3a63.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76532.html"
+   }
+  ],
+  "anime-sangyo": [
+   {
+    "id": "cf750d0c8fec",
+    "title": "食文化の海外展開・インバウンド拡大に取り組む外食事業者及び地方公共団体の支援対象を決定しました",
+    "ministry": "農林水産省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/cf750d0c8fec.html",
+    "url": "https://www.maff.go.jp/j/press/shokuhin/kikaku/261030.html"
+   }
+  ],
+  "seibutsu-tayosei": [
+   {
+    "id": "4fe412fe9cef",
+    "title": "地域生物多様性増進法に基づく「自然共生サイト」の認定（令和8年度第2回）について",
+    "ministry": "農林水産省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/4fe412fe9cef.html",
+    "url": "https://www.maff.go.jp/j/press/kanbo/b_kankyo/261030.html"
+   }
+  ],
+  "kyutokuho": [
+   {
+    "id": "9b04d2d292e0",
+    "title": "高等教育局任期付職員の採用のお知らせ",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/9b04d2d292e0.html",
+    "url": "https://www.mext.go.jp/b_menu/saiyou/sonota/1417284_00051.htm"
+   },
+   {
+    "id": "d460f1a1fdc5",
+    "title": "いじめ対策・不登校支援等推進事業（いじめ・不登校等の未然防止等に向けた魅力ある学校づくりに関する調査研究 （医療及び学校現場の連携による自殺対策の強化事業））（総合評価落札方式）",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d460f1a1fdc5.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00085.html"
+   },
+   {
+    "id": "9263004f9bf0",
+    "title": "高等専門学校の機能強化に関する検討会（第5回）議事録",
+    "ministry": "文部科学省",
+    "date": "2026-10-29",
+    "page": "https://exbridge.jp/shocho/n/9263004f9bf0.html",
+    "url": "https://www.mext.go.jp/b_menu/shingi/chousa/koutou/136/gijiroku/mext_00004.html"
+   },
+   {
+    "id": "1a9173d98187",
+    "title": "「学校給食衛生管理基準」の在り方に関する有識者会議（第4回）議事録",
+    "ministry": "文部科学省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/1a9173d98187.html",
+    "url": "https://www.mext.go.jp/b_menu/shingi/chousa/shotou/205/gijiroku/mext_00004.html"
+   },
+   {
+    "id": "436edc3a6fea",
+    "title": "不登校等のこどもの健康診断に関する調査　＜結果に基づく通知＞",
+    "ministry": "総務省",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/436edc3a6fea.html",
+    "url": "https://www.soumu.go.jp/menu_news/s-news/hyouka_261022000193158.html"
+   }
+  ],
+  "futoko": [
+   {
+    "id": "d460f1a1fdc5",
+    "title": "いじめ対策・不登校支援等推進事業（いじめ・不登校等の未然防止等に向けた魅力ある学校づくりに関する調査研究 （医療及び学校現場の連携による自殺対策の強化事業））（総合評価落札方式）",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d460f1a1fdc5.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00085.html"
+   },
+   {
+    "id": "31f151a5f577",
+    "title": "CSユースリーダーによる大学生対象イベントを開催します",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/31f151a5f577.html",
+    "url": "https://www.mext.go.jp/b_menu/houdou/mext_01698.html"
+   },
+   {
+    "id": "436edc3a6fea",
+    "title": "不登校等のこどもの健康診断に関する調査　＜結果に基づく通知＞",
+    "ministry": "総務省",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/436edc3a6fea.html",
+    "url": "https://www.soumu.go.jp/menu_news/s-news/hyouka_261022000193158.html"
+   }
+  ],
+  "jisatsu-taisaku": [
+   {
+    "id": "d460f1a1fdc5",
+    "title": "いじめ対策・不登校支援等推進事業（いじめ・不登校等の未然防止等に向けた魅力ある学校づくりに関する調査研究 （医療及び学校現場の連携による自殺対策の強化事業））（総合評価落札方式）",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d460f1a1fdc5.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00085.html"
+   }
+  ],
+  "kaigo-jimu-futan": [
+   {
+    "id": "d460f1a1fdc5",
+    "title": "いじめ対策・不登校支援等推進事業（いじめ・不登校等の未然防止等に向けた魅力ある学校づくりに関する調査研究 （医療及び学校現場の連携による自殺対策の強化事業））（総合評価落札方式）",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d460f1a1fdc5.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00085.html"
+   }
+  ],
   "chiiki-iryo-renkei": [
+   {
+    "id": "d460f1a1fdc5",
+    "title": "いじめ対策・不登校支援等推進事業（いじめ・不登校等の未然防止等に向けた魅力ある学校づくりに関する調査研究 （医療及び学校現場の連携による自殺対策の強化事業））（総合評価落札方式）",
+    "ministry": "文部科学省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/d460f1a1fdc5.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00085.html"
+   },
    {
     "id": "d23f9f2a94a0",
     "title": "「2040年に向けた地域医療構想」について",
@@ -53,6 +375,262 @@
     "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/fukushi/shisetsu_seibi_00004.html"
    }
   ],
+  "kodomo-sns": [
+   {
+    "id": "0f5fcb7257a2",
+    "title": "AIネットワーク社会推進会議　AIガバナンス検討会（第32回）",
+    "ministry": "総務省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/0f5fcb7257a2.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/ai_network/02tsushin06_04000147.html"
+   }
+  ],
+  "ai-koyo-zeisei": [
+   {
+    "id": "0f5fcb7257a2",
+    "title": "AIネットワーク社会推進会議　AIガバナンス検討会（第32回）",
+    "ministry": "総務省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/0f5fcb7257a2.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/ai_network/02tsushin06_04000147.html"
+   }
+  ],
+  "seito-kofukin": [
+   {
+    "id": "e06ce812ec7f",
+    "title": "政治資金規正法施行令及び政党助成法施行令の一部を改正する政令（案）等に対する意見募集の結果",
+    "ministry": "総務省",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/e06ce812ec7f.html",
+    "url": "https://www.soumu.go.jp/menu_news/s-news/01gyosei17_02000276.html"
+   }
+  ],
+  "ai-hou": [
+   {
+    "id": "2ceac02ca0b5",
+    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/2ceac02ca0b5.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/shiryou/index.html"
+   },
+   {
+    "id": "45dc27e1a62d",
+    "title": "第14回人工知能（AI）技術の利用と消費者問題に関する専門調査会【11月５日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-30",
+    "page": "https://exbridge.jp/shocho/n/45dc27e1a62d.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/014/kaisai/index.html"
+   },
+   {
+    "id": "2744a5e022a7",
+    "title": "第12回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月22日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/2744a5e022a7.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/012/shiryou/index.html"
+   },
+   {
+    "id": "8a06a2c9828a",
+    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
+    "ministry": "内閣府",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/8a06a2c9828a.html",
+    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/kaisai/index.html"
+   },
+   {
+    "id": "fc4f7f1f1fbd",
+    "title": "「自治体からの照会事務の自動化などの国・地方AI共通サービスに関する実証事業」の参加自治体（都道府県及び市区町村）を募集します",
+    "ministry": "デジタル庁",
+    "date": "2026-10-20",
+    "page": "https://exbridge.jp/shocho/n/fc4f7f1f1fbd.html",
+    "url": "https://www.digital.go.jp/policies/genai/0ef07948-2f5d-4b45-8ebe-ea974c20a3ac"
+   }
+  ],
+  "zaiseiho-4jo": [
+   {
+    "id": "ebee27179729",
+    "title": "令和8年度地方財政審議会（10月21日）議事要旨",
+    "ministry": "総務省",
+    "date": "2026-10-29",
+    "page": "https://exbridge.jp/shocho/n/ebee27179729.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/singi/chizai/02zaisei02_04001397_00975.html"
+   }
+  ],
+  "nihonban-dbs": [
+   {
+    "id": "ad3ed351c05b",
+    "title": "高等教育の修学支援新制度の対象機関（確認大学等）の公表（令和8年10月30日）",
+    "ministry": "文部科学省",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/ad3ed351c05b.html",
+    "url": "https://www.mext.go.jp/a_menu/koutou/hutankeigen/mext_03668.html"
+   }
+  ],
+  "ai-biosecurity": [
+   {
+    "id": "5b3fe93c9841",
+    "title": "第6回先進的AI利活用アドバイザリーボードの議事要旨を掲載しました",
+    "ministry": "デジタル庁",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/5b3fe93c9841.html",
+    "url": "https://www.digital.go.jp/councils/ai-advisory-board/162953b0-3dc0-46a6-a24c-0e3a335e0495"
+   },
+   {
+    "id": "d910e819a0f6",
+    "title": "フロンティアAI時代の通信事業におけるデータの保護・セキュリティの在り方に関する検討会（第1回）",
+    "ministry": "総務省",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/d910e819a0f6.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/data_protection/02kiban18_02000510.html"
+   }
+  ],
+  "shokuba-netchusho": [
+   {
+    "id": "3d9ee45ab41d",
+    "title": "労働者派遣事業及び有料の職業紹介事業の許可を取り消しました",
+    "ministry": "厚生労働省",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/3d9ee45ab41d.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76850.html"
+   },
+   {
+    "id": "6843d91c109b",
+    "title": "「事業場における労働者の健康保持増進のための指針」について（公示）",
+    "ministry": "厚生労働省",
+    "date": "2026-10-19",
+    "page": "https://exbridge.jp/shocho/n/6843d91c109b.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76807.html"
+   },
+   {
+    "id": "ae1dfbe2fac6",
+    "title": "令和８年労働安全衛生調査（実態調査）にご協力をお願いします",
+    "ministry": "厚生労働省",
+    "date": "2026-10-19",
+    "page": "https://exbridge.jp/shocho/n/ae1dfbe2fac6.html",
+    "url": "https://www.mhlw.go.jp/toukei/oshirase/261014.html"
+   },
+   {
+    "id": "12c6259513f7",
+    "title": "令和８年度「食品衛生事業功労者厚生労働大臣表彰」の受賞者の決定について",
+    "ministry": "厚生労働省",
+    "date": "2026-10-08",
+    "page": "https://exbridge.jp/shocho/n/12c6259513f7.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76332.html"
+   }
+  ],
+  "koreisha-kyukyu": [
+   {
+    "id": "960c9f260663",
+    "title": "令和8年（5月～9月）の熱中症による救急搬送状況",
+    "ministry": "総務省",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/960c9f260663.html",
+    "url": "https://www.soumu.go.jp/menu_news/s-news/01shoubo01_02001287.html"
+   },
+   {
+    "id": "da9d70b3b843",
+    "title": "令和8年9月の熱中症による救急搬送状況",
+    "ministry": "総務省",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/da9d70b3b843.html",
+    "url": "https://www.soumu.go.jp/menu_news/s-news/01shoubo01_02001286.html"
+   }
+  ],
+  "gaikokujin-seisaku": [
+   {
+    "id": "e2c8a0e90064",
+    "title": "地域における外国人との秩序ある共生社会の実現のための研究会（第4回）",
+    "ministry": "総務省",
+    "date": "2026-10-28",
+    "page": "https://exbridge.jp/shocho/n/e2c8a0e90064.html",
+    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/chiikiniokerugaikokujintonochitsujoaru/02gyosei05_04000120.html"
+   }
+  ],
+  "ishi-henzai": [
+   {
+    "id": "3512cd8befa5",
+    "title": "第16回医師養成過程を通じた医師の偏在対策等に関する検討会",
+    "ministry": "厚生労働省",
+    "date": "2026-10-27",
+    "page": "https://exbridge.jp/shocho/n/3512cd8befa5.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76989.html"
+   },
+   {
+    "id": "0935979c8e36",
+    "title": "「ポストコロナ時代の医療人材養成拠点形成事業（大学を中核とした地域における総合的な診療能力を有する医師の養成事業）」",
+    "ministry": "文部科学省",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/0935979c8e36.html",
+    "url": "https://www.mext.go.jp/a_menu/koutou/iryou/20260731_00001.html"
+   }
+  ],
+  "honnin-kakunin": [
+   {
+    "id": "010276ea668b",
+    "title": "国家資格等のオンライン・デジタル化に係る現在手続が可能な資格の情報を更新しました",
+    "ministry": "デジタル庁",
+    "date": "2026-10-26",
+    "page": "https://exbridge.jp/shocho/n/010276ea668b.html",
+    "url": "https://www.digital.go.jp/policies/government-certification"
+   }
+  ],
+  "kaigo-shogu": [
+   {
+    "id": "03da10137e03",
+    "title": "第33回社会保障審議会介護給付費分科会介護報酬改定検証・研究委員会（Web会議）を開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/03da10137e03.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76755.html"
+   },
+   {
+    "id": "80cdafcb922f",
+    "title": "第６回2040年に向けた看護職員の養成・確保の在り方に関する検討会の開催について：開催案内",
+    "ministry": "厚生労働省",
+    "date": "2026-10-09",
+    "page": "https://exbridge.jp/shocho/n/80cdafcb922f.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76493.html"
+   }
+  ],
+  "keizai-anpo-infra": [
+   {
+    "id": "930436133933",
+    "title": "経済安全保障推進法に基づく肥料原料の備蓄に係る供給確保計画の認定（サンアグロ株式会社）について",
+    "ministry": "農林水産省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/930436133933.html",
+    "url": "https://www.maff.go.jp/j/press/nousan/sizai/261023.html"
+   }
+  ],
+  "koukou-mushouka": [
+   {
+    "id": "1162bc1209a0",
+    "title": "令和7年度　産業イノベーション人材育成等に資する高等学校等教育改革促進事業の採択結果について",
+    "ministry": "文部科学省",
+    "date": "2026-10-23",
+    "page": "https://exbridge.jp/shocho/n/1162bc1209a0.html",
+    "url": "https://www.mext.go.jp/b_menu/boshu/mext_00074.html"
+   }
+  ],
+  "jinsei-kaigi": [
+   {
+    "id": "75e1a5272a8d",
+    "title": "令和８年度　人生会議（ACP）普及・啓発イベント 「自分らしく生き抜くために「人生会議」はじめてみませんか？ 2026 in 和歌山」を10月12日（月・祝）に和歌山県で開催します",
+    "ministry": "厚生労働省",
+    "date": "2026-10-22",
+    "page": "https://exbridge.jp/shocho/n/75e1a5272a8d.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76893.html"
+   },
+   {
+    "id": "a4886fb41cb2",
+    "title": "令和8年度「人生会議」普及啓発イベント第一弾（和歌山）のアーカイブ動画を公開しました",
+    "ministry": "厚生労働省",
+    "date": "2026-10-13",
+    "page": "https://exbridge.jp/shocho/n/a4886fb41cb2.html",
+    "url": "https://www.mhlw.go.jp/acp-jinseikaigi/"
+   }
+  ],
   "juten-shien-kofukin": [
    {
     "id": "1bdfa04e995b",
@@ -81,61 +659,7 @@
     "url": "https://www.mext.go.jp/b_menu/shingi/chousa/shotou/206/kaisai/mext_02457.html"
    }
   ],
-  "ishi-henzai": [
-   {
-    "id": "0935979c8e36",
-    "title": "「ポストコロナ時代の医療人材養成拠点形成事業（大学を中核とした地域における総合的な診療能力を有する医師の養成事業）」",
-    "ministry": "文部科学省",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/0935979c8e36.html",
-    "url": "https://www.mext.go.jp/a_menu/koutou/iryou/20260731_00001.html"
-   }
-  ],
-  "futoko": [
-   {
-    "id": "436edc3a6fea",
-    "title": "不登校等のこどもの健康診断に関する調査　＜結果に基づく通知＞",
-    "ministry": "総務省",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/436edc3a6fea.html",
-    "url": "https://www.soumu.go.jp/menu_news/s-news/hyouka_261022000193158.html"
-   }
-  ],
-  "kyutokuho": [
-   {
-    "id": "436edc3a6fea",
-    "title": "不登校等のこどもの健康診断に関する調査　＜結果に基づく通知＞",
-    "ministry": "総務省",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/436edc3a6fea.html",
-    "url": "https://www.soumu.go.jp/menu_news/s-news/hyouka_261022000193158.html"
-   },
-   {
-    "id": "714cf3e0ce13",
-    "title": "「ポスト2030教育に関するユースアジェンダ起草会議」を開催します",
-    "ministry": "文部科学省",
-    "date": "2026-10-21",
-    "page": "https://exbridge.jp/shocho/n/714cf3e0ce13.html",
-    "url": "https://www.mext.go.jp/unesco/001/2014/1347530_00012.htm"
-   },
-   {
-    "id": "4f51efba5c42",
-    "title": "高等専門学校の機能強化に関する検討会（第6回）配布資料",
-    "ministry": "文部科学省",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/4f51efba5c42.html",
-    "url": "https://www.mext.go.jp/b_menu/shingi/chousa/koutou/136/siryo/mext_00005.html"
-   },
-   {
-    "id": "de3f35fa00f8",
-    "title": "保育提供体制に関するダッシュボードを更新しました",
-    "ministry": "デジタル庁",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/de3f35fa00f8.html",
-    "url": "https://www.digital.go.jp/resources/govdashboard/childcare"
-   }
-  ],
-  "ai-biosecurity": [
+  "zeijakusei-chosa": [
    {
     "id": "d910e819a0f6",
     "title": "フロンティアAI時代の通信事業におけるデータの保護・セキュリティの在り方に関する検討会（第1回）",
@@ -143,129 +667,17 @@
     "date": "2026-10-22",
     "page": "https://exbridge.jp/shocho/n/d910e819a0f6.html",
     "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/data_protection/02kiban18_02000510.html"
-   }
-  ],
-  "ai-hou": [
-   {
-    "id": "d910e819a0f6",
-    "title": "フロンティアAI時代の通信事業におけるデータの保護・セキュリティの在り方に関する検討会（第1回）",
-    "ministry": "総務省",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/d910e819a0f6.html",
-    "url": "https://www.soumu.go.jp/main_sosiki/kenkyu/data_protection/02kiban18_02000510.html"
-   },
-   {
-    "id": "8a06a2c9828a",
-    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
-    "ministry": "内閣府",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/8a06a2c9828a.html",
-    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/kaisai/index.html"
-   },
-   {
-    "id": "fc4f7f1f1fbd",
-    "title": "「自治体からの照会事務の自動化などの国・地方AI共通サービスに関する実証事業」の参加自治体（都道府県及び市区町村）を募集します",
-    "ministry": "デジタル庁",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/fc4f7f1f1fbd.html",
-    "url": "https://www.digital.go.jp/policies/genai/0ef07948-2f5d-4b45-8ebe-ea974c20a3ac"
-   },
-   {
-    "id": "647d6a5539f6",
-    "title": "国際関係,金融安定理事会による最終報告書「AIの責任ある導入に関する健全な実務慣行」について公表しました。",
-    "ministry": "金融庁",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/647d6a5539f6.html",
-    "url": "https://www.fsa.go.jp/inter/fsf/20261016/20261016.html"
-   },
-   {
-    "id": "8273699215af",
-    "title": "第12回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月22日開催】",
-    "ministry": "内閣府",
-    "date": "2026-10-15",
-    "page": "https://exbridge.jp/shocho/n/8273699215af.html",
-    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/012/kaisai/index.html"
-   }
-  ],
-  "ai-agent": [
-   {
-    "id": "8a06a2c9828a",
-    "title": "第13回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月29日開催】",
-    "ministry": "内閣府",
-    "date": "2026-10-22",
-    "page": "https://exbridge.jp/shocho/n/8a06a2c9828a.html",
-    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/013/kaisai/index.html"
-   },
-   {
-    "id": "66801f3eb178",
-    "title": "ガバメントAI 源内におけるAI エージェント利用環境の提供開始のお知らせと「源内基準」を掲載しました",
-    "ministry": "デジタル庁",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/66801f3eb178.html",
-    "url": "https://www.digital.go.jp/policies/genai/agent-safety-standard"
-   },
-   {
-    "id": "8273699215af",
-    "title": "第12回人工知能（AI）技術の利用と消費者問題に関する専門調査会【10月22日開催】",
-    "ministry": "内閣府",
-    "date": "2026-10-15",
-    "page": "https://exbridge.jp/shocho/n/8273699215af.html",
-    "url": "https://www.cao.go.jp/consumer/kabusoshiki/ai_technology/012/kaisai/index.html"
-   }
-  ],
-  "iyakuhin-antei-kyokyu": [
-   {
-    "id": "4b2ca9c1c5bc",
-    "title": "第５回 医療関係職種の安定的な養成・確保に関する検討会：開催案内",
-    "ministry": "厚生労働省",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/4b2ca9c1c5bc.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76847.html"
-   }
-  ],
-  "kokuho-nogare": [
-   {
-    "id": "057f76d9bf4f",
-    "title": "2026年9月18日　第136回社会保障審議会介護保険部会　議事録",
-    "ministry": "厚生労働省",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/057f76d9bf4f.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76811.html"
-   },
-   {
-    "id": "1b48922ee66a",
-    "title": "第137回社会保障審議会介護保険部会の開催について",
-    "ministry": "厚生労働省",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/1b48922ee66a.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76757.html"
-   },
-   {
-    "id": "520d21ac3477",
-    "title": "社会保障審議会（介護保険部会）",
-    "ministry": "厚生労働省",
-    "date": "2026-10-20",
-    "page": "https://exbridge.jp/shocho/n/520d21ac3477.html",
-    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-hosho_126734.html"
-   },
-   {
-    "id": "e75d3e756cfc",
-    "title": "第271回社会保障審議会介護給付費分科会（Web会議）を開催します",
-    "ministry": "厚生労働省",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/e75d3e756cfc.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76624.html"
-   },
-   {
-    "id": "8b000271e891",
-    "title": "第218回社会保障審議会医療保険部会（ペーパーレス）の開催について",
-    "ministry": "厚生労働省",
-    "date": "2026-10-14",
-    "page": "https://exbridge.jp/shocho/n/8b000271e891.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76677.html"
    }
   ],
   "iryo-kiki": [
+   {
+    "id": "9ba768d58998",
+    "title": "中央社会保険医療協議会診療報酬調査専門組織（入院・外来医療等の調査・評価分科会）の開催について",
+    "ministry": "厚生労働省",
+    "date": "2026-10-20",
+    "page": "https://exbridge.jp/shocho/n/9ba768d58998.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76834.html"
+   },
    {
     "id": "524779763b97",
     "title": "令和８年度第２回 厚生科学審議会医薬品医療機器制度部会の開催について（Web併用）",
@@ -291,6 +703,24 @@
     "url": "https://www.mhlw.go.jp/stf/newpage_76729.html"
    }
   ],
+  "iyakuhin-antei-kyokyu": [
+   {
+    "id": "894cb391b59b",
+    "title": "第５回　医療関係職種の安定的な養成・確保に関する検討会：資料",
+    "ministry": "厚生労働省",
+    "date": "2026-10-20",
+    "page": "https://exbridge.jp/shocho/n/894cb391b59b.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76854.html"
+   },
+   {
+    "id": "4b2ca9c1c5bc",
+    "title": "第５回 医療関係職種の安定的な養成・確保に関する検討会：開催案内",
+    "ministry": "厚生労働省",
+    "date": "2026-10-20",
+    "page": "https://exbridge.jp/shocho/n/4b2ca9c1c5bc.html",
+    "url": "https://www.mhlw.go.jp/stf/newpage_76847.html"
+   }
+  ],
   "uchu-seisaku": [
    {
     "id": "94d4c4bb8954",
@@ -309,98 +739,6 @@
     "date": "2026-10-20",
     "page": "https://exbridge.jp/shocho/n/8e60149c8784.html",
     "url": "https://www.fsa.go.jp/news/r8/sonota/20261020/20261020.html"
-   }
-  ],
-  "shokuba-netchusho": [
-   {
-    "id": "6843d91c109b",
-    "title": "「事業場における労働者の健康保持増進のための指針」について（公示）",
-    "ministry": "厚生労働省",
-    "date": "2026-10-19",
-    "page": "https://exbridge.jp/shocho/n/6843d91c109b.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76807.html"
-   },
-   {
-    "id": "ae1dfbe2fac6",
-    "title": "令和８年労働安全衛生調査（実態調査）にご協力をお願いします",
-    "ministry": "厚生労働省",
-    "date": "2026-10-19",
-    "page": "https://exbridge.jp/shocho/n/ae1dfbe2fac6.html",
-    "url": "https://www.mhlw.go.jp/toukei/oshirase/261014.html"
-   },
-   {
-    "id": "12c6259513f7",
-    "title": "令和８年度「食品衛生事業功労者厚生労働大臣表彰」の受賞者の決定について",
-    "ministry": "厚生労働省",
-    "date": "2026-10-08",
-    "page": "https://exbridge.jp/shocho/n/12c6259513f7.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76332.html"
-   }
-  ],
-  "koritsu-byoin-keiei": [
-   {
-    "id": "0a2391266d2b",
-    "title": "自治体が実施する健康・医療・介護分野の事業のデジタル化（PMH）ー医療費助成に関するダッシュボードを更新しました",
-    "ministry": "デジタル庁",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/0a2391266d2b.html",
-    "url": "https://www.digital.go.jp/resources/govdashboard/pmh-medical-expense-subsidies"
-   }
-  ],
-  "saitei-chingin": [
-   {
-    "id": "83c29b1a1076",
-    "title": "中央最低賃金審議会(目安制度の在り方に関する全員協議会)",
-    "ministry": "厚生労働省",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/83c29b1a1076.html",
-    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-tingin_127940.html"
-   },
-   {
-    "id": "8742a0895054",
-    "title": "中央最低賃金審議会 (中央最低賃金審議会)",
-    "ministry": "厚生労働省",
-    "date": "2026-10-16",
-    "page": "https://exbridge.jp/shocho/n/8742a0895054.html",
-    "url": "https://www.mhlw.go.jp/stf/shingi/shingi-tingin_127939.html"
-   },
-   {
-    "id": "b55ab3ed3a63",
-    "title": "令和８年熊本地震に伴う産業雇用安定助成金の特例を実施します",
-    "ministry": "厚生労働省",
-    "date": "2026-10-15",
-    "page": "https://exbridge.jp/shocho/n/b55ab3ed3a63.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76532.html"
-   }
-  ],
-  "jinsei-kaigi": [
-   {
-    "id": "a4886fb41cb2",
-    "title": "自分らしく生きるための「人生会議」ポータルサイト",
-    "ministry": "厚生労働省",
-    "date": "2026-10-13",
-    "page": "https://exbridge.jp/shocho/n/a4886fb41cb2.html",
-    "url": "https://www.mhlw.go.jp/acp-jinseikaigi/"
-   }
-  ],
-  "kaigo-shogu": [
-   {
-    "id": "80cdafcb922f",
-    "title": "第６回2040年に向けた看護職員の養成・確保の在り方に関する検討会の開催について：開催案内",
-    "ministry": "厚生労働省",
-    "date": "2026-10-09",
-    "page": "https://exbridge.jp/shocho/n/80cdafcb922f.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76493.html"
-   }
-  ],
-  "saisei-iryo": [
-   {
-    "id": "f02b35d825d1",
-    "title": "薬事審議会　再生医療等製品・生物由来技術部会を開催します",
-    "ministry": "厚生労働省",
-    "date": "2026-10-08",
-    "page": "https://exbridge.jp/shocho/n/f02b35d825d1.html",
-    "url": "https://www.mhlw.go.jp/stf/newpage_76385.html"
    }
   ]
  }

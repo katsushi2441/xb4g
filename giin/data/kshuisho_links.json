@@ -566,5 +566,9 @@
  "iryo-inbound": {
   "word": "外国人患者",
   "count": 12
+ },
+ "tokushu-sagi": {
+  "word": "特殊詐欺",
+  "count": 14
  }
 }

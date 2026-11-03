@@ -4,7 +4,11 @@
 議員発言ログ（make_ogp_all.py）からも、Kurage 国会トラッカー単体からも使う。
 単体の設置では、画像の左下に出す公開URLを TRACKER_PUBLIC_URL（例: https://example.com/kokkai/）で決める。
 
-  /usr/bin/python3 scripts/make_ogp_trackers.py
+  TRACKER_PUBLIC_URL=https://xb4g.com/giin /usr/bin/python3 scripts/make_ogp_trackers.py   # 当社の本番（xb4g.com/giin）
+  /usr/bin/python3 scripts/make_ogp_trackers.py      # 単体の設置で URL を決めていないとき（左下は example.com）
+
+当社の本番で TRACKER_PUBLIC_URL を付け忘れると、155枚の左下が example.com になる（2026-11-03 に本番へ出ていたのを見つけた）。
+これらはページの画像（tracker/<key>.png・推移の棒グラフ入り）を描けなかったときの予備に使われる。
 """
 import json, os, sqlite3, sys
 
