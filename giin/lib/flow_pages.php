@@ -13,6 +13,8 @@ declare(strict_types=1);
 const G_FLOW_NAME = 'Kurage 政策の流れトラッカー';
 // 契約を集める型の分野（政府広報など）の画面
 if (is_file(__DIR__ . '/flow_koho.php')) { require_once __DIR__ . '/flow_koho.php'; }
+// 採択先ごとの成果（公開モデル・論文・ベンチマーク）
+if (is_file(__DIR__ . '/flow_outcomes.php')) { require_once __DIR__ . '/flow_outcomes.php'; }
 
 function g_flow_404(string $slug): void
 {
@@ -199,7 +201,7 @@ function g_page_flow(string $slug): void
     echo '<h2 data-en="Flow">流れの全体</h2><div class="fstages">'
        . '<div class="fstage"><div class="h">政策形成（会議）</div><b>' . (int)$s['councils'] . '会議</b><span>構成員 ' . (int)$s['members'] . '人・開催 ' . (int)$s['meetings'] . '回・提言や取りまとめ ' . (int)$s['outputs'] . '本</span></div>'
        . '<div class="fstage"><div class="h">予算</div><b>' . (int)$s['projects'] . '事業</b><span>2025年度シートの' . (int)$s['projects_2025'] . '事業の当初予算の合計 ' . g_flow_yen($s['initial_2025']) . '（うち事業名に語を含む ' . (int)$s['projects_name'] . '事業 ' . g_flow_yen($s['initial_2025_name']) . '）</span></div>'
-       . '<div class="fstage"><div class="h">採択</div><b>' . (int)$s['programs'] . '公募</b><span>公表された採択先 ' . (int)$s['award_rows'] . '件（NEDO・JST・NICT）</span></div>'
+       . '<div class="fstage"><div class="h">採択</div><b>' . (int)$s['programs'] . '公募</b><span>公表された採択先 ' . (int)$s['award_rows'] . '件（NEDO・JST・NICT）' . (!empty($s['outcomes']) ? '。<a href="#outcomes">採択先の成果</a>：公開モデル ' . (int)$s['outcomes']['hf_models'] . '件' : '') . '</span></div>'
        . '<div class="fstage"><div class="h">実施（支出先）</div><b>' . g_flow_yen($s['exec_2024']) . '</b><span>2025年度シートの' . (int)$s['projects_2025'] . '事業の、2024年度の執行額の合計。支出先の記載 ' . number_format((int)$s['payee_rows']) . '件</span></div>'
        . '<div class="fstage"><div class="h">成果評価</div><b>' . (int)$s['with_review'] . '事業</b><span>行政事業レビューの点検の記載あり（うち外部有識者の所見 ' . (int)$s['with_ext_review'] . '事業）。NEDO・経済産業省などの評価 ' . (int)$s['evaluations'] . '件</span></div>'
        . '</div>';
@@ -272,6 +274,9 @@ function g_page_flow(string $slug): void
         }
         echo '</ul>' . g_flow_src((string)($g['source_title'] ?? ''), (string)($g['source_url'] ?? ''), (string)($d['awards_meta']['fetched_at'] ?? '')) . '</details>';
     }
+
+    // ---- 採択先の成果
+    if (function_exists('g_flow_oc_section') && !empty($d['outcomes'])) { echo g_flow_oc_css() . g_flow_oc_section($slug, $d); }
 
     // ---- 重なり
     echo '<h2 id="overlap" data-en="Same names">会議の構成員の所属と、支出先・採択先に同じ組織名が出る例</h2>';
@@ -473,6 +478,10 @@ function g_page_flow_project(string $slug, string $id): void
         }
     } else {
         echo '<p>この事業につながる公募の採択結果は、集めた公表資料（NEDO・JST・NICTの' . count($d['programs']) . '公募）の中では確かめられていません。支出先は次の節のとおりです。</p>';
+    }
+
+    if (function_exists('g_flow_oc_section') && !empty($d['outcomes']) && !empty($p['outcome_keys'])) {
+        echo g_flow_oc_css() . str_replace('採択先の成果：', '3-2. 採択先の成果：', g_flow_oc_section($slug, $d, (array)$p['outcome_keys']));
     }
 
     // 4. 支出先

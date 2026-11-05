@@ -73,6 +73,7 @@ if (!empty($__fx['fields']) && is_file(__DIR__ . '/lib/flow_pages.php')) {
     foreach ($__fx['fields'] as $__f) {
         $urls[] = ['flow/' . $__f['slug'], '0.9', 'weekly', $__f['generated_at']];
         $__d = @json_decode((string)@file_get_contents(__DIR__ . '/data/flow/' . $__f['slug'] . '.json'), true);
+        if (!empty($__d['outcomes'])) { $urls[] = ['flow/' . $__f['slug'] . '/outcomes', '0.8', 'weekly', $__f['generated_at']]; }
         foreach (($__d['projects'] ?? []) as $__p) { $urls[] = ['flow/' . $__f['slug'] . '/p/' . $__p['id'], '0.6', 'monthly', $__f['generated_at']]; }
         // 契約型（政府広報など）: 府省・契約先のページ。契約先は2件以上か1,000万円以上のもの（中身の薄いページを索引に出しすぎない）
         foreach (($__d['ministries'] ?? []) as $__m) { $urls[] = ['flow/' . $__f['slug'] . '/m/' . $__m['code'], '0.7', 'monthly', $__f['generated_at']]; }
