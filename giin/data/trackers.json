@@ -4321,7 +4321,17 @@
   ],
   "seo_word": "特定健診",
   "seo_title": "特定健診・生活習慣病予防｜国会の質疑と政府の答弁",
-  "added": "2026-11-05"
+  "added": "2026-11-05",
+  "next": [
+   {
+    "label": "健診のあとの保健指導の実施率を、市町村と保険者ごとに見る（Kurage 健康トラッカー）",
+    "url": "https://xb4g.com/giin/health/kenshin"
+   },
+   {
+    "label": "食べ方・睡眠・健診の数値を、都道府県と地域ごとに見る（Kurage 健康トラッカー）",
+    "url": "https://xb4g.com/giin/health"
+   }
+  ]
  },
  {
   "key": "missing-link",

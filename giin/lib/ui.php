@@ -101,7 +101,7 @@ function g_head(string $title, string $desc = '', string $path = '/', array $x =
        . '<style>' . g_css() . '</style></head><body>';
     // 見た目は team-mir.ai を手本にしたライトテーマ（白＋ミントの帯＋大きな数字）。色は xb4g のティール。
     $nav = G_APP === 'tracker' ? [['tracker', 'テーマ一覧'], ['about', 'このサイトについて']] : [['list', '議員一覧'], ['theme', 'ことがら'], ['tracker', '国会トラッカー'], ['bill', '法案'], ['senkyoku', '選挙区'], ['news', '最近の動き'],
-            ['ai', 'AI特集'], ['flow', '政策の流れ'], ['compare', 'ことがら×議員'], ['about', 'このサイトについて']];
+            ['ai', 'AI特集'], ['flow', '政策の流れ'], ['health', '健康'], ['compare', 'ことがら×議員'], ['about', 'このサイトについて']];
     if (G_APP === 'giin' && !(defined('G_HAS_TRACKER') && G_HAS_TRACKER)) {
         $nav = array_values(array_filter($nav, fn($n) => $n[0] !== 'tracker'));
     }

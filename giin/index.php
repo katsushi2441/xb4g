@@ -32,6 +32,8 @@ require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 // 政策の流れトラッカー（会議→予算→採択→評価。2026-11-05。データは kseisakuflow が data/flow/ に書く）
 if (is_file(__DIR__ . '/lib/flow_pages.php')) { require __DIR__ . '/lib/flow_pages.php'; }
+// Kurage 健康トラッカー（食べ方・睡眠・健診の数値・保健指導・料理の栄養。2026-11-05。データは khealth が data/health/ に書く）
+if (is_file(__DIR__ . '/lib/health_pages.php')) { require __DIR__ . '/lib/health_pages.php'; }
 require __DIR__ . '/lib/senkyoku.php';
 // 全国の議員の軽いページ（2026-10-15）。製品版で無いときは読まない
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }
@@ -75,6 +77,15 @@ function g_route(string $path, int $page): void
         if (function_exists('g_page_flow_outcomes') && preg_match('#^/flow/([a-z0-9-]+)/outcomes$#', $path, $m)) { g_page_flow_outcomes($m[1]); return; }
         if (function_exists('g_page_flow_koho_ministry') && preg_match('#^/flow/([a-z0-9-]+)/m/(\d{1,4})$#', $path, $m)) { g_page_flow_koho_ministry($m[1], $m[2]); return; }
         if (function_exists('g_page_flow_koho_payee') && preg_match('#^/flow/([a-z0-9-]+)/s/(\d{13})$#', $path, $m)) { g_page_flow_koho_payee($m[1], $m[2]); return; }
+    }
+    if (function_exists('g_page_health_index')) {
+        if ($path === '/health') { g_page_health_index(); return; }
+        if ($path === '/health/kenshin') { g_page_health_kenshin(); return; }
+        if ($path === '/health/kenshin/kumiai') { g_page_health_kenshin('kumiai'); return; }
+        if (preg_match('#^/health/kenshin/(\d{8})$#', $path, $m)) { g_page_health_insurer($m[1]); return; }
+        if ($path === '/health/food') { g_page_health_food(); return; }
+        if (preg_match('#^/health/food/([a-z0-9-]+)$#', $path, $m)) { g_page_health_food($m[1]); return; }
+        if (preg_match('#^/health/([a-z0-9-]+)$#', $path, $m)) { g_page_health_topic($m[1]); return; }
     }
     if (G_HAS_TRACKER && preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     // 質疑1件のページとカード画像（Xに貼るとカードが出る。2026-10-14）

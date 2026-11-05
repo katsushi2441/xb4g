@@ -23,7 +23,7 @@ REMOTE = os.environ.get("GIIN_REMOTE_ROOT", "/web/xb4g_com/giin")
 TARGETS = ["index.php", "sitemap.php", "giin_mcp.php", "ogp.png", "llms.txt", "lib", "img",
            "data/themes.json", "data/links.json", "data/stats.json", "data/trackers.json",
            "data/kshuisho_links.json", "data/kshuisho_giin.json", "data/shocho_links.json",
-           "data/flow"]   # 政策の流れトラッカー（kseisakuflow の build_flow.py --copy が書く）
+           "data/flow", "data/health"]   # data/health は Kurage 健康トラッカー（khealth の build_*.py --copy が書く）   # 政策の流れトラッカー（kseisakuflow の build_flow.py --copy が書く）
 SKIP_NAMES = {"giin_config.php", "giin_config.php.example", "giin.sqlite", ".DS_Store"}
 
 
