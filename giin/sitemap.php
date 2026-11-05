@@ -66,20 +66,6 @@ if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE name='sess_meta'")) {
     }
 }
 
-// Kurage 健康トラッカー（2026-11-05）。lastmod は data/health/index.json の generated_at
-$__hx = @json_decode((string)@file_get_contents(__DIR__ . '/data/health/index.json'), true);
-if (!empty($__hx['topics']) && is_file(__DIR__ . '/lib/health_pages.php')) {
-    $__hd = (string)$__hx['generated_at'];
-    $urls[] = ['health', '0.8', 'monthly', $__hd];
-    foreach ($__hx['topics'] as $__t) { $urls[] = ['health/' . $__t['slug'], '0.8', 'monthly', $__hd]; }
-    $urls[] = ['health/kenshin', '0.8', 'monthly', $__hd];
-    $urls[] = ['health/kenshin/kumiai', '0.6', 'monthly', $__hd];
-    $__hk = @json_decode((string)@file_get_contents(__DIR__ . '/data/health/kenshin.json'), true);
-    foreach (($__hk['insurers'] ?? []) as $__e) { if (isset($__e['years']['2024'])) { $urls[] = ['health/kenshin/' . $__e['no'], '0.5', 'yearly', $__hd]; } }
-    $__hf = @json_decode((string)@file_get_contents(__DIR__ . '/data/health/food.json'), true);
-    $urls[] = ['health/food', '0.6', 'monthly', $__hd];
-    foreach (($__hf['dishes'] ?? []) as $__f) { $urls[] = ['health/food/' . $__f['slug'], '0.5', 'monthly', $__hd]; }
-}
 // 政策の流れトラッカー（2026-11-05）。lastmod はデータを作り直した日（data/flow/<分野>.json の generated_at）
 $__fx = @json_decode((string)@file_get_contents(__DIR__ . '/data/flow/index.json'), true);
 if (!empty($__fx['fields']) && is_file(__DIR__ . '/lib/flow_pages.php')) {
