@@ -72,6 +72,8 @@ function g_route(string $path, int $page): void
         if ($path === '/flow') { g_page_flow_index(); return; }
         if (preg_match('#^/flow/([a-z0-9-]+)$#', $path, $m)) { g_page_flow($m[1]); return; }
         if (preg_match('#^/flow/([a-z0-9-]+)/p/(\d{1,8})$#', $path, $m)) { g_page_flow_project($m[1], $m[2]); return; }
+        if (function_exists('g_page_flow_koho_ministry') && preg_match('#^/flow/([a-z0-9-]+)/m/(\d{1,4})$#', $path, $m)) { g_page_flow_koho_ministry($m[1], $m[2]); return; }
+        if (function_exists('g_page_flow_koho_payee') && preg_match('#^/flow/([a-z0-9-]+)/s/(\d{13})$#', $path, $m)) { g_page_flow_koho_payee($m[1], $m[2]); return; }
     }
     if (G_HAS_TRACKER && preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     // 質疑1件のページとカード画像（Xに貼るとカードが出る。2026-10-14）

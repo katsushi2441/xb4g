@@ -11,6 +11,14 @@
 declare(strict_types=1);
 
 const G_FLOW_NAME = 'Kurage 政策の流れトラッカー';
+// 契約を集める型の分野（政府広報など）の画面
+if (is_file(__DIR__ . '/flow_koho.php')) { require_once __DIR__ . '/flow_koho.php'; }
+
+function g_flow_404(string $slug): void
+{
+    http_response_code(404); g_head('見つかりません', '', '/flow/' . $slug, ['noindex' => true]);
+    echo '<h1>見つかりません</h1><p><a href="' . g_url('flow/' . $slug) . '">一覧へ</a></p>'; g_foot();
+}
 
 function g_flow_index(): array
 {
@@ -46,10 +54,12 @@ function g_flow_tracker_box(string $key, string $ref): string
     $h = '';
     foreach ($fs as $f) {
         $s = $f['summary'];
+        $line = ($f['type'] ?? '') === 'contracts'
+            ? g_e($s['exec_year']) . '年度に執行された広報・周知・啓発などの契約' . number_format((int)$s['contracts']) . '件（' . g_flow_yen($s['sum']) . '）を、府省・契約先・事業ごとに、入札者数・落札率と成果目標の記載と並べています。'
+            : '国会での議論の先にある、会議での政策形成・予算・採択・評価を、公表資料だけでつないで並べています。AI関係の会議' . (int)$s['councils'] . '・関連事業' . (int)$s['projects'] . '件・公募の採択' . (int)$s['award_rows'] . '件。';
         $h .= '<section class="panel" style="margin:16px 0;border-left:4px solid #3949ab;background:#f5f6fc"><p style="margin:0 0 4px;font-weight:900;color:#283593">'
             . g_e(G_FLOW_NAME) . '｜' . g_e($f['name']) . '</p>'
-            . '<p style="margin:0 0 8px">国会での議論の先にある、会議での政策形成・予算・採択・評価を、公表資料だけでつないで並べています。'
-            . 'AI関係の会議' . (int)$s['councils'] . '・関連事業' . (int)$s['projects'] . '件・公募の採択' . (int)$s['award_rows'] . '件。</p>'
+            . '<p style="margin:0 0 8px">' . $line . '</p>'
             . '<a class="btn" style="background:#3949ab;border-color:#3949ab" href="' . g_url('flow/' . $f['slug']) . '#ref=' . g_e($ref) . '">' . g_e($f['name']) . 'の流れを見る</a></section>';
     }
     return $h;
@@ -152,6 +162,11 @@ function g_page_flow_index(): void
     echo '<h2 data-en="Fields">分野</h2>';
     foreach ($fs as $f) {
         $s = $f['summary'];
+        if (($f['type'] ?? '') === 'contracts') {
+            echo '<a class="fproj" href="' . g_url('flow/' . $f['slug']) . '"><div class="nm">' . g_e($f['title']) . '</div><div class="mt">' . g_e($f['lead']) . '</div>'
+               . '<div class="mt" style="margin-top:6px">' . g_e($s['exec_year']) . '年度執行の契約 ' . number_format((int)$s['contracts']) . '件・' . g_flow_yen($s['sum']) . '・契約先 ' . number_format((int)$s['payees']) . '　更新 ' . g_e($f['generated_at']) . '</div></a>';
+            continue;
+        }
         echo '<a class="fproj" href="' . g_url('flow/' . $f['slug']) . '"><div class="nm">' . g_e($f['title']) . '</div>'
            . '<div class="mt">' . g_e($f['lead']) . '</div>'
            . '<div class="mt" style="margin-top:6px">会議 ' . (int)$s['councils'] . '・関連事業 ' . (int)$s['projects'] . '件・公募 ' . (int)$s['programs'] . '件（採択 ' . (int)$s['award_rows'] . '件）・評価 ' . (int)$s['evaluations'] . '件　更新 ' . g_e($f['generated_at']) . '</div></a>';
@@ -166,6 +181,7 @@ function g_page_flow(string $slug): void
 {
     $d = g_flow_load($slug);
     if (!$d) { http_response_code(404); g_head('見つかりません', '', '/flow', ['noindex' => true]); echo '<h1>その分野はまだありません</h1><p><a href="' . g_url('flow') . '">' . G_FLOW_NAME . 'へ</a></p>'; g_foot(); return; }
+    if (($d['type'] ?? '') === 'contracts' && function_exists('g_page_flow_koho')) { g_page_flow_koho($slug, $d); return; }
     $f = $d['field']; $s = $d['summary'];
     $title = $f['title'];
     $desc = 'AI政策の会議' . $s['councils'] . '（構成員' . $s['members'] . '人・開催' . $s['meetings'] . '回）、行政事業レビューのAI関連事業' . $s['projects'] . '件、NEDOなどの公募' . $s['programs'] . '件（採択' . $s['award_rows'] . '件）、評価、国会の質疑を、公表資料だけでつないで並べます。';
@@ -191,7 +207,11 @@ function g_page_flow(string $slug): void
        . '関連事業は、事業名または事業の目的・現状・概要に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
        . '概要にだけ語を含む事業（' . (int)$s['projects_body'] . '事業）には、AI以外が主な目的の事業も含まれます。'
        . '2024年度の執行額の合計（' . g_flow_yen($s['exec_2024']) . '）のうち、事業名に語を含む事業は ' . g_flow_yen($s['exec_2024_name']) . 'です。'
-       . 'このうち最も大きい「ポスト５Ｇ情報通信システム基盤強化研究開発事業（AI基盤モデル及び先端半導体関連技術開発事業）」は、事業名のとおり先端半導体の開発も含む基金への交付です。</div>';
+       . 'このうち最も大きい「ポスト５Ｇ情報通信システム基盤強化研究開発事業（AI基盤モデル及び先端半導体関連技術開発事業）」は、事業名のとおり先端半導体の開発も含む基金への交付です。'
+       . (isset($s['supp_2024']) ? '<br><b>執行額が当初予算より大きい理由</b>：2024年度の執行額（' . g_flow_yen($s['exec_2024']) . '）は、2024年度の当初予算（' . g_flow_yen($s['initial_2024']) . '）に、補正予算（' . g_flow_yen($s['supp_2024']) . '）と前年度からの繰越し（' . g_flow_yen($s['carried_2024'])
+          . '）を加えた歳出予算現額（' . g_flow_yen($s['current_2024']) . '）を使った額です（行政事業レビューの「予算・執行サマリ」の合計の行の値で、支出先の行は足していません）。上の「2025年度の当初予算」とは年度が違い、補正予算も含みません。2024年度の執行額の大きい3事業は '
+          . implode('、', array_map(fn($t) => '「' . g_e($t['name']) . '」' . g_flow_yen($t['exec']) . '（うち補正 ' . g_flow_yen($t['supp']) . '）', (array)($s['top_exec_2024'] ?? []))) . ' です（RSの記載では、いずれも2024年度の当初予算は0円）。' : '')
+       . '</div>';
     echo g_flow_src('行政事業レビュー見える化サイト（RSシステム） CSVダウンロード 2025年度・2024年度（1-2 事業概要等・2-1 予算・執行サマリ・5-1 支出先）を加工して作成', 'https://rssystem.go.jp/download-csv/2025', '2026-11-05');
 
     // ---- つながりが見える事業
@@ -366,6 +386,7 @@ function g_flow_credit(array $d): void
 function g_page_flow_project(string $slug, string $id): void
 {
     $d = g_flow_load($slug);
+    if (($d['type'] ?? '') === 'contracts' && function_exists('g_page_flow_koho_project')) { g_page_flow_koho_project($slug, $id); return; }
     $p = null;
     foreach (($d['projects'] ?? []) as $x) { if ((string)$x['id'] === $id) { $p = $x; break; } }
     if (!$p) { http_response_code(404); g_head('見つかりません', '', '/flow/' . $slug, ['noindex' => true]); echo '<h1>その事業は見つかりません</h1><p><a href="' . g_url('flow/' . $slug) . '">一覧へ</a></p>'; g_foot(); return; }
