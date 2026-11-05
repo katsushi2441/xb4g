@@ -506,7 +506,8 @@ KEIZAI_JSON = os.path.join(WORK, "exbridge_jp", "keizai", "keizai.json")   # exb
 
 
 def keizai_hits(text, k=2):
-    """投稿が為替・金利・物価・景気に触れていれば、経済指標のカード（exbridge.jp/keizai/<key>/）を候補にする"""
+    """投稿が為替・金利・物価・景気に触れていれば、経済指標のカード（exbridge.jp/keizai/<key>/）を候補にする。
+    経営の定石（/keizai/teiseki/<slug>/。資金繰り・手元資金・値上げ）も同じ keizai.json に先頭で入っている"""
     try:
         items = json.load(open(KEIZAI_JSON, encoding="utf-8"))["items"]
     except (OSError, ValueError, KeyError):
@@ -520,6 +521,8 @@ def keizai_hits(text, k=2):
 
 
 def keizai_fact(x):
+    if x.get("fact"):   # 経営の定石のページ（/keizai/teiseki/<slug>/）は keizai_build.py が文を作って入れている
+        return x["fact"]
     t, v = x["latest"]
     u = x["unit"]
     s = f"{x['name']}（{x['sub']}）は{x['label']}に{v}{u}" + ("（前年同月比）" if x["kind"] == "yoy" else "")
@@ -612,10 +615,14 @@ def make_item(p, field, mmdd, r=None):
         x = kz[0]
         url = with_ref(x["url"], ref)
         label = f"経済指標のカード: {x['name']}"
-        what = f"経済指標のカード「{x['name']}」: 日本銀行の統計から、最新の値と1年前との差、2年分の推移を1枚にした当社のページ"
+        what = (f"{x['name']}: 日本銀行・財務省・中小企業庁の数字でその定石を確かめた当社のページ（グラフのカード1枚と出典つきの説明）"
+                if x["key"].startswith("teiseki/") else
+                f"経済指標のカード「{x['name']}」: 日本銀行の統計から、最新の値と1年前との差、2年分の推移を1枚にした当社のページ")
         facts = dict(facts or {}, 経済指標=[keizai_fact(y) for y in kz], カードに出る指標=keizai_fact(x))
         t, v = x["latest"]
         fb = f"{x['name']}は{x['label']}時点で{v}{x['unit']}" + (f"、1年前は{x['compare'][-1][2]}{x['unit']}でした。" if x["compare"] else "でした。")
+        if x.get("fact"):
+            fb = x["fact"].split("。")[0] + "。"
         links = []
     elif kz:
         links = [{"種類": "経済指標のカード（当社のページ。最新の値と2年の推移のグラフが1枚。日本銀行の統計）", "題名": x["name"],
