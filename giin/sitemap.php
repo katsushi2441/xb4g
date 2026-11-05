@@ -66,6 +66,17 @@ if ((bool)g_val("SELECT 1 FROM sqlite_master WHERE name='sess_meta'")) {
     }
 }
 
+// 政策の流れトラッカー（2026-11-05）。lastmod はデータを作り直した日（data/flow/<分野>.json の generated_at）
+$__fx = @json_decode((string)@file_get_contents(__DIR__ . '/data/flow/index.json'), true);
+if (!empty($__fx['fields']) && is_file(__DIR__ . '/lib/flow_pages.php')) {
+    $urls[] = ['flow', '0.8', 'weekly', max(array_column($__fx['fields'], 'generated_at'))];
+    foreach ($__fx['fields'] as $__f) {
+        $urls[] = ['flow/' . $__f['slug'], '0.9', 'weekly', $__f['generated_at']];
+        $__d = @json_decode((string)@file_get_contents(__DIR__ . '/data/flow/' . $__f['slug'] . '.json'), true);
+        foreach (($__d['projects'] ?? []) as $__p) { $urls[] = ['flow/' . $__f['slug'] . '/p/' . $__p['id'], '0.6', 'monthly', $__f['generated_at']]; }
+    }
+}
+
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
    . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as [$p, $pri, $freq, $lm]) {

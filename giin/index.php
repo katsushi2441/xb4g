@@ -30,6 +30,8 @@ if (G_HAS_TRACKER) { require __DIR__ . '/lib/tracker_pages.php'; }
 if (G_HAS_QA) { require __DIR__ . '/lib/qa.php'; require __DIR__ . '/lib/tracker_cards.php'; }
 require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
+// 政策の流れトラッカー（会議→予算→採択→評価。2026-11-05。データは kseisakuflow が data/flow/ に書く）
+if (is_file(__DIR__ . '/lib/flow_pages.php')) { require __DIR__ . '/lib/flow_pages.php'; }
 require __DIR__ . '/lib/senkyoku.php';
 // 全国の議員の軽いページ（2026-10-15）。製品版で無いときは読まない
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }
@@ -66,6 +68,11 @@ function g_route(string $path, int $page): void
 
     // ---- いまのURL ----
     if (preg_match('#^/theme/([a-z0-9-]+)$#', $path, $m)) { g_page_theme($m[1], $page); return; }
+    if (function_exists('g_page_flow')) {
+        if ($path === '/flow') { g_page_flow_index(); return; }
+        if (preg_match('#^/flow/([a-z0-9-]+)$#', $path, $m)) { g_page_flow($m[1]); return; }
+        if (preg_match('#^/flow/([a-z0-9-]+)/p/(\d{1,8})$#', $path, $m)) { g_page_flow_project($m[1], $m[2]); return; }
+    }
     if (G_HAS_TRACKER && preg_match('#^/tracker/([a-z0-9-]+)$#', $path, $m)) { g_page_tracker($m[1], $page); return; }
     // 質疑1件のページとカード画像（Xに貼るとカードが出る。2026-10-14）
     if (G_HAS_QA && preg_match('#^/tracker/([a-z0-9-]+)\.png$#', $path, $m)) { g_tracker_png($m[1]); return; }

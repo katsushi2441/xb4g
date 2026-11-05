@@ -149,6 +149,8 @@ function g_page_tracker(string $key, int $page): void
         echo '</ul><p class="note" style="margin:8px 0 0">各府省の新着情報を毎日取り込み、この話題に関係する発表を並べています（<a href="https://exbridge.jp/shocho/#ref=tracker-' . g_e($t['key']) . '-shocho">Kurage 省庁トラッカー</a>）。</p></section>';
     }
     echo g_sns_line('tracker-' . $t['key']);   // AI-SNS顧問への入口（2026-10-22）
+    // 政策の流れ（会議→予算→採択→評価）への相互リンク（2026-11-05）。data/flow/index.json の trackers にあるテーマだけ
+    if (function_exists('g_flow_tracker_box')) { echo g_flow_tracker_box($t['key'], 'tracker-' . $t['key'] . '-flow'); }
     echo g_tracker_next($t);
     // この話題の語を件名に含む法案（審議の経過と、その法案に触れた質疑へ）
     if (function_exists('g_bills_for_words') && ($rb = g_bills_for_words((array)$words, 5))) {   // 法案は議員発言ログだけ
