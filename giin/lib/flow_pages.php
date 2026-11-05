@@ -282,8 +282,11 @@ function g_page_flow(string $slug): void
         $nm = $o['payees'][0]['payee'] ?? ($o['awards'][0]['org'] ?? $o['key']);
         echo '<details class="fd"><summary>' . g_e($nm) . '　<span class="note">支出先 ' . count(array_unique(array_column($o['payees'], 'project_id'))) . '事業・採択 ' . count($o['awards']) . '件</span></summary>';
         echo '<p style="margin:8px 0 2px;font-weight:700">会議の構成員名簿</p><ul class="flist">';
-        foreach ($o['members'] as $m) {
-            echo '<li>' . g_e($m['council']) . '：' . g_e($m['name']) . '（' . g_e($m['affiliation']) . '）' . g_flow_src((string)$m['source_title'], (string)$m['source_url']) . '</li>';
+        // 個人名は出さない（2026-11-05 ユーザー了承）。会議ごとに、この組織名を所属に含む構成員の人数だけ示す。
+        $byc = [];
+        foreach ($o['members'] as $m) { $k = (string)$m['council']; if (!isset($byc[$k])) { $byc[$k] = ['n' => 0, 'title' => (string)$m['source_title'], 'url' => (string)$m['source_url']]; } $byc[$k]['n']++; }
+        foreach ($byc as $cn => $v) {
+            echo '<li>' . g_e($cn) . '：構成員 ' . (int)$v['n'] . '人の所属にこの組織名が出ます' . g_flow_src($v['title'], $v['url']) . '</li>';
         }
         echo '</ul>';
         if ($o['payees']) {
@@ -539,7 +542,7 @@ function g_page_flow_project(string $slug, string $id): void
         foreach ($d['overlaps'] as $o) {
             if (!in_array($o['key'], $keys, true)) { continue; }
             $nm = $o['payees'][0]['payee'] ?? ($o['awards'][0]['org'] ?? $o['key']);
-            echo '<li><b>' . g_e($nm) . '</b><br><span class="note">' . g_e(implode('、', array_unique(array_map(fn($m) => $m['council'] . '：' . $m['name'], $o['members'])))) . '</span></li>';
+            echo '<li><b>' . g_e($nm) . '</b><br><span class="note">' . g_e(implode('、', array_unique(array_map(fn($m) => (string)$m['council'], $o['members'])))) . 'の構成員名簿の所属に出る組織名</span></li>';
         }
         echo '</ul><p><a href="' . g_url('flow/' . $slug) . '#overlap">組織名の重なりの全体と、利益相反の管理について公表されている定め</a></p>';
     }
