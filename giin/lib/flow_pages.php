@@ -110,6 +110,21 @@ function g_flow_rs_src(array $p, string $prefix = '1-2_'): string
     return g_flow_src((string)($s['title'] ?? '行政事業レビュー見える化サイト'), (string)($s['url'] ?? 'https://rssystem.go.jp/'), '2026-11-05', '予算事業ID ' . $p['id']);
 }
 
+/** 会計検査院などの検査・報告（分野の設定 audit）。数字は報告の原文のまま、出典つきで並べる */
+function g_flow_audit(array $f): string
+{
+    if (empty($f['audit'])) return '';
+    $o = '<h2 data-en="Audit">会計検査院などの検査</h2>';
+    foreach ($f['audit'] as $a) {
+        $o .= '<div class="card" style="margin:0 0 12px"><div style="font-weight:700;line-height:1.6">' . g_e($a['title']) . '</div>'
+            . '<div style="font-size:13px;color:#5b6b70;margin:2px 0 8px">' . g_e($a['org'] . '・' . $a['date']) . '</div><ul style="margin:0 0 8px;padding-left:20px;line-height:1.8">';
+        foreach ($a['points'] as $pt) $o .= '<li>' . g_e($pt) . '</li>';
+        $o .= '</ul>' . (!empty($a['note']) ? '<p style="font-size:13px;color:#5b6b70;margin:0 0 6px">' . g_e($a['note']) . '</p>' : '')
+            . '<p style="font-size:13px;margin:0">出典：<a href="' . g_e($a['url']) . '" rel="noopener" target="_blank">' . g_e($a['source']) . '</a></p></div>';
+    }
+    return $o;
+}
+
 function g_flow_css(): string
 {
     // 国会トラッカー（ティール）と見分けがつくよう、このページの色は藍（カード img/og/flow-*.png と同じ系統）にそろえる
@@ -161,7 +176,7 @@ function g_flow_proj_card(string $slug, array $p): string
     $b25 = g_flow_budget_of($p, '2025'); $b24 = g_flow_budget_of($p, '2024');
     return '<a class="fproj" href="' . g_url('flow/' . $slug . '/p/' . $p['id']) . '"><div class="nm">' . g_e($p['name']) . '</div>'
          . '<div class="mt">' . g_e($p['ministry']) . ($p['bureau'] ? '　' . g_e($p['bureau']) : '')
-         . '　2025年度当初 ' . g_flow_yen($b25['initial'] ?? null) . '・2024年度執行 ' . g_flow_yen($b24['exec'] ?? null) . '</div>'
+         . '　2025年度当初 ' . g_flow_yen($b25['initial'] ?? null) . (!empty($b25['supplementary']) ? '・補正 ' . g_flow_yen($b25['supplementary']) : '') . '・2024年度執行 ' . g_flow_yen($b24['exec'] ?? null) . '</div>'
          . g_flow_chain($p, g_flow_plans_mode(g_flow_load($slug))) . '</a>';
 }
 
@@ -227,15 +242,18 @@ function g_page_flow(string $slug): void
     if ($plans) {
         echo '<h2 data-en="Flow">流れの全体</h2><div class="fstages">'
            . '<div class="fstage"><div class="h">政策の根拠（計画）</div><b>' . (int)($s['with_plans'] ?? 0) . '事業</b><span>行政事業レビューに「関係する計画・通知等」の記載がある事業</span></div>'
-           . '<div class="fstage"><div class="h">予算</div><b>' . (int)$s['projects_name'] . '事業</b><span>事業名に語を含む事業の2025年度当初予算の合計 ' . g_flow_yen($s['initial_2025_name']) . '（概要にだけ語を含む事業は別に ' . (int)$s['projects_body'] . '事業）</span></div>'
+           . '<div class="fstage"><div class="h">予算</div><b>' . (int)$s['projects_name'] . '事業</b><span>' . (g_flow_ui($d, 'budget') === 'current'
+                ? '事業名に語を含む事業の2025年度の予算（当初＋補正）の合計 ' . g_flow_yen($s['current_2025_name'] ?? 0) . '（うち当初予算 ' . g_flow_yen($s['initial_2025_name']) . '）'
+                : '事業名に語を含む事業の2025年度当初予算の合計 ' . g_flow_yen($s['initial_2025_name'])) . ((int)$s['projects_body'] ? '（概要にだけ語を含む事業は別に ' . (int)$s['projects_body'] . '事業）' : '') . '</span></div>'
            . '<div class="fstage"><div class="h">実施（支出先）</div><b>' . g_flow_yen($s['exec_2024_name']) . '</b><span>事業名に語を含む事業の、2024年度の執行額の合計。支出先の記載（全事業） ' . number_format((int)$s['payee_rows']) . '件</span></div>'
            . '<div class="fstage"><div class="h">成果評価</div><b>' . (int)$s['with_review'] . '事業</b><span>行政事業レビューの点検の記載あり（うち外部有識者の所見 ' . (int)$s['with_ext_review'] . '事業）</span></div>'
            . '<div class="fstage"><div class="h">国会の質疑</div><b>' . (int)($s['with_kokkai'] ?? 0) . '事業</b><span>事業や制度の名前で国会会議録を引き、質疑がつながった事業</span></div>'
            . '</div>';
         echo '<div class="fwarn">金額は行政事業レビュー見える化サイト（RSシステム）のCSVの値（円）を億円に換算したものです。'
-           . '関連事業は、事業名または事業の目的・現状・概要に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
-           . '概要にだけ語を含む事業（' . (int)$s['projects_body'] . '事業）には、情報システムの整備や中小企業の補助金のように、セキュリティが目的の一部にすぎない大きな事業も含まれるため、上の金額は事業名に語を含む事業だけで数えています（概要にだけ語を含む事業も足した2024年度の執行額は ' . g_flow_yen($s['exec_2024']) . '）。'
-           . '国会の質疑は、事業や制度の名前（例：能動的サイバー防御、NOTICE、サイバーセキュリティお助け隊）で引いたもので、その事業そのものを取り上げた質疑とは限りません。</div>';
+           . '関連事業は、' . g_e(g_flow_ui($d, 'match_scope', '事業名または事業の目的・現状・概要')) . 'に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
+           . ((int)$s['projects_body'] ? '概要にだけ語を含む事業（' . (int)$s['projects_body'] . '事業）には、' . g_e(g_flow_ui($d, 'body_note', '情報システムの整備や中小企業の補助金のように、セキュリティが目的の一部にすぎない大きな事業')) . 'も含まれるため、上の金額は事業名に語を含む事業だけで数えています（概要にだけ語を含む事業も足した2024年度の執行額は ' . g_flow_yen($s['exec_2024']) . '）。' : '')
+           . '国会の質疑は、事業や制度の名前（例：' . g_e(g_flow_ui($d, 'kokkai_examples', '能動的サイバー防御、NOTICE、サイバーセキュリティお助け隊')) . '）で引いたもので、その事業そのものを取り上げた質疑とは限りません。</div>';
+        echo g_flow_audit($f);
     } else {
     echo '<h2 data-en="Flow">流れの全体</h2><div class="fstages">'
        . '<div class="fstage"><div class="h">政策形成（会議）</div><b>' . (int)$s['councils'] . '会議</b><span>構成員 ' . (int)$s['members'] . '人・開催 ' . (int)$s['meetings'] . '回・提言や取りまとめ ' . (int)$s['outputs'] . '本</span></div>'
@@ -245,7 +263,7 @@ function g_page_flow(string $slug): void
        . '<div class="fstage"><div class="h">成果評価</div><b>' . (int)$s['with_review'] . '事業</b><span>行政事業レビューの点検の記載あり（うち外部有識者の所見 ' . (int)$s['with_ext_review'] . '事業）。NEDO・経済産業省などの評価 ' . (int)$s['evaluations'] . '件</span></div>'
        . '</div>';
     echo '<div class="fwarn">金額は行政事業レビュー見える化サイト（RSシステム）のCSVの値（円）を億円に換算したものです。'
-       . '関連事業は、事業名または事業の目的・現状・概要に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
+       . '関連事業は、' . g_e(g_flow_ui($d, 'match_scope', '事業名または事業の目的・現状・概要')) . 'に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
        . '概要にだけ語を含む事業（' . (int)$s['projects_body'] . '事業）には、AI以外が主な目的の事業も含まれます。'
        . '2024年度の執行額の合計（' . g_flow_yen($s['exec_2024']) . '）のうち、事業名に語を含む事業は ' . g_flow_yen($s['exec_2024_name']) . 'です。'
        . 'このうち最も大きい「ポスト５Ｇ情報通信システム基盤強化研究開発事業（AI基盤モデル及び先端半導体関連技術開発事業）」は、事業名のとおり先端半導体の開発も含む基金への交付です。'
@@ -258,7 +276,7 @@ function g_page_flow(string $slug): void
 
     // ---- つながりが見える事業
     echo $plans
-        ? '<h2 data-en="Linked">計画から国会の質疑までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。計画は、行政事業レビューにその事業が書いている「関係する計画・通知等」（サイバーセキュリティ戦略など）です。</p>'
+        ? '<h2 data-en="Linked">計画から国会の質疑までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。計画は、行政事業レビューにその事業が書いている「関係する計画・通知等」（' . g_e(g_flow_ui($d, 'plan_example', 'サイバーセキュリティ戦略')) . 'など）です。</p>'
         : '<h2 data-en="Linked">会議から評価までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。会議は、内閣府のAI関係の会議の資料・議事要旨・提言に、事業名（または関連語）が出るものです。</p>';
     $shown = 0;
     foreach ($d['projects'] as $p) {
