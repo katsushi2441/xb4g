@@ -58,7 +58,9 @@ function g_flow_tracker_box(string $key, string $ref): string
         $s = $f['summary'];
         $line = ($f['type'] ?? '') === 'contracts'
             ? g_e($s['exec_year']) . '年度に執行された広報・周知・啓発などの契約' . number_format((int)$s['contracts']) . '件（' . g_flow_yen($s['sum']) . '）を、府省・契約先・事業ごとに、入札者数・落札率と成果目標の記載と並べています。'
-            : '国会での議論の先にある、会議での政策形成・予算・採択・評価を、公表資料だけでつないで並べています。AI関係の会議' . (int)$s['councils'] . '・関連事業' . (int)$s['projects'] . '件・公募の採択' . (int)$s['award_rows'] . '件。';
+            : (g_flow_plans_mode($f)
+                ? '国会での議論の先にある、事業の根拠になった計画・予算・支出先・目標と実績・点検を、公表資料だけでつないで並べています。関連事業' . (int)$s['projects'] . '件（うち国会の質疑とつながる事業' . (int)($s['with_kokkai'] ?? 0) . '件）。'
+                : '国会での議論の先にある、会議での政策形成・予算・採択・評価を、公表資料だけでつないで並べています。AI関係の会議' . (int)$s['councils'] . '・関連事業' . (int)$s['projects'] . '件・公募の採択' . (int)$s['award_rows'] . '件。');
         $h .= '<section class="panel" style="margin:16px 0;border-left:4px solid #3949ab;background:#f5f6fc"><p style="margin:0 0 4px;font-weight:900;color:#283593">'
             . g_e(G_FLOW_NAME) . '｜' . g_e($f['name']) . '</p>'
             . '<p style="margin:0 0 8px">' . $line . '</p>'
@@ -68,6 +70,19 @@ function g_flow_tracker_box(string $key, string $ref): string
 }
 
 /** 分野のカード画像（scripts/make_ogp_flow.py が作る）。無ければ入口のカード */
+/** 分野ごとの画面の言い回し（fields/<分野>.json の ui。無ければAI政策の言い回し） */
+function g_flow_ui(?array $d, string $k, string $def = ''): string
+{
+    $ui = (array)($d['field']['ui'] ?? $d['ui'] ?? []);
+    return (string)($ui[$k] ?? $def);
+}
+
+/** 会議資料ではなく、行政事業レビューの「関係する計画・通知等」を政策形成の段にする分野か */
+function g_flow_plans_mode(?array $d): bool
+{
+    return g_flow_ui($d, 'policy', 'councils') === 'plans';
+}
+
 function g_flow_og(string $slug): string
 {
     return g_abs(is_file(__DIR__ . '/../img/og/flow-' . $slug . '.png') ? 'img/og/flow-' . $slug . '.png' : 'img/og/flow.png');
@@ -123,11 +138,11 @@ function g_flow_css(): string
 }
 
 /** 事業1件が、どの段までつながっているか（公表資料で確かめられた段だけ色を付ける） */
-function g_flow_chain(array $p): string
+function g_flow_chain(array $p, bool $plans = false): string
 {
     $rv = $p['review'] ?? null;
     $steps = [
-        ['会議', !empty($p['council_refs'])], ['予算', !empty($p['budget'])], ['採択', !empty($p['programs'])],
+        [$plans ? '計画' : '会議', $plans ? !empty($p['policy_on']) : !empty($p['council_refs'])], ['予算', !empty($p['budget'])], ['採択', !empty($p['programs'])],
         ['支出先', !empty($p['payees'])], ['評価', ($rv && ($rv['self_result'] || $rv['ext_opinion'])) || !empty($p['evaluations'])], ['国会', !empty($p['kokkai'])],
     ];
     $h = '<div class="fchain" aria-label="公表資料でつながった段">';
@@ -147,7 +162,7 @@ function g_flow_proj_card(string $slug, array $p): string
     return '<a class="fproj" href="' . g_url('flow/' . $slug . '/p/' . $p['id']) . '"><div class="nm">' . g_e($p['name']) . '</div>'
          . '<div class="mt">' . g_e($p['ministry']) . ($p['bureau'] ? '　' . g_e($p['bureau']) : '')
          . '　2025年度当初 ' . g_flow_yen($b25['initial'] ?? null) . '・2024年度執行 ' . g_flow_yen($b24['exec'] ?? null) . '</div>'
-         . g_flow_chain($p) . '</a>';
+         . g_flow_chain($p, g_flow_plans_mode(g_flow_load($slug))) . '</a>';
 }
 
 // ---------------------------------------------------------------- /flow
@@ -169,12 +184,17 @@ function g_page_flow_index(): void
                . '<div class="mt" style="margin-top:6px">' . g_e($s['exec_year']) . '年度執行の契約 ' . number_format((int)$s['contracts']) . '件・' . g_flow_yen($s['sum']) . '・契約先 ' . number_format((int)$s['payees']) . '　更新 ' . g_e($f['generated_at']) . '</div></a>';
             continue;
         }
+        if (g_flow_plans_mode($f)) {
+            echo '<a class="fproj" href="' . g_url('flow/' . $f['slug']) . '"><div class="nm">' . g_e($f['title']) . '</div><div class="mt">' . g_e($f['lead']) . '</div>'
+               . '<div class="mt" style="margin-top:6px">関連事業 ' . (int)$s['projects'] . '件（事業名に語を含む ' . (int)$s['projects_name'] . '件）・計画とつながる事業 ' . (int)($s['with_plans'] ?? 0) . '件・国会の質疑とつながる事業 ' . (int)($s['with_kokkai'] ?? 0) . '件　更新 ' . g_e($f['generated_at']) . '</div></a>';
+            continue;
+        }
         echo '<a class="fproj" href="' . g_url('flow/' . $f['slug']) . '"><div class="nm">' . g_e($f['title']) . '</div>'
            . '<div class="mt">' . g_e($f['lead']) . '</div>'
            . '<div class="mt" style="margin-top:6px">会議 ' . (int)$s['councils'] . '・関連事業 ' . (int)$s['projects'] . '件・公募 ' . (int)$s['programs'] . '件（採択 ' . (int)$s['award_rows'] . '件）・評価 ' . (int)$s['evaluations'] . '件　更新 ' . g_e($f['generated_at']) . '</div></a>';
     }
     echo '<div class="panel"><p style="margin:0">国会トラッカーは「国会で何が議論されたか」を並べています。こちらは、その先の「政策がどのように実行され、どのような成果を生んだか」を、公表資料でたどれるようにする試みです。'
-       . 'AI政策から始め、ほかの分野にも広げていきます。</p></div>';
+       . 'AI政策から始め、分野を順に広げています。</p></div>';
     g_foot();
 }
 
@@ -186,18 +206,37 @@ function g_page_flow(string $slug): void
     if (($d['type'] ?? '') === 'contracts' && function_exists('g_page_flow_koho')) { g_page_flow_koho($slug, $d); return; }
     $f = $d['field']; $s = $d['summary'];
     $title = $f['title'];
-    $desc = 'AI政策の会議' . $s['councils'] . '（構成員' . $s['members'] . '人・開催' . $s['meetings'] . '回）、行政事業レビューのAI関連事業' . $s['projects'] . '件、NEDOなどの公募' . $s['programs'] . '件（採択' . $s['award_rows'] . '件）、評価、国会の質疑を、公表資料だけでつないで並べます。';
+    $plans = g_flow_plans_mode($d);
+    $topic = g_flow_ui($d, 'topic', 'AI');
+    $desc = $plans
+        ? $topic . 'に関する行政事業レビューの事業' . $s['projects'] . '件について、根拠になった計画・予算・支出先・目標と実績・点検と、国会の質疑を、公表資料だけでつないで並べます。'
+        : 'AI政策の会議' . $s['councils'] . '（構成員' . $s['members'] . '人・開催' . $s['meetings'] . '回）、行政事業レビューのAI関連事業' . $s['projects'] . '件、NEDOなどの公募' . $s['programs'] . '件（採択' . $s['award_rows'] . '件）、評価、国会の質疑を、公表資料だけでつないで並べます。';
     g_head($title, $desc, '/flow/' . $slug, ['nosuffix' => true, 'image' => g_flow_og($slug), 'jsonld' => g_jsonld([
         g_crumbs([['ホーム', '/'], [G_FLOW_NAME, '/flow'], [$f['name'], '/flow/' . $slug]]),
         ['@type' => 'Dataset', 'name' => $title, 'description' => $desc, 'url' => g_abs('flow/' . $slug), 'inLanguage' => 'ja',
          'dateModified' => $d['generated_at'], 'creator' => ['@type' => 'Organization', 'name' => '株式会社エクスブリッジ'],
-         'isBasedOn' => ['https://rssystem.go.jp/download-csv/2025', 'https://www8.cao.go.jp/cstp/ai/', 'https://www.nedo.go.jp/', 'https://kokkai.ndl.go.jp/']]])]);
+         'isBasedOn' => $plans ? ['https://rssystem.go.jp/download-csv/2025', 'https://kokkai.ndl.go.jp/'] : ['https://rssystem.go.jp/download-csv/2025', 'https://www8.cao.go.jp/cstp/ai/', 'https://www.nedo.go.jp/', 'https://kokkai.ndl.go.jp/']]])]);
     echo g_flow_css();
     echo '<section class="hero p"><nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › <a href="' . g_url('flow') . '">' . g_e(G_FLOW_NAME) . '</a> › ' . g_e($f['name']) . '</nav>'
        . '<p class="kick">Policy Flow Tracker</p><h1>' . g_e($title) . '</h1><p class="lead" style="margin-bottom:0">' . g_e($f['lead']) . '</p></section>';
-    echo g_share_bar('【' . G_FLOW_NAME . '】AI政策の会議・予算' . $s['projects'] . '事業・公募の採択' . $s['award_rows'] . '件・評価を、公表資料だけでつないで並べる', 'flow/' . $slug, 'flow-' . $slug);
+    echo g_share_bar($plans
+        ? '【' . G_FLOW_NAME . '】' . $f['name'] . 'の予算' . $s['projects'] . '事業の計画・支出先・点検と国会の質疑を、公表資料だけでつないで並べる'
+        : '【' . G_FLOW_NAME . '】AI政策の会議・予算' . $s['projects'] . '事業・公募の採択' . $s['award_rows'] . '件・評価を、公表資料だけでつないで並べる', 'flow/' . $slug, 'flow-' . $slug);
 
     // ---- 段ごとの件数と金額
+    if ($plans) {
+        echo '<h2 data-en="Flow">流れの全体</h2><div class="fstages">'
+           . '<div class="fstage"><div class="h">政策の根拠（計画）</div><b>' . (int)($s['with_plans'] ?? 0) . '事業</b><span>行政事業レビューに「関係する計画・通知等」の記載がある事業</span></div>'
+           . '<div class="fstage"><div class="h">予算</div><b>' . (int)$s['projects_name'] . '事業</b><span>事業名に語を含む事業の2025年度当初予算の合計 ' . g_flow_yen($s['initial_2025_name']) . '（概要にだけ語を含む事業は別に ' . (int)$s['projects_body'] . '事業）</span></div>'
+           . '<div class="fstage"><div class="h">実施（支出先）</div><b>' . g_flow_yen($s['exec_2024_name']) . '</b><span>事業名に語を含む事業の、2024年度の執行額の合計。支出先の記載（全事業） ' . number_format((int)$s['payee_rows']) . '件</span></div>'
+           . '<div class="fstage"><div class="h">成果評価</div><b>' . (int)$s['with_review'] . '事業</b><span>行政事業レビューの点検の記載あり（うち外部有識者の所見 ' . (int)$s['with_ext_review'] . '事業）</span></div>'
+           . '<div class="fstage"><div class="h">国会の質疑</div><b>' . (int)($s['with_kokkai'] ?? 0) . '事業</b><span>事業や制度の名前で国会会議録を引き、質疑がつながった事業</span></div>'
+           . '</div>';
+        echo '<div class="fwarn">金額は行政事業レビュー見える化サイト（RSシステム）のCSVの値（円）を億円に換算したものです。'
+           . '関連事業は、事業名または事業の目的・現状・概要に「' . g_e($d['words_label']) . '」のいずれかの語を含む事業を機械的に拾っています（2025年度のシートに無い事業は2024年度のシートから）。'
+           . '概要にだけ語を含む事業（' . (int)$s['projects_body'] . '事業）には、情報システムの整備や中小企業の補助金のように、セキュリティが目的の一部にすぎない大きな事業も含まれるため、上の金額は事業名に語を含む事業だけで数えています（概要にだけ語を含む事業も足した2024年度の執行額は ' . g_flow_yen($s['exec_2024']) . '）。'
+           . '国会の質疑は、事業や制度の名前（例：能動的サイバー防御、NOTICE、サイバーセキュリティお助け隊）で引いたもので、その事業そのものを取り上げた質疑とは限りません。</div>';
+    } else {
     echo '<h2 data-en="Flow">流れの全体</h2><div class="fstages">'
        . '<div class="fstage"><div class="h">政策形成（会議）</div><b>' . (int)$s['councils'] . '会議</b><span>構成員 ' . (int)$s['members'] . '人・開催 ' . (int)$s['meetings'] . '回・提言や取りまとめ ' . (int)$s['outputs'] . '本</span></div>'
        . '<div class="fstage"><div class="h">予算</div><b>' . (int)$s['projects'] . '事業</b><span>2025年度シートの' . (int)$s['projects_2025'] . '事業の当初予算の合計 ' . g_flow_yen($s['initial_2025']) . '（うち事業名に語を含む ' . (int)$s['projects_name'] . '事業 ' . g_flow_yen($s['initial_2025_name']) . '）</span></div>'
@@ -214,10 +253,13 @@ function g_page_flow(string $slug): void
           . '）を加えた歳出予算現額（' . g_flow_yen($s['current_2024']) . '）を使った額です（行政事業レビューの「予算・執行サマリ」の合計の行の値で、支出先の行は足していません）。上の「2025年度の当初予算」とは年度が違い、補正予算も含みません。2024年度の執行額の大きい3事業は '
           . implode('、', array_map(fn($t) => '「' . g_e($t['name']) . '」' . g_flow_yen($t['exec']) . '（うち補正 ' . g_flow_yen($t['supp']) . '）', (array)($s['top_exec_2024'] ?? []))) . ' です（RSの記載では、いずれも2024年度の当初予算は0円）。' : '')
        . '</div>';
+    }
     echo g_flow_src('行政事業レビュー見える化サイト（RSシステム） CSVダウンロード 2025年度・2024年度（1-2 事業概要等・2-1 予算・執行サマリ・5-1 支出先）を加工して作成', 'https://rssystem.go.jp/download-csv/2025', '2026-11-05');
 
     // ---- つながりが見える事業
-    echo '<h2 data-en="Linked">会議から評価までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。会議は、内閣府のAI関係の会議の資料・議事要旨・提言に、事業名（または関連語）が出るものです。</p>';
+    echo $plans
+        ? '<h2 data-en="Linked">計画から国会の質疑までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。計画は、行政事業レビューにその事業が書いている「関係する計画・通知等」（サイバーセキュリティ戦略など）です。</p>'
+        : '<h2 data-en="Linked">会議から評価までつながった事業</h2><p class="note">公表資料で確かめられた段に ✓ を付けています。会議は、内閣府のAI関係の会議の資料・議事要旨・提言に、事業名（または関連語）が出るものです。</p>';
     $shown = 0;
     foreach ($d['projects'] as $p) {
         if ((int)$p['stages'] < 4) { continue; }
@@ -225,7 +267,8 @@ function g_page_flow(string $slug): void
         if ($shown >= 12) { break; }
     }
 
-    // ---- 会議
+    // ---- 会議（会議資料を集めていない分野では出さない）
+    if (!empty($d['councils'])) {
     echo '<h2 id="councils" data-en="Councils">政策形成：AIに関する会議と構成員</h2>';
     foreach ($d['councils'] as $c) {
         $r = $c['rosters'] ? $c['rosters'][count($c['rosters']) - 1] : null;
@@ -255,7 +298,23 @@ function g_page_flow(string $slug): void
         echo g_flow_src($c['name'] . '（内閣府）', (string)$c['url'], (string)($d['councils_meta']['fetched_at'] ?? '')) . '</section>';
     }
 
-    // ---- 採択
+    }
+    // ---- 計画（行政事業レビューの「関係する計画・通知等」を、計画ごとに束ねる）
+    if ($plans) {
+        $by = [];
+        foreach ($d['projects'] as $p) { foreach ((array)$p['plans'] as $pl) { $k = (string)preg_replace('/[「」『』\s　]/u', '', (string)$pl['title']); $by[$k] = $by[$k] ?? ['title' => trim((string)preg_replace('/[「」『』]/u', '', (string)$pl['title'])), 'url' => (string)$pl['url'], 'ps' => []]; $by[$k]['ps'][$p['id']] = $p; } }
+        uasort($by, fn($a, $b) => count($b['ps']) <=> count($a['ps']));
+        echo '<h2 id="plans" data-en="Plans">政策の根拠：事業が挙げている計画・通知</h2><p class="note">行政事業レビューで、各事業が「関係する計画・通知等」に書いているものを、挙げている事業の多い順に並べています（表記は各事業の記載どおり）。</p>';
+        foreach (array_slice($by, 0, 20, true) as $t => $v) {
+            echo '<details class="fd"><summary>' . g_e($v['title']) . '　<span class="note">' . count($v['ps']) . '事業</span></summary>'
+               . ($v['url'] !== '' ? '<p class="note" style="overflow-wrap:anywhere"><a href="' . g_e($v['url']) . '" rel="noopener" target="_blank">' . g_e($v['url']) . '</a></p>' : '') . '<ul class="flist">';
+            foreach ($v['ps'] as $p) { echo '<li><a href="' . g_url('flow/' . $slug . '/p/' . $p['id']) . '">' . g_e($p['name']) . '</a> <span class="note">' . g_e($p['ministry']) . '</span></li>'; }
+            echo '</ul></details>';
+        }
+        echo g_flow_src('行政事業レビュー見える化サイト（RSシステム） CSVダウンロード 2025年度・2024年度（1-3 関係する計画・通知等）を加工して作成', 'https://rssystem.go.jp/download-csv/2025', '2026-11-05');
+    }
+    // ---- 採択（公募を集めていない分野では出さない）
+    if (!empty($d['programs'])) {
     echo '<h2 id="awards" data-en="Awards">採択：公募と採択先</h2><p class="note">採択先は各機関の公表資料の表記どおりです。採択先ごとの金額は公表資料に見当たらず「未取得」です。</p>';
     foreach ($d['programs'] as $g) {
         $pid = $d['linked_programs'][$g['id']] ?? null;
@@ -275,9 +334,11 @@ function g_page_flow(string $slug): void
         echo '</ul>' . g_flow_src((string)($g['source_title'] ?? ''), (string)($g['source_url'] ?? ''), (string)($d['awards_meta']['fetched_at'] ?? '')) . '</details>';
     }
 
+    }
     // ---- 採択先の成果
     if (function_exists('g_flow_oc_section') && !empty($d['outcomes'])) { echo g_flow_oc_css() . g_flow_oc_section($slug, $d); }
 
+ if (!empty($d['councils']) || !empty($d['programs'])) {
     // ---- 重なり
     echo '<h2 id="overlap" data-en="Same names">会議の構成員の所属と、支出先・採択先に同じ組織名が出る例</h2>';
     echo '<div class="panel"><p style="margin:0">会議の構成員名簿にある所属の組織名と、AI関連事業の支出先（行政事業レビュー）・公募の採択先（NEDO・JST・NICTの公表資料）の組織名を、法人の種類を表す語（株式会社・国立大学法人など）と空白を除いて機械的に突き合わせ、同じ組織名が両方に出るものを並べています。'
@@ -357,6 +418,7 @@ function g_page_flow(string $slug): void
         echo '<li><b>NEDO の評価</b>：' . g_e((string)$er['title']) . '<blockquote class="fq">' . nl2br(g_e((string)$er['text'])) . '</blockquote>' . g_flow_src((string)$er['title'], (string)$er['url']) . '</li>';
     }
     echo '</ul>';
+    }
 
     // ---- 国会
     echo '<h2 id="kokkai" data-en="Diet">国会の質疑（Kurage 国会トラッカー）</h2><div class="grid">';
@@ -366,8 +428,8 @@ function g_page_flow(string $slug): void
     echo '</div>' . g_flow_src('国立国会図書館 国会会議録検索システム（Kurage 国会トラッカーで収集）', 'https://kokkai.ndl.go.jp/');
 
     // ---- 全事業
-    echo '<h2 id="projects" data-en="All projects">AI関連事業の一覧（' . count($d['projects']) . '件）</h2>'
-       . '<p><input id="fq" type="search" placeholder="事業名・府省で探す（例：生成AI、経済産業省）" autocomplete="off"><br><span class="note" id="fqn"></span></p><div id="fall">';
+    echo '<h2 id="projects" data-en="All projects">' . g_e($topic) . '関連事業の一覧（' . count($d['projects']) . '件）</h2>'
+       . '<p><input id="fq" type="search" placeholder="' . g_e(g_flow_ui($d, 'search_ph', '事業名・府省で探す（例：生成AI、経済産業省）')) . '" autocomplete="off"><br><span class="note" id="fqn"></span></p><div id="fall">';
     foreach ($d['projects'] as $p) {
         echo '<div data-q="' . g_e(mb_strtolower($p['name'] . ' ' . $p['ministry'] . ' ' . $p['bureau'])) . '">' . g_flow_proj_card($slug, $p) . '</div>';
     }
@@ -382,10 +444,10 @@ function g_flow_credit(array $d): void
 {
     echo '<h2 data-en="Sources">出典と作り方</h2><div class="panel"><ul style="margin:0;padding-left:18px">'
        . '<li>予算・執行・支出先・目標と実績・点検：出典 <a href="https://rssystem.go.jp/" rel="noopener" target="_blank">行政事業レビュー見える化サイト</a>（CSVダウンロード 2024年度・2025年度）のデータを加工して作成。公共データ利用規約（第1.0版）（PDL1.0）に準拠。取得 2026-11-05。</li>'
-       . '<li>会議の名簿・開催・資料・提言：内閣府 科学技術・イノベーション推進事務局の <a href="https://www8.cao.go.jp/cstp/ai/" rel="noopener" target="_blank">AI関係のページ</a> と e-Gov法令検索。取得 ' . g_e((string)($d['councils_meta']['fetched_at'] ?? '')) . '。</li>'
-       . '<li>採択・審査・評価：<a href="https://www.nedo.go.jp/" rel="noopener" target="_blank">NEDO</a>・<a href="https://www.meti.go.jp/" rel="noopener" target="_blank">経済産業省</a>・<a href="https://www.jst.go.jp/" rel="noopener" target="_blank">JST</a>・<a href="https://www.nict.go.jp/" rel="noopener" target="_blank">NICT</a>の公表資料から、法人名・テーマ名・日付・規程の文言を出所を明示して引用。取得 ' . g_e((string)($d['awards_meta']['fetched_at'] ?? '')) . '。</li>'
+       . (empty($d['councils']) ? '<li>政策の根拠：行政事業レビューの「関係する計画・通知等」の記載（各事業が挙げたもの）。</li>' : '<li>会議の名簿・開催・資料・提言：内閣府 科学技術・イノベーション推進事務局の <a href="https://www8.cao.go.jp/cstp/ai/" rel="noopener" target="_blank">AI関係のページ</a> と e-Gov法令検索。取得 ' . g_e((string)($d['councils_meta']['fetched_at'] ?? '')) . '。</li>')
+       . (empty($d['programs']) ? '' : '<li>採択・審査・評価：<a href="https://www.nedo.go.jp/" rel="noopener" target="_blank">NEDO</a>・<a href="https://www.meti.go.jp/" rel="noopener" target="_blank">経済産業省</a>・<a href="https://www.jst.go.jp/" rel="noopener" target="_blank">JST</a>・<a href="https://www.nict.go.jp/" rel="noopener" target="_blank">NICT</a>の公表資料から、法人名・テーマ名・日付・規程の文言を出所を明示して引用。取得 ' . g_e((string)($d['awards_meta']['fetched_at'] ?? '')) . '。</li>')
        . '<li>国会の発言：<a href="https://kokkai.ndl.go.jp/" rel="noopener" target="_blank">国立国会図書館 国会会議録検索システム</a>（検索用API）。抜粋は会議録の文をそのまま切り出したものです。</li>'
-       . '<li>会議と事業のつながりは、会議の資料・議事要旨・提言のPDFの本文に、行政事業レビューの事業名（括弧の前まで・10字以上）か、設定した関連語（GENIACなど）が出るかで機械的に判定しています。採択と事業のつながりは、公募名や評価報告書の「METI予算要求名称」の記載によります。</li>'
+       . (empty($d['councils']) ? '<li>国会の質疑と事業のつながりは、事業や制度の名前（設定した語）で国会会議録を引いたもので、その事業そのものを取り上げた質疑とは限りません。</li>' : '<li>会議と事業のつながりは、会議の資料・議事要旨・提言のPDFの本文に、行政事業レビューの事業名（括弧の前まで・10字以上）か、設定した関連語（GENIACなど）が出るかで機械的に判定しています。採択と事業のつながりは、公募名や評価報告書の「METI予算要求名称」の記載によります。</li>')
        . '<li>要約・論評・評価はしていません。誤りに気づいたら <a href="https://exbridge.jp/contact.php#ref=flow-fix">お問い合わせ</a> からお知らせください。</li>'
        . '</ul></div>';
 }
@@ -401,7 +463,8 @@ function g_page_flow_project(string $slug, string $id): void
     $f = $d['field'];
     $b25 = g_flow_budget_of($p, '2025'); $b24 = g_flow_budget_of($p, '2024');
     $title = $p['name'];
-    $desc = $p['ministry'] . 'の「' . $p['name'] . '」の予算・執行・支出先・点検' . ($p['programs'] ? '・公募の採択先' : '') . ($p['council_refs'] ? '・AIに関する会議の資料での言及' : '') . ($p['kokkai'] ? '・国会の質疑' : '') . 'を、公表資料からつないで並べます。';
+    $plans = g_flow_plans_mode($d);
+    $desc = $p['ministry'] . 'の「' . $p['name'] . '」の予算・執行・支出先・点検' . ($p['programs'] ? '・公募の採択先' : '') . ($p['council_refs'] ? '・AIに関する会議の資料での言及' : '') . ($plans && $p['plans'] ? '・根拠の計画' : '') . ($p['kokkai'] ? '・国会の質疑' : '') . 'を、公表資料からつないで並べます。';
     if (mb_strlen($title) > 40) { $title = mb_substr($title, 0, 40) . '…'; }
     g_head($title . '｜予算・採択・評価の流れ', $desc, '/flow/' . $slug . '/p/' . $id, ['nosuffix' => true, 'image' => g_flow_og($slug), 'jsonld' => g_jsonld([
         g_crumbs([['ホーム', '/'], [G_FLOW_NAME, '/flow'], [$f['name'], '/flow/' . $slug], [$title, '/flow/' . $slug . '/p/' . $id]])])]);
@@ -412,8 +475,8 @@ function g_page_flow_project(string $slug, string $id): void
        . '<div class="c"><b>' . g_flow_yen($b24['current'] ?? null) . '</b><span>2024年度 歳出予算現額</span></div>'
        . '<div class="c"><b>' . g_flow_yen($b24['exec'] ?? null) . '</b><span>2024年度 執行額</span></div></div></section>';
     echo g_share_bar('【' . G_FLOW_NAME . '】' . $p['name'] . '（' . $p['ministry'] . '）の予算・支出先・評価の流れ', 'flow/' . $slug . '/p/' . $id, 'flow-' . $slug . '-p');
-    echo g_flow_chain($p);
-    echo '<p class="note">' . ($p['tier'] === 'name' ? '事業名' : '事業の目的・現状・概要') . 'に「' . g_e((string)$p['hit_word']) . '」を含むため、AI関連事業として拾っています。</p>';
+    echo g_flow_chain($p, $plans);
+    echo '<p class="note">' . ($p['tier'] === 'name' ? '事業名' : '事業の目的・現状・概要') . 'に「' . g_e((string)$p['hit_word']) . '」を含むため、' . g_e(g_flow_ui($d, 'topic', 'AI')) . '関連事業として拾っています。</p>';
 
     echo '<h2 data-en="Outline">事業の概要</h2><div class="panel"><dl class="fdl">'
        . '<dt>目的</dt><dd>' . nl2br(g_e(str_replace('／', "\n", (string)$p['purpose']))) . '</dd>'
@@ -422,7 +485,17 @@ function g_page_flow_project(string $slug, string $id): void
        . ($p['url'] ? '<dt>事業のページ</dt><dd><a href="' . g_e((string)$p['url']) . '" rel="noopener" target="_blank">' . g_e((string)$p['url']) . '</a></dd>' : '')
        . '</dl>' . g_flow_rs_src($p) . '</div>';
 
-    // 1. 会議
+    // 1. 会議（計画を根拠にする分野では、行政事業レビューの「関係する計画・通知等」を開いて出す）
+    if ($plans) {
+        echo '<h2 data-en="Plans">1. 政策の根拠：関係する計画・通知</h2>';
+        if ($p['plans']) {
+            echo '<ul class="flist">';
+            foreach ($p['plans'] as $pl) { echo '<li>' . ($pl['url'] ? '<a href="' . g_e($pl['url']) . '" rel="noopener" target="_blank">' . g_e($pl['title']) . '</a>' : g_e($pl['title'])) . '</li>'; }
+            echo '</ul>' . g_flow_rs_src($p, '1-3_');
+        } else {
+            echo '<p>行政事業レビューに、この事業の「関係する計画・通知等」の記載はありません。</p>';
+        }
+    } else {
     echo '<h2 data-en="Councils">1. 政策形成：AIに関する会議での言及</h2>';
     if ($p['council_refs']) {
         echo '<ul class="flist">';
@@ -440,6 +513,7 @@ function g_page_flow_project(string $slug, string $id): void
         foreach ($p['plans'] as $pl) { echo '<li>' . ($pl['url'] ? '<a href="' . g_e($pl['url']) . '" rel="noopener" target="_blank">' . g_e($pl['title']) . '</a>' : g_e($pl['title'])) . '</li>'; }
         echo '</ul>' . g_flow_rs_src($p, '1-3_') . '</details>';
     }
+    }
 
     // 2. 予算
     echo '<h2 data-en="Budget">2. 予算と執行</h2>';
@@ -454,7 +528,10 @@ function g_page_flow_project(string $slug, string $id): void
     if (!$p['budget']) { echo '<p>予算・執行のデータは未取得です。</p>'; }
     echo g_flow_rs_src($p, '2-1_');
 
-    // 3. 採択
+    // 3. 採択（公募を集めていない分野では出さない。節の番号は詰める）
+    $no = 3;
+    if (!empty($d['programs'])) {
+    $no = 4;
     echo '<h2 data-en="Awards">3. 採択：公募と採択先</h2>';
     if ($p['programs']) {
         echo '<p class="note">つながりの根拠：' . g_e((string)($p['programs_basis'] ?? '')) . '</p>';
@@ -479,13 +556,14 @@ function g_page_flow_project(string $slug, string $id): void
     } else {
         echo '<p>この事業につながる公募の採択結果は、集めた公表資料（NEDO・JST・NICTの' . count($d['programs']) . '公募）の中では確かめられていません。支出先は次の節のとおりです。</p>';
     }
+    }
 
     if (function_exists('g_flow_oc_section') && !empty($d['outcomes']) && !empty($p['outcome_keys'])) {
         echo g_flow_oc_css() . str_replace('採択先の成果：', '3-2. 採択先の成果：', g_flow_oc_section($slug, $d, (array)$p['outcome_keys']));
     }
 
     // 4. 支出先
-    echo '<h2 data-en="Payees">4. 実施：支出先</h2>';
+    echo '<h2 data-en="Payees">' . $no++ . '. 実施：支出先</h2>';
     if ($p['payees']) {
         echo '<p class="note">支出先 ' . count($p['payees']) . '件（ブロックごと）のうち、金額の大きい順に15件。ブロックはお金の流れの段（A＝最初の支出先、B以降はその先）です。</p><ul class="flist">';
         foreach (array_slice($p['payees'], 0, 15) as $py) {
@@ -496,7 +574,7 @@ function g_page_flow_project(string $slug, string $id): void
     echo g_flow_rs_src($p, '5-1_');
 
     // 5. 評価
-    echo '<h2 data-en="Evaluation">5. 成果評価</h2>';
+    echo '<h2 data-en="Evaluation">' . $no++ . '. 成果評価</h2>';
     $rv = $p['review'];
     if ($rv) {
         echo '<div class="panel"><dl class="fdl">';
@@ -528,7 +606,7 @@ function g_page_flow_project(string $slug, string $id): void
     }
 
     // 6. 国会
-    echo '<h2 data-en="Diet">6. 国会の質疑</h2>';
+    echo '<h2 data-en="Diet">' . $no++ . '. 国会の質疑</h2>';
     if ($p['kokkai']) {
         echo '<p class="note">国会会議録で「' . g_e(implode('」「', (array)$p['kokkai_terms'])) . '」を含む発言（' . (int)$p['kokkai_total'] . '件）のうち新しい順。</p>';
         foreach (array_slice($p['kokkai'], 0, 12) as $s) {
@@ -538,7 +616,7 @@ function g_page_flow_project(string $slug, string $id): void
         }
         echo g_flow_src('国立国会図書館 国会会議録検索システム', 'https://kokkai.ndl.go.jp/', (string)($p['kokkai'][0]['fetched'] ?? ''));
     } else {
-        echo '<p>この事業の名前で引いた国会の発言は、まだ取り込んでいません。AI政策全体の質疑は国会トラッカーにあります。</p>';
+        echo '<p>この事業の名前で引いた国会の発言は、まだ取り込んでいません。' . g_e($f['name']) . '全体の質疑は国会トラッカーにあります。</p>';
     }
     echo '<div class="grid">';
     foreach ($d['trackers'] as $t) { echo '<a class="card" href="' . g_url('tracker/' . $t['key']) . '"><div class="nm">' . g_e($t['name']) . '</div><div class="n">会議録の発言 ' . number_format((int)$t['count']) . '件</div></a>'; }

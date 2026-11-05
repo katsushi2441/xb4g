@@ -22,7 +22,8 @@ NAVY, GRAY = "#12202f", "#5d6b7a"
 STEPS = ["提言", "予算", "採択", "評価"]
 
 
-def card(path, line1, line2, sub1, sub2, url):
+def card(path, line1, line2, sub1, sub2, url, steps=None):
+    steps = steps or STEPS
     img = Image.new("RGB", (W, H), "#ffffff")
     dr = ImageDraw.Draw(img, "RGBA")
     dr.ellipse([-180, -240, 480, 380], fill=(232, 234, 246, 255))       # 淡い藍
@@ -34,15 +35,15 @@ def card(path, line1, line2, sub1, sub2, url):
     fc = ImageFont.truetype(FM, 26)
     fa = ImageFont.truetype(FB, 28)
     pad, gap, arrow = 22, 14, "→"
-    ws = [dr.textlength(s, font=fc) + pad * 2 for s in STEPS]
+    ws = [dr.textlength(s, font=fc) + pad * 2 for s in steps]
     aw = dr.textlength(arrow, font=fa)
-    total = sum(ws) + (aw + gap * 2) * (len(STEPS) - 1)
+    total = sum(ws) + (aw + gap * 2) * (len(steps) - 1)
     x = cx - total / 2
-    for i, (s, w) in enumerate(zip(STEPS, ws)):
+    for i, (s, w) in enumerate(zip(steps, ws)):
         dr.rounded_rectangle([x, 88, x + w, 136], radius=24, fill=INDIGO_XL, outline=INDIGO_L, width=2)
         dr.text((x + w / 2, 112), s, font=fc, fill=INDIGO_D, anchor="mm")
         x += w
-        if i < len(STEPS) - 1:
+        if i < len(steps) - 1:
             dr.text((x + gap + aw / 2, 110), arrow, font=fa, fill=AMBER, anchor="mm")
             x += aw + gap * 2
 
@@ -82,7 +83,7 @@ def main():
         sub1 = f.get("card_sub1") or (f"会議 {s['councils']}・関連事業 {s['projects']}件・公募 {s['programs']}件（採択 {s['award_rows']}件）・評価 {s['evaluations']}件")
         sub2 = f.get("card_sub2") or "行政事業レビュー・会議資料・採択結果を出典つきで。"
         card(os.path.join(OUT, f"flow-{f['slug']}.png"), f"{f['name']}は、", "会議から評価までどうつながったか。" if not f.get("card_line2") else f["card_line2"],
-             sub1, sub2, f"xb4g.com/giin/flow/{f['slug']}")
+             sub1, sub2, f"xb4g.com/giin/flow/{f['slug']}", f.get("card_steps"))   # 段の札（分野ごと。無ければ 提言→予算→採択→評価）
         made.append(f"flow-{f['slug']}.png")
     print("作成:", ", ".join(made), "→", OUT)
 
