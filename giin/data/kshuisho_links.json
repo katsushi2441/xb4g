@@ -281,7 +281,7 @@
  },
  "gasoline-zantei": {
   "word": "ガソリン 暫定税率",
-  "count": 20
+  "count": 21
  },
  "danjo-chingin": {
   "word": "男女間賃金格差",
@@ -569,6 +569,22 @@
  },
  "tokushu-sagi": {
   "word": "特殊詐欺",
+  "count": 14
+ },
+ "nise-joho": {
+  "word": "誤情報",
+  "count": 23
+ },
+ "tokutei-kenshin": {
+  "word": "特定健康診査",
+  "count": 28
+ },
+ "missing-link": {
+  "word": "高規格道路",
+  "count": 23
+ },
+ "corona-yushi": {
+  "word": "福祉医療機構 融資",
   "count": 14
  }
 }
