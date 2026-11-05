@@ -507,7 +507,7 @@ KEIZAI_JSON = os.path.join(WORK, "exbridge_jp", "keizai", "keizai.json")   # exb
 
 def keizai_hits(text, k=2):
     """投稿が為替・金利・物価・景気に触れていれば、経済指標のカード（exbridge.jp/keizai/<key>/）を候補にする。
-    経営の定石（/keizai/teiseki/<slug>/。資金繰り・手元資金・値上げ）も同じ keizai.json に先頭で入っている"""
+    経営の定石（/keizai/teiseki/<slug>/。資金繰り・手元資金・値上げ・再起）も同じ keizai.json に先頭で入っている"""
     try:
         items = json.load(open(KEIZAI_JSON, encoding="utf-8"))["items"]
     except (OSError, ValueError, KeyError):
