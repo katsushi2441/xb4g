@@ -254,6 +254,8 @@ function g_foot(): void
        . '<script>(function(){var h=location.hash.slice(1),i=h.split("&")[0];if(i&&i.indexOf("ref=")!==0&&h.indexOf("ref=")>0){var e=document.getElementById(i);if(e){e.scrollIntoView();}}})();</script>'
        // 再販パートナー募集の枠（中身は kurage_web/partner-bar.js）。当社の公開先でだけ読む（配布版を置いたサイトからは当社へ通信しない）
        . ((($_SERVER['HTTP_HOST'] ?? '') === 'xb4g.com') ? '<script src="https://kurage.exbridge.jp/partner-bar.js" defer></script><script src="https://kurage.exbridge.jp/kpv_cm.js" defer></script>' : '')
+       // ChatGPT などのAI検索から来た人の、Kurage App Store・exbridge.jp への移動を数える印（via=ai。2026-11-07）
+       . '<script>(function(){try{var r=document.referrer||"",q=location.search||"";if(!/chatgpt\\.com|chat\\.openai\\.com|perplexity\\.ai|gemini\\.google\\.com|copilot\\.microsoft\\.com|claude\\.ai/.test(r)&&q.indexOf("utm_source=chatgpt.com")<0)return;document.querySelectorAll(\'a[href*="kappstore.exbridge.jp"],a[href^="https://exbridge.jp"]\').forEach(function(a){var h=a.getAttribute("href");if(h.indexOf("via=ai")>=0)return;var i=h.indexOf("#"),b=i<0?h:h.slice(0,i),f=i<0?"":h.slice(i);a.setAttribute("href",b+(b.indexOf("?")<0?"?":"&")+"via=ai"+f);});}catch(e){}})();</script>'
        . '</body></html>';
 }
 

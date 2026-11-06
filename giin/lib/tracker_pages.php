@@ -126,9 +126,12 @@ function g_page_tracker(string $key, int $page): void
     // 共有とコピー（2026-10-23）
     echo g_share_bar($w . 'の国会答弁｜質疑' . number_format((int)$st['q']) . '件・答弁' . number_format((int)$st['gov']) . '件・' . (int)$st['speakers'] . '人（Kurage 国会トラッカー）', 'tracker/' . $key, 'tracker-' . $key);
     // 答えを先に一文で（AI検索・強調スニペットが引用しやすい形）
-    echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1]) . '</p>';
+    // 2026-11-07: 件数だけでなく、党ごとの多さと直近の政府答弁まで1段落に入れる（ChatGPT などが答えとしてそのまま引用できる形）
+    $pts = g_tracker_points($t, $st, $years, $qs, $latestGov);
+    $ans_more = implode('', array_values(array_filter($pts, fn($x) => str_starts_with($x, '党（会派）ごと') || str_starts_with($x, '直近の政府答弁'))));
+    echo '<p class="answer" style="font-size:15.5px;line-height:1.9;margin:14px 0 6px"><strong>' . g_e($faq[0][0]) . '</strong> ' . g_e($faq[0][1] . $ans_more) . '（出典：国立国会図書館 国会会議録検索システム、' . g_e(G_SITE) . '集計）</p>';
     // 当社が数えた要点（会議録の写しではない、このページだけの中身。2026-10-09）
-    if ($pts = g_tracker_points($t, $st, $years, $qs, $latestGov)) {
+    if ($pts) {
         echo '<div class="panel"><h2 style="margin-top:0" data-en="Key facts">数字で見る要点</h2><ul>';
         foreach ($pts as $p) { echo '<li>' . g_e($p) . '</li>'; }
         echo '</ul></div>';
@@ -320,6 +323,8 @@ function g_page_tracker(string $key, int $page): void
            . 'style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>'
            . '<p class="note">' . g_e($v['note'] ?? '') . '　<a href="' . g_e($kv) . '" target="_blank" rel="noopener">歌詞つきの動画ページで見る</a></p></div>';
     }
+    // 当社のシステムの1行（2026-11-07 ユーザー指示「ページの下の方に1行」）。中立の記録として読まれているので、冒頭には出さない
+    echo '<p class="note" style="margin-top:22px">このページの仕組み（テーマごとに会議録から質疑と答弁を集め、カードにする）は、<a href="https://kappstore.exbridge.jp/app.php?id=5447675118edd258&amp;ref=xb4g-tracker-' . g_e($key) . '">Kurage 国会トラッカー</a>（Kurage App Store）として、自社のサイトに置いて使えます。</p>';
     if ($side) { echo g_side_close(); }
     g_foot();
 }
