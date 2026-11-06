@@ -160,6 +160,38 @@ function g_flow_oc_css(): string
 }
 
 // ---------------------------------------------------------------- /flow/<分野>/outcomes
+/** モデルカードに何が書かれているか（kseisakuflow/scripts/model_card_audit.py → data/flow/model_card_audit.json）。記載の有無だけを並べる */
+function g_flow_card_audit(): string
+{
+    $a = @json_decode((string)@file_get_contents(__DIR__ . '/../data/flow/model_card_audit.json'), true);
+    if (!$a || empty($a['models'])) return '';
+    $n = (int)$a['n']; $g = (int)($a['gated_unreadable'] ?? 0);
+    $o = '<h2 id="cards" data-en="Model cards">モデルカードに何が書かれているか（' . $n . '本）</h2>'
+       . '<p class="note">公開モデル' . $n . '本のモデルカード（Hugging Face のメタデータと README）に、検証に要る項目の記載があるかを機械的に数えました。'
+       . '記載の有無だけを見ていて、内容が十分かどうかは判定していません。記載が無いことは、その作業をしていないことを意味しません（論文や別のページに書かれている場合があります）。ゼロから学習したモデルには元のモデルが無いので、「元のモデル」は「—」になります。'
+       . ($g ? '利用申請が要る' . $g . '本は README を読めないため、メタデータで分からない項目は「確かめられない」に分けています。' : '') . '</p><div class="fstages">';
+    foreach ($a['items'] as $it) {
+        $k = $it['key']; $y = (int)$a['summary'][$k]; $u = (int)($a['unknown'][$k] ?? 0);
+        $o .= '<div class="fstage"><div class="h">' . g_e($it['label']) . '</div><b>' . $y . ' / ' . $n . '本</b><span>記載あり' . ($u ? '（確かめられない ' . $u . '本）' : '') . '</span></div>';
+    }
+    $o .= '</div><style>.ftbl{border-collapse:collapse;width:100%}.ftbl th,.ftbl td{border-bottom:1px solid #e3eaec;padding:6px 8px;vertical-align:top}.ftbl th{background:#f3f7f8;text-align:left;font-weight:700;white-space:nowrap}.ftbl td:first-child{word-break:break-all}</style><details style="margin:10px 0 0"><summary>モデルごとの記載（✓＝記載あり・—＝見つからない・？＝確かめられない）</summary><div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="ftbl" style="min-width:640px;font-size:13px"><thead><tr><th>モデル</th><th>採択先</th>';
+    foreach ($a['items'] as $it) $o .= '<th>' . g_e($it['label']) . '</th>';
+    $o .= '</tr></thead><tbody>';
+    foreach ($a['models'] as $m) {
+        $o .= '<tr><td><a href="' . g_e((string)$m['url']) . '" rel="noopener" target="_blank">' . g_e($m['id']) . '</a></td><td>' . g_e((string)$m['org']) . '</td>';
+        foreach ($a['items'] as $it) {
+            $v = $m['items'][$it['key']] ?? null;
+            if (!$v) { $o .= '<td style="text-align:center;color:#9aa5a8">—</td>'; continue; }
+            if (($v['by'] ?? '') === 'gated') { $o .= '<td style="text-align:center;color:#9aa5a8" title="利用申請が要るため README を読めない">？</td>'; continue; }
+            $t = ($v['by'] === 'meta') ? 'メタデータの ' . $v['field'] . ' 欄' : 'README の見出し「' . trim(preg_replace('/^#+\s*/', '', (string)$v['heading'])) . '」';
+            $o .= '<td style="text-align:center" title="' . g_e($t) . '">✓</td>';
+        }
+        $o .= '</tr>';
+    }
+    $o .= '</tbody></table></div><p class="note">' . g_e((string)$a['rule']) . '</p>' . g_flow_src('Hugging Face のモデルカード', 'https://huggingface.co/docs/hub/model-cards', '', (string)$a['source'] . '（判定 ' . (string)$a['generated_at'] . '）') . '</details>';
+    return $o;
+}
+
 function g_page_flow_outcomes(string $slug): void
 {
     $d = g_flow_load($slug);
@@ -176,6 +208,7 @@ function g_page_flow_outcomes(string $slug): void
        . '<p class="kick">Policy Flow Tracker</p><h1>' . g_e($title) . '</h1><p class="lead" style="margin-bottom:0">' . g_e($desc) . '</p></section>';
     echo g_share_bar('【' . G_FLOW_NAME . '】AI政策の採択先' . (int)$s['orgs'] . 'の成果（公開モデル' . (int)$s['hf_models'] . '件・論文・ベンチマーク）を出典つきで並べる', 'flow/' . $slug . '/outcomes', 'flow-' . $slug . '-outcomes');
     echo g_flow_oc_intro($oc) . g_flow_oc_stats($oc);
+    echo g_flow_card_audit();
     // 助成番号の論文の全体
     if (!empty($oc['grants'])) {
         echo '<h2 data-en="Papers by grant">助成番号つきの論文（OpenAlex）</h2><ul class="flist">';
