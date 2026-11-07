@@ -247,7 +247,7 @@ function g_foot(): void
        . g_exb_about('exb-about-giin')
        . '</div></footer>'
        . '<script>(function(){var s=document.createElement("script");'
-       . 's.src="https://kurage.exbridge.jp/simpletrack.php?url="+encodeURIComponent(location.href)'
+       . 's.src="https://xb4g.com/simpletrack.php?url="+encodeURIComponent(location.href)'
        . '+"&ref="+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>'
        // 計測の ref は #ref=… に置く（?ref= だと Google が ref ごとに別のURLとして拾い、評価が割れた。2026-10-10）。
        // 「#ayumi&ref=…」のときは、& の前の目印へ飛ぶ

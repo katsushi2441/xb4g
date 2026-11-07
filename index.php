@@ -1,4 +1,5 @@
 <?php
+@include __DIR__ . '/st_bot.php';   // ボットだけサーバー側で記録（2026-11-07）
 // xb4g.com — 第4世代エクスブリッジ ポータル（メディアサイト型）
 require __DIR__ . '/lib/feeds.php';
 
@@ -273,7 +274,7 @@ footer{margin-top:36px;padding:24px 0 40px;border-top:1px solid var(--line);colo
     <div>
       <div class="sec-head">
         <h2>VWork Blog</h2>
-        <a class="more" href="https://katsushi2441.github.io/vwork/blog/">一覧 →</a>
+        <a class="more" href="https://exbridge.jp/vibeblog/">一覧 →</a>
       </div>
       <?php foreach (array_slice($blog, 0, 6) as $p): ?>
         <a class="post" href="<?= $h($p['url']) ?>" target="_blank" rel="noopener">
@@ -376,6 +377,6 @@ footer{margin-top:36px;padding:24px 0 40px;border-top:1px solid var(--line);colo
   © 株式会社エクスブリッジ ｜ <a href="https://exbridge.jp/">会社概要</a> ｜ <a href="https://exbridge.jp/contact.php">無料相談</a> ｜ <a href="https://kurage.exbridge.jp/">Kurage Project</a><br>
   このページは <a href="https://kurage.exbridge.jp/oss/decap-cms/">Decap CMS</a> で運用しています。
 </footer>
-<script>(function(){var s=document.createElement('script');s.src='https://kurage.exbridge.jp/simpletrack.php?url='+encodeURIComponent(location.href)+'&ref='+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>
+<script>(function(){var s=document.createElement('script');s.src='https://xb4g.com/simpletrack.php?url='+encodeURIComponent(location.href)+'&ref='+encodeURIComponent(document.referrer);document.head.appendChild(s)})();</script>
 </body>
 </html>

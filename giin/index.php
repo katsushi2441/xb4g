@@ -12,6 +12,7 @@
  * 党派で選ばない。恣意的な取捨選択が無いので「なぜこの人が入っているのか」に一言で答えられる。
  */
 declare(strict_types=1);
+@include __DIR__ . '/../st_bot.php';   // ボットだけサーバー側で記録（2026-11-07）
 
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/text.php';

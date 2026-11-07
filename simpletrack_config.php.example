@@ -1,0 +1,9 @@
+<?php
+/**
+ * SimpleTrack（xb4g.com 用）の環境ごとの設定。simpletrack_config.php にコピーして使う。実値はgitに入れない。
+ * kurage.exbridge.jp・kappstore.exbridge.jp にも同名の別系統がある。ログ・Cookie・合鍵はドメインごとに分ける。
+ */
+define("ST_TITLE", "xb4g.com アクセス解析");
+define("ST_OWN_HOSTS", "xb4g.com");
+define("ST_KEEP_MONTHS", 36);
+define("ST_INTERNAL_KEY", "xb4g-track-v1");

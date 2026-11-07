@@ -18,3 +18,9 @@ giin/img/og/
 giin_config.php
 giin/.giin_env
 giin/outputs/
+
+# SimpleTrack（2026-11-07）。設定の実値とログはgitに入れない
+simpletrack_config.php
+access-*.log
+.st_salt
+.st_cache*
