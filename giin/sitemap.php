@@ -85,6 +85,15 @@ if (!empty($__fx['fields']) && is_file(__DIR__ . '/lib/flow_pages.php')) {
     }
 }
 
+// 議員ごとの国会活動ダッシュボード（2026-11-10）。対象は lib/dashboard.php の G_DASH_SLUGS。lastmod はその議員の最後の発言の日と公開日の新しい方
+if (is_file(__DIR__ . '/lib/dashboard.php') && preg_match('/const G_DASH_SLUGS = \\[([^\\]]*)\\]/', (string)file_get_contents(__DIR__ . '/lib/dashboard.php'), $__dm)) {
+    preg_match_all("/'([a-z0-9-]+)'/", $__dm[1], $__ds);
+    foreach ($__ds[1] as $__slug) {
+        $__g = g_one('SELECT last_date FROM ' . (function_exists('g_gall') ? g_gall() : 'giin') . ' WHERE slug=?', [$__slug]);
+        if ($__g) { $urls[] = [$__slug . '/dashboard', '0.7', 'weekly', max('2026-11-10', substr((string)$__g['last_date'], 0, 10))]; }
+    }
+}
+
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
    . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as [$p, $pri, $freq, $lm]) {

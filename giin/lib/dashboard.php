@@ -5,7 +5,7 @@
  *  （大事な数字を左上に・全体から詳細へ・棒は 0 から・色だけに頼らない）にそろえた。
  *  **数えるのは国会会議録にある事実だけ。**「政府が動いた」「制度・予算になった」は会議録から
  *  判定できないので、欄だけ用意して「未記入」で出す（事務所で確かめて書く欄）。勝手に埋めない。
- *  まず試しに出す議員だけ（G_DASH_SLUGS）。検索には出さない（noindex）。 */
+ *  まず試しに出す議員だけ（G_DASH_SLUGS）。検索に出す（2026-11-10 ユーザー指示で noindex を外した・sitemap.php にも入れる）。 */
 declare(strict_types=1);
 
 const G_DASH_SLUGS = ['ito-takae'];
@@ -102,7 +102,7 @@ function g_page_dashboard(string $slug): void
           . '回）、本会議登壇' . $D['plenary'] . '回、取り上げた論点' . count($D['topics']) . 'テーマ。会議別・月別の推移と、1回ごとの明細を会議録へのリンク付きで載せています。対象期間 ' . $period . '。';
     $img = g_abs($path . '.png') . '?v=' . g_dash_ver($D);
     $ld = g_jsonld([g_crumbs([['ホーム', '/'], [$name, '/' . $slug], ['国会活動ダッシュボード', '/' . $path]])]);
-    g_head($title, $desc, '/' . $path, ['jsonld' => $ld, 'image' => $img, 'nosuffix' => true, 'noindex' => true]);
+    g_head($title, $desc, '/' . $path, ['jsonld' => $ld, 'image' => $img, 'nosuffix' => true]);
     echo '<style>' . g_dash_css() . '</style><div class="db">';
     echo '<nav class="crumb"><a href="' . g_url('') . '">ホーム</a> › <a href="' . g_url($slug) . '">' . g_e($name) . '</a> › 国会活動ダッシュボード</nav>';
     echo '<div class="db-head"><div><h1>' . g_e($name) . '議員 国会活動ダッシュボード</h1>'
