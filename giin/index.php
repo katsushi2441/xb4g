@@ -38,6 +38,8 @@ require __DIR__ . '/lib/senkyoku.php';
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }
 // 国会（回次）ごとの記録（2026-10-19）
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/session.php')) { require __DIR__ . '/lib/session.php'; }
+// 議員ごとの国会活動ダッシュボード（2026-11-10。試しに出す議員だけ・lib/dashboard.php の G_DASH_SLUGS）
+if (G_HAS_CARD && is_file(__DIR__ . '/lib/dashboard.php')) { require __DIR__ . '/lib/dashboard.php'; }
 
 $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 if (strpos($path, G_BASE) === 0) { $path = substr($path, strlen(G_BASE)); }
@@ -112,6 +114,11 @@ function g_route(string $path, int $page): void
         case '/tracker': if (G_HAS_TRACKER) { g_page_trackers(); return; } break;
         case '/bill':    g_page_bills($page); return;
         case '/senkyoku': g_page_senkyoku_list(); return;
+    }
+    // 国会活動ダッシュボード: /<議員>/dashboard(.png)
+    if (function_exists('g_page_dashboard') && preg_match('#^/([a-z0-9-]+)/dashboard(\.png)?$#', $path, $m) && !in_array($m[1], G_RESERVED, true)) {
+        if (($m[2] ?? '') !== '') { g_dashboard_png($m[1]); } else { g_page_dashboard($m[1]); }
+        return;
     }
     // 議員は /giin/<ローマ字> で引く。URLに名前が入っていないと、
     // 検索結果でも共有先でも「誰のページか」が伝わらない。
