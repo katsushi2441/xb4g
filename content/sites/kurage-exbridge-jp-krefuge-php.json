@@ -1,0 +1,8 @@
+{
+  "title": "Kurage 避難所マップ",
+  "url": "https://kurage.exbridge.jp/krefuge.php/",
+  "category": "bousai",
+  "desc": "住所から最寄りの指定緊急避難場所まで、道路をたどって徒歩何分かを表示する。",
+  "order": 5,
+  "published": true
+}

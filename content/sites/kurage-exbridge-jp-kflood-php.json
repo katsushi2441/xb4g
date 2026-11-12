@@ -1,0 +1,8 @@
+{
+  "title": "洪水・内水ハザードマップ",
+  "url": "https://kurage.exbridge.jp/kflood.php/",
+  "category": "bousai",
+  "desc": "住所を入れると、洪水と内水で何メートル・何日浸かる想定かを返す。",
+  "order": 2,
+  "published": true
+}

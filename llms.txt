@@ -15,48 +15,34 @@
 
 ## 政治・社会の課題
 
-- [愛知の国会議員 発言ログ](https://xb4g.com/giin/): 衆議院 愛知1〜16区・比例代表東海ブロック・参議院 愛知県選挙区の国会議員45人が、国会でいつ・どの会議で何を質問したかを引ける道具。収録は2023-01-01以降の発言10,321件（うち議員としての質疑6,886件）。出典は国立国会図書館 国会会議録検索システム。**要約・論評・賛否の判定・議員の序列づけはしない。**機械的な抜粋と会議録へのリンクだけを出す。AIは使っていない。
+国会・省庁・研究・公的統計の公開データを、要約も論評もせずに引けるようにしたシステム群。
 
-### この道具が答えられること
+- [Kurage 国会議員 発言ログ](https://xb4g.com/giin/): いまの衆議院・参議院の議員全員（711人）が、国会でいつ・どの会議で何を話したかを、議員・政党・選挙区・ことばで引ける。収録は2023年1月1日以降。
+- [Kurage 国会トラッカー](https://xb4g.com/giin/tracker): 年収の壁・消費税減税など162のテーマについて、だれが質問し、政府が何と答えたかを、過去の会議録までさかのぼって並べる。
+- [Kurage 法案トラッカー](https://xb4g.com/giin/bill): 国会に出された法案・予算・条約（第211回国会以降）の、提出から委員会・本会議・成立までの経過、参議院の会派別の賛否、その法案に触れた質疑と答弁。
+- [Kurage 政策の流れトラッカー](https://xb4g.com/giin/flow): 政策がどの計画・会議で形づくられ、どれだけ予算がつき、どう点検されたかを、行政事業レビュー・会議資料・国会会議録などの公表資料でつなぐ。
+- [選挙区ダッシュボード](https://xb4g.com/giin/senkyoku): 衆議院の小選挙区289について、人口・防災・介護・子育ての公開データを選挙区ごとに1ページに並べる。
+- [Kurage 質問主意書アシスト](https://kurage.exbridge.jp/kshuisho.php/): 1947年からの質問主意書と政府の答弁書を、本文の中までことばで検索する。
+- [Kurage 省庁トラッカー](https://exbridge.jp/shocho/): 各府省の新しい発表を毎日取り込み、同じ話題の国会の質疑・答弁と並べる。
+- [Kurage 論文トラッカー](https://exbridge.jp/academic/): 東海・関東の大学の研究（科研費・論文）と国会の議論を、テーマごとにつなぐ。
+- [Kurage 健康トラッカー](https://exbridge.jp/health/): 食事・睡眠・運動と健診の結果を、都道府県・二次医療圏・市町村ごとに、公的データと出典つきで並べる。
+
+### 発言ログ・国会トラッカーが答えられること
 - 「〇〇議員は国会で何を質問したか」（議員ページ・日付と会議名と会議録リンクつき）
-- 「〇〇というテーマで、愛知の国会議員のうち誰が何件発言しているか」（ことがらページ）
-- 「いま国会や省庁で動いているのはどのテーマか」（議案と省庁の報道発表から機械的に集計）
+- 「〇〇というテーマで、だれが質問し、政府は何と答えたか」（国会トラッカー）
+- 「〇〇法案はいまどこまで進んだか」（法案トラッカー）
 
 ### 件数の数え方（重要）
-会議録の発言には、議員としての質疑のほかに、**委員長としての議事整理**（「次に、○○君。」）と**大臣・副大臣・政務官としての答弁**が混ざる。分けずに数えると委員長経験者の件数が跳ね上がり「よく質問している人」に誤読される。実例として、ある議員は収録期間の発言601件のうち議員としての質疑は5件で、596件は委員長としての議事整理だった。このサイトは3つに分けて数え、**既定では議員としての質疑だけ**を表示する。
-
-### 収録の線引き
-「愛知の有権者の一票が当落に効く議員」＝衆議院 愛知1区〜16区（16人）・衆議院 比例代表 東海ブロック（21人）・参議院 愛知県選挙区（8人）。参議院の比例代表は全国共通なので含めない。**党派では選んでいない。特定の政党・候補者を支援するサイトではない。**
+会議録の発言には、議員としての質疑のほかに、**委員長としての議事整理**（「次に、○○君。」）と**大臣・副大臣・政務官としての答弁**が混ざる。発言ログはこの3つを分けて数えている。数は会議録の発言の区切りごとで、1回の質疑の中の質問・再質問もそれぞれ1回と数える。
 
 ### 主なページ
-- https://xb4g.com/giin/list — 議員一覧（45人）
-- https://xb4g.com/giin/theme — ことがら一覧（20件）
-- https://xb4g.com/giin/compare — ことがら × 議員の件数表
-- https://xb4g.com/giin/news — 国会の議案と省庁の報道発表
+- https://xb4g.com/giin/list — 議員一覧
+- https://xb4g.com/giin/theme — ことがら一覧
+- https://xb4g.com/giin/tracker — 国会トラッカー（テーマ別）
+- https://xb4g.com/giin/bill — 法案
+- https://xb4g.com/giin/flow — 政策の流れ
+- https://xb4g.com/giin/senkyoku — 選挙区ダッシュボード
 - https://xb4g.com/giin/about — 収録範囲・出典・しないこと
-
-### ことがら
-
-- [年収の壁](https://xb4g.com/giin/theme/nenshu-no-kabe): 働く時間を抑える原因になっている、税と社会保険の境目についての発言です。
-- [物価高と賃上げ](https://xb4g.com/giin/theme/bukka-chinage): 物価の上昇と賃金についての発言です。
-- [ガソリンと電気料金](https://xb4g.com/giin/theme/gasoline-energy): 燃料と電力の価格・供給についての発言です。
-- [南海トラフと防災](https://xb4g.com/giin/theme/nankai-bosai): 地震・水害への備えと、被災したあとの支援についての発言です。
-- [子育てと教育](https://xb4g.com/giin/theme/kosodate): 保育・学校・子育て支援についての発言です。
-- [医療と介護](https://xb4g.com/giin/theme/iryo-kaigo): 医療・介護の制度と現場についての発言です。
-- [自動車産業](https://xb4g.com/giin/theme/jidosha): 愛知の基幹産業である自動車についての発言です。
-- [中小企業](https://xb4g.com/giin/theme/chusho): 中小・小規模事業者についての発言です。
-- [農業と食料](https://xb4g.com/giin/theme/nogyo): 農業・食料についての発言です。
-- [交通とリニア](https://xb4g.com/giin/theme/kotsu): 鉄道・道路・空港・港湾についての発言です。
-- [外国人材](https://xb4g.com/giin/theme/gaikokujin): 外国人の受け入れと共生についての発言です。
-- [年金と社会保険](https://xb4g.com/giin/theme/nenkin): 年金・社会保険についての発言です。
-- [税と減税](https://xb4g.com/giin/theme/zeisei): 税制についての発言です。
-- [デジタルとAI](https://xb4g.com/giin/theme/digital-ai): デジタル政策・AI・情報セキュリティについての発言です。
-- [安全保障](https://xb4g.com/giin/theme/anzen-hosho): 防衛・安全保障についての発言です。
-- [政治とカネ](https://xb4g.com/giin/theme/seiji-kaikaku): 政治資金と選挙制度についての発言です。
-- [住宅と空き家](https://xb4g.com/giin/theme/jutaku): 住まいと土地についての発言です。
-- [環境と水](https://xb4g.com/giin/theme/kankyo): 環境・水・化学物質についての発言です。
-- [働き方](https://xb4g.com/giin/theme/rodo): 働き方・労働環境についての発言です。
-- [地方と自治体](https://xb4g.com/giin/theme/chiho): 地方自治・地域についての発言です。
 
 ### 出典
 - 発言・会議名・日付: 国立国会図書館 国会会議録検索システム https://kokkai.ndl.go.jp/
@@ -64,6 +50,20 @@
 - 参議院議員の名簿・議案: smartnews-smri/house-of-councillors（MIT） https://github.com/smartnews-smri/house-of-councillors
 - 報道発表: 厚生労働省・国土交通省・総務省・内閣府・デジタル庁・文部科学省（公共データ利用規約 PDL1.0）
 - 一般ニュースは扱わない。報道各社のRSSは個人利用に限られ、事業者の再配信を許していないため。
+
+## 災害に備えるシステム
+
+住所を入れると、その場所の災害の想定や避難先を、公的データから返すシステム群。
+
+- [防災AIチャットボット](https://kurage.exbridge.jp/kbousai.php/): 住所か現在地を入れると、その場所のハザード・警報・雨量・避難情報をまとめて答える。
+- [洪水・内水ハザードマップ](https://kurage.exbridge.jp/kflood.php/): 洪水と内水で何メートル・何日浸かる想定かを返す。
+- [土砂災害ハザードマップ](https://kurage.exbridge.jp/khazard.php/): 住所が土砂災害の警戒区域・特別警戒区域の中かを判定する。全国47都道府県を収録。
+- [Kurage 津波浸水想定マップ](https://kurage.exbridge.jp/ktsunami.php/): 津波で何メートル浸かる想定かと、その地点の海抜。
+- [Kurage 避難所マップ](https://kurage.exbridge.jp/krefuge.php/): 最寄りの指定緊急避難場所まで徒歩何分か。
+- [災害危険区域マップ](https://kurage.exbridge.jp/kriskarea.php/): 建築基準法39条の災害危険区域かを、根拠の条例・告示つきで判定する。
+- [Kurage 盛土規制区域マップ](https://kurage.exbridge.jp/kmorido.php/): 盛土規制法の規制区域に入っているか。
+- [Kurage 地震ハザードマップ（名古屋版）](https://kurage.exbridge.jp/kjishin.php/): 南海トラフ地震で想定される震度と液状化の危険度。
+- [被災者支援ナビ](https://kurage.exbridge.jp/khisai.php/): 被災したときに使える国の支援制度を、状況に合うものだけ一覧にする。
 
 ## 事業の変遷
 
@@ -117,7 +117,7 @@
 
 ## ブログ・メディア
 
-- [VWork Blog](https://katsushi2441.github.io/vwork/blog/): バイブコーディングを企業に導入する実践知のブログ。
+- [VWork Blog](https://exbridge.jp/vibeblog/): バイブコーディングを企業に導入する実践知のブログ。
 - [AI OSS技術解説](https://katsushi2441.github.io/vwork/articles/): 注目のAI・OSSを日本語で解説する技術記事。
 - [note](https://note.com/tokoname): プロダクト制作の裏側・リサーチの実録。
 - [はてなブログ](https://xb-bittensor.hatenablog.com/): 名古屋バイブコーディング経営革命。ブログ記事の要約転載。

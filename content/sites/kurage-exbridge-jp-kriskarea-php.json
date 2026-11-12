@@ -1,0 +1,8 @@
+{
+  "title": "災害危険区域マップ",
+  "url": "https://kurage.exbridge.jp/kriskarea.php/",
+  "category": "bousai",
+  "desc": "その土地が建築基準法39条の災害危険区域かを、根拠の条例・告示つきで判定する。",
+  "order": 6,
+  "published": true
+}

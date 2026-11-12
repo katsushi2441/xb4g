@@ -1,0 +1,8 @@
+{
+  "title": "土砂災害ハザードマップ",
+  "url": "https://kurage.exbridge.jp/khazard.php/",
+  "category": "bousai",
+  "desc": "住所が土砂災害の警戒区域・特別警戒区域の中かを判定する。全国47都道府県を収録。",
+  "order": 3,
+  "published": true
+}

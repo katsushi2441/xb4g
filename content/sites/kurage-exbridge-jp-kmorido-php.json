@@ -1,0 +1,8 @@
+{
+  "title": "Kurage 盛土規制区域マップ",
+  "url": "https://kurage.exbridge.jp/kmorido.php/",
+  "category": "bousai",
+  "desc": "その土地が盛土規制法の規制区域に入っているかを、告示番号・施行日つきで調べる。",
+  "order": 7,
+  "published": true
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Kurage 地震ハザードマップ（名古屋版）",
+  "url": "https://kurage.exbridge.jp/kjishin.php/",
+  "category": "bousai",
+  "desc": "住所や地番から、南海トラフ地震で想定される震度と液状化の危険度を調べる。",
+  "order": 8,
+  "published": true
+}

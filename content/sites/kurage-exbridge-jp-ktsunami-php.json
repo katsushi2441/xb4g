@@ -1,0 +1,8 @@
+{
+  "title": "Kurage 津波浸水想定マップ",
+  "url": "https://kurage.exbridge.jp/ktsunami.php/",
+  "category": "bousai",
+  "desc": "住所を入れると、津波で何メートル浸かる想定かと、その地点の海抜を表示する。",
+  "order": 4,
+  "published": true
+}

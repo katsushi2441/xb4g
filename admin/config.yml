@@ -25,6 +25,8 @@ collections:
         widget: "select"
         options:
           - {label: "入口 — 探す・相談する", value: "entrance"}
+          - {label: "政治・社会の課題 — 公共データを引くシステム", value: "civic"}
+          - {label: "災害に備えるシステム — 住所から調べる", value: "bousai"}
           - {label: "お店 — 買い切りとキット", value: "store"}
           - {label: "Kurage AIプロダクト", value: "product"}
           - {label: "受託・コミュニティ", value: "service"}

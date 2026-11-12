@@ -1,0 +1,8 @@
+{
+  "title": "防災AIチャットボット",
+  "url": "https://kurage.exbridge.jp/kbousai.php/",
+  "category": "bousai",
+  "desc": "住所か現在地を入れると、その場所のハザード・警報・雨量・避難情報をまとめて答える。",
+  "order": 1,
+  "published": true
+}
