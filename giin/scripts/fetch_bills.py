@@ -106,6 +106,13 @@ def status_of(r: dict) -> tuple[str, str]:
         return "継続審査", last
     if "未了" in comm:
         return "審議未了", last
+    # 両院の本会議で議決済み（公布はまだ）。後から議決した院が修正なしで可決していれば成立。
+    # 後の院が修正したときは先の院へ回付されるので、成立とはせず「◯議院で可決」にとどめる
+    # （2026-11-12: この場合分けが無く、成立した法案が「委員会で審査中」と出ていた）
+    shu_r, san_r = r.get("shu_plenary_result") or "", r.get("san_plenary_result") or ""
+    if re.search(r"可決|修正", shu_r) and re.search(r"可決|修正", san_r):
+        later, name = (shu_r, "衆議院で可決") if "参先議" in (r.get("sen_first") or "") else (san_r, "参議院で可決")
+        return ("成立" if "可決" in later and "修正" not in later else name), last
     if re.search(r"可決|修正", r.get("shu_plenary_result") or "") and not r.get("san_plenary_result"):
         return "衆議院で可決", last
     if re.search(r"可決|修正", r.get("san_plenary_result") or "") and not r.get("shu_plenary_result"):
@@ -162,7 +169,11 @@ def scrape_session(n: int) -> list[dict]:
         sc, sp, hc, hp = tbl("参議院委員会"), tbl("参議院本会議"), tbl("衆議院委員会"), tbl("衆議院本会議")
         other = tbl("その他")
         def val(block, label):
-            return block.get(label, "")
+            # 本会議の表の見出しは「参議院本会議経過議決日」「その他公布年月日」のように前に語が付く
+            # （2026-11-12: 見出しを完全一致で引いていて、今国会の本会議の議決日と公布日が全部空になっていた）
+            if label in block:
+                return block[label]
+            return next((v for k, v in block.items() if k.endswith(label)), "")
         pdf = {k: urllib.parse.urljoin(u, v) for v, k in re.findall(r'href="([^"]+\.pdf)"[^>]*>\s*([^<]{0,20})', h)}
         vote = re.search(r'href="([^"]*(?:vote|touhyoulist)[^"]*\.htm)"', h)
         out.append({
