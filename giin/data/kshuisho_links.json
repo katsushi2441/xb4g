@@ -61,7 +61,7 @@
  },
  "shohizei-genzei": {
   "word": "消費税 引き下げ",
-  "count": 70
+  "count": 72
  },
  "gaitameho-fdi": {
   "word": "外為法 改正",
@@ -73,7 +73,7 @@
  },
  "futoko": {
   "word": "不登校",
-  "count": 50
+  "count": 51
  },
  "jisatsu-taisaku": {
   "word": "自殺対策",
@@ -101,7 +101,7 @@
  },
  "konenki-josei-kenko": {
   "word": "更年期",
-  "count": 2
+  "count": 3
  },
  "tokubetsu-shi": {
   "word": "特別市",
@@ -233,7 +233,7 @@
  },
  "bukkadaka-taisaku": {
   "word": "物価高対策",
-  "count": 27
+  "count": 28
  },
  "spy-boushi-hou": {
   "word": "スパイ防止法",
@@ -393,7 +393,7 @@
  },
  "hattatsu-shogai": {
   "word": "発達障害 支援",
-  "count": 54
+  "count": 55
  },
  "enyasu-kawase": {
   "word": "為替介入",
@@ -517,7 +517,7 @@
  },
  "stablecoin": {
   "word": "ステーブルコイン",
-  "count": 3
+  "count": 4
  },
  "saitei-chingin": {
   "word": "最低賃金 引き上げ",
@@ -586,5 +586,25 @@
  "corona-yushi": {
   "word": "福祉医療機構 融資",
   "count": 14
+ },
+ "kasetsu-jutaku": {
+  "word": "応急仮設住宅",
+  "count": 31
+ },
+ "yokin-hoken": {
+  "word": "銀行 破綻",
+  "count": 73
+ },
+ "stagflation": {
+  "word": "スタグフレーション",
+  "count": 4
+ },
+ "shushoku-hyogaki": {
+  "word": "就職氷河期",
+  "count": 15
+ },
+ "boei-tokubetsu-shotokuzei": {
+  "word": "防衛増税",
+  "count": 8
  }
 }
