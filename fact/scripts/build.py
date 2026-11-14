@@ -8,6 +8,8 @@
   /usr/bin/python3 fact/scripts/build.py      # fact/out/ に作る
   /usr/bin/python3 fact/scripts/deploy.py     # xb4g.com/fact/ へ
 """
+import hashlib
+import sys
 import html, json, re, sqlite3, urllib.parse
 from datetime import date
 from pathlib import Path
@@ -59,7 +61,7 @@ def head(title, desc, url, ld, ref):
     return f"""<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{e(title)}</title><meta name="description" content="{e(desc)}"><link rel="canonical" href="{e(url)}">
 <meta property="og:type" content="website"><meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(desc)}">
-<meta property="og:url" content="{e(url)}"><meta property="og:image" content="https://xb4g.com/giin/ogp.png?b=k4"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="{e(url)}"><meta property="og:image" content="{e(url)}og.png?v={hashlib.md5(title.encode()).hexdigest()[:8]}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:locale" content="ja_JP"><meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BP0650KDFR"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments)}}gtag('js',new Date());gtag('config','G-BP0650KDFR');</script>
@@ -197,14 +199,39 @@ def build_index(qs):
     return page(title, desc, BASE, ld, "fact-top", body)
 
 
+def split_q(text):
+    """問いを2行に（「？」の後で切る。1つしか無ければ読点の後か半分で）"""
+    parts = [x + "？" for x in text.split("？") if x]
+    if len(parts) >= 2:
+        return parts[0], "".join(parts[1:])
+    t = parts[0] if parts else text
+    i = t.find("、")
+    if 0 < i < len(t) - 2:
+        return t[:i + 1], t[i + 1:]
+    return t, ""
+
+
+def og_card(path, line1, line2, slug):
+    """国会ファクトのカード（1200×630）。発言ログの共通画像を使っていた（2026-11-15 指摘）"""
+    sys.path.insert(0, str(ROOT.parent / "giin" / "scripts"))
+    from make_ogp_all import card
+    card(str(path), "政策の疑問に、国会の会議録の原文で答える", line1, line2,
+         "国会の答弁を、原文と会議録のリンクで並べる。",
+         "判定のラベルは付けず、どの党も同じ決まりで。",
+         "Kurage 国会ファクト", "xb4g.com/fact/" + slug)
+
+
 def main():
     qs = json.loads((ROOT / "data" / "questions.json").read_text())["questions"]
     c = sqlite3.connect(DB)
     OUT.mkdir(exist_ok=True)
     (OUT / "index.html").write_text(build_index(qs))
+    og_card(OUT / "og.png", "政策の疑問に、", "国会の記録で答える。", "")
     for q in qs:
         d = OUT / q["slug"]; d.mkdir(exist_ok=True)
         (d / "index.html").write_text(build_q(c, q))
+        l1, l2 = split_q(q["question"])
+        og_card(d / "og.png", l1, l2, q["slug"] + "/")
     today = date.today().isoformat()
     sm = "".join(f"<url><loc>{BASE}{p}</loc><lastmod>{lm}</lastmod></url>" for p, lm in [("", today)] + [(q["slug"] + "/", q["checked_at"]) for q in qs])
     (OUT / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{sm}</urlset>')
