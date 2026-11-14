@@ -164,6 +164,7 @@ function g_page_tracker(string $key, int $page): void
         }
         echo '</ul></div>';
     }
+    if (function_exists('g_tl_box_tracker')) { echo g_tl_box_tracker($t); }   // 法案と政府の決定の時系列（2026-11-15）
     if ($side) { echo g_cm_sp('giin-tracker'); }   // スマホだけ: ここにCM枠（広い画面では右の列の上に出る）
     echo g_tracker_explain($t);
 

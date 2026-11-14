@@ -320,6 +320,7 @@ function g_page_qa(string $key, string $sid): void
             echo '</ul></div>';
         }
     }
+    if ($q && function_exists('g_tl_box_qa')) { echo g_tl_box_qa($t, $q); }   // この質疑の時点の法案・政府の決定（2026-11-15）
     if (function_exists('g_flow_tracker_box')) { echo g_flow_tracker_box($key, 'qa-' . $key . '-flow'); }   // 政策の流れへ（2026-11-05）
     echo '<p class="more"><a class="btn o" href="' . g_url('tracker/' . $key) . '">' . g_e($w) . 'の国会答弁をすべて見る</a></p>';
     g_foot();

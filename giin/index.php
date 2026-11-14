@@ -33,6 +33,7 @@ require __DIR__ . '/lib/bills.php';
 require __DIR__ . '/lib/ui.php';
 // 政策の流れトラッカー（会議→予算→採択→評価。2026-11-05。データは kseisakuflow が data/flow/ に書く）
 if (is_file(__DIR__ . '/lib/flow_pages.php')) { require __DIR__ . '/lib/flow_pages.php'; }
+if (is_file(__DIR__ . '/lib/timeline.php')) { require __DIR__ . '/lib/timeline.php'; }   // 質疑と法案・政府の決定の前後（2026-11-15）
 require __DIR__ . '/lib/senkyoku.php';
 // 全国の議員の軽いページ（2026-10-15）。製品版で無いときは読まない
 if (G_HAS_CARD && is_file(__DIR__ . '/lib/giin_lite.php')) { require __DIR__ . '/lib/giin_lite.php'; }

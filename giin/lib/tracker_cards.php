@@ -163,6 +163,7 @@ function g_page_tm(string $key, string $id): void
        . 'width="1200" height="630" style="width:100%;height:auto;display:block;border-radius:8px"></div>';
     g_share_buttons($label, $path, 'tm', g_share_x((string)$sp));
 
+    if (function_exists('g_tl_box_tm')) { echo g_tl_box_tm($t, $sp, $d['rows']); }   // 法案・政府の決定との前後（2026-11-15）
     echo '<h2>質疑の一覧</h2><p class="note">新しい順。各質疑の「質問と答弁をカードで見る」から、質問とその直後の政府の答弁を1枚にしたカードを開けます。</p>';
     foreach ($d['rows'] as $r) { g_tracker_speech($r + ['slug' => null, 'plain' => null], (array)$t['words']); }
     echo '<p class="note">数えているのは「' . g_e(implode('」「', (array)$t['words'])) . '」を含む、議員としての質疑です。'
