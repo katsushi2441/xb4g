@@ -92,8 +92,37 @@ function g_tl_events(array $t): array
             }
         }
     }
+    // 骨太の方針・経済対策・税制改正の大綱（scripts/fetch_gov_decisions.py）。このテーマの語が本文に出てくる決定だけ。引用つき
+    $gd = g_tl_gov();
+    foreach ((array)($gd['hits'][$key] ?? []) as $id => $hit) {
+        $d = $gd['by_id'][$id] ?? null;
+        if (!$d) { continue; }
+        $ev[] = [(string)$d['date'], $d['how'] . '：「' . $d['title'] . '」に「' . $hit['word'] . '」の記述（' . (int)$hit['n'] . 'か所）',
+                 (string)$d['url'], 'decision', (string)$hit['quote']];
+    }
     usort($ev, fn($x, $y) => strcmp($x[0], $y[0]));
     return $c[$key] = $ev;
+}
+
+/** 政府の決定の日付表（data/gov_decisions.json） */
+function g_tl_gov(): array
+{
+    static $g = null;
+    if ($g === null) {
+        $g = @json_decode((string)@file_get_contents(__DIR__ . '/../data/gov_decisions.json'), true) ?: [];
+        $g['by_id'] = [];
+        foreach ((array)($g['decisions'] ?? []) as $d) { $g['by_id'][$d['id']] = $d; }
+    }
+    return $g;
+}
+
+/** このテーマの語が、政府の決定に初めて書かれた日（日付表の範囲＝2016年以降の骨太・経済対策・税制改正の大綱で） */
+function g_tl_first_decision(array $t): ?array
+{
+    foreach (g_tl_events($t) as $e) {
+        if ($e[3] === 'decision' && isset($e[4])) { return $e; }
+    }
+    return null;
 }
 
 function g_tl_days(string $a, string $b): int
@@ -108,8 +137,9 @@ function g_tl_rel(string $ev, string $q): string
     return $n < 0 ? 'この質疑の' . number_format(-$n) . '日前' : 'この質疑の' . number_format($n) . '日後';
 }
 
-function g_tl_li(array $e, string $extra = ''): string
+function g_tl_li(array $e, string $extra = '', bool $quote = true): string
 {
+    if ($quote && !empty($e[4])) { $extra .= '<br><span class="note">「' . g_e((string)$e[4]) . '」</span>'; }
     $txt = g_e($e[1]);
     if ($e[2] !== '') {
         $ext = strpos($e[2], 'http') === 0;
@@ -120,6 +150,7 @@ function g_tl_li(array $e, string $extra = ''): string
 }
 
 const G_TL_NOTE = '日付は衆議院・参議院の議案情報と、政府の公表資料のものです。法案は、このテーマの質疑の中で、会議録に法案名が出てきたものです。'
+    . '政府の決定は、2016年以降の骨太の方針、2022年以降の総合経済対策、令和7年度からの税制改正の大綱のうち、このテーマの語が本文に出てくるものです（引用は本文のまま。語のすぐ後ろの数字は脚注の番号のことがあります）。'
     . '質疑と政府の動きの前後は日付で分かりますが、ある質疑が政府の判断を動かしたかどうかは、記録からは決められません。当サイトはその判定をしません。';
 
 /** トラッカーのページ：このテーマの法案と政府の決定を日付順に */
@@ -142,7 +173,8 @@ function g_tl_box_tm(array $t, string $speaker, array $rows): string
     $qdays = [];
     foreach ($rows as $r) { $qdays[(string)$r['date']][] = $r; }
     ksort($qdays);
-    $h = '<h2 id="timeline">' . g_e($speaker) . '議員の質疑と、法案・政府の決定の前後</h2><div class="panel">';
+    $h = '<h2 id="timeline">' . g_e($speaker) . '議員の質疑と、法案・政府の決定の前後</h2><div class="panel">'
+       . g_tl_first_line($t, $speaker, (string)array_key_first($qdays));
     // 法案ごとに、質疑の日が提出の前か、審議中か、成立の後かを数える（日付だけ）
     $lines = '';
     foreach (g_tl_bills($t) as $b) {
@@ -170,8 +202,19 @@ function g_tl_box_tm(array $t, string $speaker, array $rows): string
     }
     usort($all, fn($x, $y) => strcmp($x[0], $y[0]) ?: strcmp($x[3] === 'q' ? '1' : '0', $y[3] === 'q' ? '1' : '0'));
     $h .= '<p style="margin:10px 0 6px;font-weight:700">時系列</p><ul class="tl">';
-    foreach ($all as $e) { $h .= g_tl_li($e); }
+    foreach ($all as $e) { $h .= g_tl_li($e, '', false); }
     return $h . '</ul><p class="note" style="margin:8px 0 0">' . G_TL_NOTE . '</p></div>';
+}
+
+/** 議員の最初の質疑と、このテーマが政府の決定に初めて書かれた日の前後（1文） */
+function g_tl_first_line(array $t, string $speaker, string $firstQ): string
+{
+    $fd = g_tl_first_decision($t);
+    if (!$fd || $firstQ === '') { return ''; }
+    $n = g_tl_days($fd[0], $firstQ);
+    $rel = $n === 0 ? '同じ日' : ($n > 0 ? number_format($n) . '日後' : number_format(-$n) . '日前');
+    return '<p style="margin:0 0 8px">このテーマの語が政府の決定に初めて出てくるのは<b>' . g_e(g_date($fd[0])) . '</b>（' . g_e(preg_replace('/に「.*$/u', '', $fd[1]) ?? '') . '）です。'
+         . g_e($speaker) . '議員がこのテーマで初めて質疑したのは<b>' . g_e(g_date($firstQ)) . '</b>で、その' . g_e($rel) . 'です。</p>';
 }
 
 /** 質疑1件のページ：この質疑の時点で、法案と政府の決定はどこまで来ていたか */
@@ -189,7 +232,12 @@ function g_tl_box_qa(array $t, array $q): string
     }
     $dec = array_values(array_filter(g_tl_events($t), fn($e) => $e[3] === 'decision'));
     if (!$bills && !$dec) { return ''; }
-    $h = '<h2 id="timeline">この質疑の時点で、法案と政府の決定はどこまで来ていたか</h2><div class="panel"><ul class="tl">';
+    $h = '<h2 id="timeline">この質疑の時点で、法案と政府の決定はどこまで来ていたか</h2><div class="panel">';
+    if ($fd = g_tl_first_decision($t)) {
+        $h .= '<p style="margin:0 0 8px">このテーマの語が政府の決定に初めて出てくるのは<b>' . g_e(g_date($fd[0])) . '</b>（'
+            . g_e(preg_replace('/に「.*$/u', '', $fd[1]) ?? '') . '・' . g_e(g_tl_rel($fd[0], $qd)) . '）です。</p>';
+    }
+    $h .= '<ul class="tl">';
     foreach ($bills as $b) {
         $sub = (string)$b['submitted']; $pas = (string)$b['_passed'];
         $state = $sub > $qd ? 'この質疑の時点では、まだ提出されていません'

@@ -23,6 +23,7 @@ REMOTE = os.environ.get("GIIN_REMOTE_ROOT", "/web/xb4g_com/giin")
 TARGETS = ["index.php", "sitemap.php", "giin_mcp.php", "ogp.png", "llms.txt", "lib", "img",
            "data/themes.json", "data/links.json", "data/stats.json", "data/trackers.json",
            "data/kshuisho_links.json", "data/kshuisho_giin.json", "data/shocho_links.json",
+           "data/gov_decisions.json",   # 骨太・経済対策・税制改正の大綱の日付表（scripts/fetch_gov_decisions.py・2026-11-15）
            "data/flow"]   # 政策の流れトラッカー（kseisakuflow の build_flow.py --copy が書く）
 SKIP_NAMES = {"giin_config.php", "giin_config.php.example", "giin.sqlite", ".DS_Store"}
 
