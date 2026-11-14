@@ -83,7 +83,7 @@ blockquote.kq{{margin:6px 0;padding:10px 14px;background:#f6fbf9;border-left:3px
 </style></head><body>
 <div class="corpbar"><div class="inner"><a class="cb-co" href="https://exbridge.jp/#ref={corp}"><img src="https://exbridge.jp/images/logo-mark-128.png" width="20" height="20" alt="">株式会社エクスブリッジ</a><nav class="cb-links" aria-label="運営会社"><a href="https://exbridge.jp/ai-it-komon.html#ref={corp}">AI-IT顧問</a><a href="https://exbridge.jp/ai-sns-komon.html#ref={corp}">AI-SNS顧問</a><a href="https://kurage.exbridge.jp/reseller.html#ref={corp}">代理店募集</a><a href="https://kappstore.exbridge.jp/#ref={corp}">Kurage App Store</a></nav></div></div>
 <header class="site"><div class="inner"><a class="brand" href="{BASE}"><img class="mark" src="https://xb4g.com/giin/img/kurage-mascot-128.png" width="34" height="38" alt="Kurage"><span><b class="kg">Kurage</b> 国会ファクト<small>{TAG}</small></span></a>
-<nav class="gnav" aria-label="サイト内"><a href="{BASE}">問いの一覧</a><a href="{BASE}#rule">決まり</a><a href="https://xb4g.com/giin/tracker#ref=fact-nav">国会トラッカー</a><a href="https://xb4g.com/giin/#ref=fact-nav">国会議員 発言ログ</a></nav></div></header>
+<nav class="gnav" aria-label="サイト内"><a href="{BASE}">問いの一覧</a><a href="{BASE}#rule">決まり</a><a href="https://xb4g.com/giin/tracker#ref=fact-nav">国会トラッカー</a><a href="https://xb4g.com/giin/bill#ref=fact-nav">法案トラッカー</a><a href="https://xb4g.com/giin/flow#ref=fact-nav">政策の流れトラッカー</a><a href="https://kurage.exbridge.jp/kshuisho.php/#ref=fact-nav">質問主意書アシスト</a><a href="https://xb4g.com/giin/#ref=fact-nav">国会議員 発言ログ</a></nav></div></header>
 <main class="wrap">
 <SHARE>""".replace("<SHARE>", "<!--share-->"), x, copy
 
