@@ -1,0 +1,161 @@
+{
+ "id": "kokkai-fact-pv",
+ "name": "Kurage 国会ファクト PV",
+ "width": 1920,
+ "height": 1080,
+ "narration": {
+  "reading": "年収の壁は、どこまで上がったのか。消費税の減税は、やめたのか。ネットで見かける政策の疑問に、国会の記録で答えるのが、クラゲの国会ファクトです。答えに使うのは、国会の会議録の原文だけ。だれが、いつ、どの委員会で何と言い、政府が何と答えたかを、引用と、会議録へのリンクで並べます。都合のよい答えだけを選ばず、まだ決まっていないことも、分けて書きます。その話題を、どの党が何回取り上げたかも、同じ決まりで並べます。デマや、まちがい、といった、判定のラベルは付けません。判断は、読む人に任せます。引用は、公開する前に、会議録の本文と一文字も違わないかを、機械で照らします。年収の壁、消費税、夫婦別姓、しゅうしょく、ひょうがき世代の支援など、七つの問いから始めています。",
+  "delay": 1.0,
+  "must_hear": [
+   "年収の壁",
+   "国会",
+   "記録"
+  ],
+  "file": "/home/kojima/work/xb4g/fact/pv/narration.wav"
+ },
+ "poster": {
+  "time": 5,
+  "main": "政策の疑問に、\n国会の記録で答える",
+  "sub": "答えは会議録の原文とリンクだけ。判定のラベルは付けない",
+  "badge": "Kurage 国会ファクト",
+  "file": "/home/kojima/work/kpvgen/outputs/h3_queue/h3-khouan-a-8s.mp4"
+ },
+ "scenes": [
+  {
+   "type": "clip",
+   "file": "/home/kojima/work/kpvgen/outputs/h3_queue/h3-khouan-a-8s.mp4",
+   "duration": 8,
+   "fit": "blur",
+   "audio_volume": 0.03,
+   "telop": {
+    "main": "SNSで見かける、政策の疑問",
+    "sub": "年収の壁は？ 消費税の減税は？",
+    "at": 0.6
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/list.png",
+   "duration": 5,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "30%",
+    "30%"
+   ],
+   "telop": {
+    "main": "政策の疑問に、国会の記録で答える",
+    "sub": "Kurage 国会ファクト"
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/lead.png",
+   "duration": 5,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "35%",
+    "25%"
+   ],
+   "telop": {
+    "main": "結論は、記録から言えることだけ",
+    "sub": "確かめた日もページに書く"
+   }
+  },
+  {
+   "type": "clip",
+   "file": "/home/kojima/work/kpvgen/outputs/h3_queue/h3-kokkai-tracker-a-8s.mp4",
+   "duration": 8,
+   "fit": "blur",
+   "audio_volume": 0.03,
+   "telop": {
+    "main": "答えに使うのは、会議録の原文だけ",
+    "sub": "国会会議録から毎日取り込む",
+    "at": 0.6
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/record.png",
+   "duration": 6,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "30%",
+    "35%"
+   ],
+   "telop": {
+    "main": "だれが、いつ、何と言ったか",
+    "sub": "引用と会議録へのリンクで並べる"
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/record2.png",
+   "duration": 5,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "40%",
+    "55%"
+   ],
+   "telop": {
+    "main": "都合のよい答弁だけを選ばない",
+    "sub": "まだ決まっていないことも分けて書く"
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/party.png",
+   "duration": 6,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "35%",
+    "30%"
+   ],
+   "telop": {
+    "main": "どの党が何回取り上げたか",
+    "sub": "どの党も同じ決まりで並べる"
+   }
+  },
+  {
+   "type": "clip",
+   "file": "/home/kojima/work/kpvgen/outputs/h3_queue/h3-kokkai-tracker-b-8s.mp4",
+   "duration": 8,
+   "fit": "blur",
+   "audio_volume": 0.03,
+   "telop": {
+    "main": "「デマ」「誤り」の判定はしない",
+    "sub": "判断は、読む人に任せる",
+    "at": 0.6
+   }
+  },
+  {
+   "type": "image",
+   "file": "/home/kojima/work/xb4g/fact/pv/caps/rules.png",
+   "duration": 6,
+   "zoom_from": 1.05,
+   "zoom_to": 1.2,
+   "origin": [
+    "35%",
+    "25%"
+   ],
+   "telop": {
+    "main": "引用は、公開前に機械で原文と照らす",
+    "sub": "AIが下書きし、人が確かめてから公開"
+   }
+  },
+  {
+   "type": "endcard",
+   "duration": 8,
+   "title": "Kurage 国会ファクト",
+   "sub": "年収の壁・消費税・夫婦別姓・就職氷河期など7問から",
+   "url1": "問いの一覧  xb4g.com/fact/",
+   "url2": "国会トラッカー  xb4g.com/giin/tracker",
+   "image": "/home/kojima/work/kurage_web/images/kurage-mascot-cutout.png",
+   "credit": "映像生成: MiniMax H3 ／ 出典：国会会議録検索システム（国立国会図書館）"
+  }
+ ]
+}
