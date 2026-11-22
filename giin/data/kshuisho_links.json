@@ -41,7 +41,7 @@
  },
  "koeki-tsuho": {
   "word": "公益通報者保護法",
-  "count": 39
+  "count": 40
  },
  "jidosha-kanren-zei": {
   "word": "自動車税 廃止",
@@ -53,7 +53,7 @@
  },
  "zaiseiho-4jo": {
   "word": "財政法第四条",
-  "count": 7
+  "count": 8
  },
  "juminzei-genzei": {
   "word": "標準税率未満",
@@ -127,6 +127,10 @@
   "word": "成田空港 機能強化",
   "count": 6
  },
+ "ikukyu-gyomu-daitai": {
+  "word": "育児休業 同僚",
+  "count": 1
+ },
  "kyufu-tsuki-zeigaku-kojo": {
   "word": "給付付き税額控除",
   "count": 18
@@ -185,7 +189,7 @@
  },
  "kodomo-sns": {
   "word": "子ども SNS",
-  "count": 28
+  "count": 29
  },
  "saisei-iryo": {
   "word": "再生医療等製品",
@@ -409,7 +413,7 @@
  },
  "shobyo-teatekin": {
   "word": "傷病手当金",
-  "count": 16
+  "count": 17
  },
  "bousaichou": {
   "word": "防災庁",
@@ -606,5 +610,13 @@
  "boei-tokubetsu-shotokuzei": {
   "word": "防衛増税",
   "count": 8
+ },
+ "okihai-saihaitatsu": {
+  "word": "再配達",
+  "count": 3
+ },
+ "keitoyo-chikudenchi": {
+  "word": "系統用蓄電池",
+  "count": 1
  }
 }
