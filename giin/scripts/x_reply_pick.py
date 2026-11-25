@@ -160,7 +160,7 @@ def _fallback(q, since_ts=0):
 
 
 def search_down():
-    """この回のはじめに1回だけ検索を試す。404なら止まっている"""
+    """この回のはじめに1回だけ検索を試す。404・503 などのエラーなら止まっている"""
     r = subprocess.run(["curl", "-s", "-m", "30", "-A", "Mozilla/5.0",
                         "https://api.fxtwitter.com/2/search?" + urllib.parse.urlencode({"q": "国会"})],
                        capture_output=True, text=True).stdout
@@ -168,7 +168,8 @@ def search_down():
         d = json.loads(r)
     except ValueError:
         return False
-    SEARCH_DOWN["down"] = not d.get("results") and d.get("code") == 404
+    # 404（2026-10〜）も 503「search is unavailable」（2026-11-25〜）も止まっている。エラーの code があれば止まっていると見る
+    SEARCH_DOWN["down"] = not d.get("results") and (d.get("code") or 200) >= 400
     return SEARCH_DOWN["down"]
 
 
@@ -188,7 +189,7 @@ def fx_search(q, pages=1, since_ts=0):
         except ValueError:
             break
         res = d.get("results", [])
-        if not res and d.get("code") == 404:
+        if not res and (d.get("code") or 200) >= 400:   # 404・503 など。2026-11-25 は 503 で代わりの読み方に切り替わらず0件が続いた
             # 検索が止まっている。from: の検索なら議員ごとの時系列で代わりに読む（語の検索には代わりが無い）
             SEARCH_DOWN["down"] = True
             return _fallback(q, since_ts)
@@ -353,20 +354,32 @@ def collect(args):
     # 使い切って、件数の大半を占める議員・報道の段に一度も進めなかった。止まっている間は議員・報道を先に読み、語は残りの時間で
     down = search_down()
     if down:
-        print("fxtwitter の検索が止まっている（404）。議員・報道を時系列で先に読み、語は Yahoo!リアルタイム検索で残りの時間に読む", flush=True)
+        print("fxtwitter の検索が止まっている（404・503 など）。議員・報道を時系列で先に読み、語は Yahoo!リアルタイム検索で残りの時間に読む", flush=True)
     else:
         words_stage()
     # 議員・首長はいいねが少なくても対象。
     # ① これまでに見つけた議員のアカウントを from: でまとめて引く（語に関係なく、その時間の投稿を全部拾う）
     reg_path = os.path.join(ROOT, "data", "x_politicians.json")
     reg = json.load(open(reg_path, encoding="utf-8")) if os.path.exists(reg_path) else {}
-    handles = sorted(reg)
-    # 国会議員を先に読む。検索が止まって議員ごとの時系列で読むときは、持ち時間で後ろが打ち切られるため（2026-10-10）
+    # 読む順と範囲（2026-11-25 ユーザー指示「直して」）:
+    #  - 国会議員は、衆参の名簿で確かめた data/kokkai_x.json（約600人）から全員。x_politicians.json は検索で見つけた
+    #    アカウントを足し続けた一覧（3,348人・国会議員は350人だけ・地方議員や候補者・後援会が大半）なので、国会議員の名簿には使わない。
+    #  - 地方議員・首長は、表示名に愛知県の市町村名か「愛知」「名古屋」がある人だけを先に。
+    #  - 検索が止まって1人ずつ時系列で読むときは、国会議員と愛知だけにする（全員を読もうとして持ち時間切れになっていた）。
+    #    検索が動いているとき（from: を20人ずつまとめて引ける）は、残りの人も後ろに付けて読む。
     try:
-        kok = {r["x"].lower() for r in json.load(open(os.path.join(ROOT, "data", "kokkai_x.json"), encoding="utf-8")) if r.get("verified") and r.get("x")}
-        handles = [h for h in handles if h.lower() in kok] + [h for h in handles if h.lower() not in kok]
+        kok = [r["x"] for r in json.load(open(os.path.join(ROOT, "data", "kokkai_x.json"), encoding="utf-8")) if r.get("verified") and r.get("x")]
     except Exception:
-        pass
+        kok = []
+    try:
+        aichi = json.load(open(os.path.join(ROOT, "data", "aichi_cities.json"), encoding="utf-8"))["names"] + ["愛知", "名古屋"]
+    except Exception:
+        aichi = ["愛知", "名古屋"]
+    kl = {h.lower() for h in kok}
+    local = [h for h in sorted(reg) if h.lower() not in kl and any(a in str(reg[h]) for a in aichi)]
+    rest = [h for h in sorted(reg) if h.lower() not in kl and h not in set(local)]
+    handles = kok + local + ([] if down else rest)
+    print(f"読む人: 国会議員 {len(kok)}人・愛知の議員と首長 {len(local)}人" + ("" if not down else f"（検索が止まっているので、ほかの {len(rest)}人は読まない）"), flush=True)
     npol = 0
     for i in range(0, len(handles), 20):
         if over("議員一覧"):
